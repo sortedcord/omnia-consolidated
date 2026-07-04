@@ -1,3 +1,5 @@
 packages:
   - "packages/*"
   - "cli"
+allowBuilds:
+  better-sqlite3: true

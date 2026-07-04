@@ -1,4 +1,7 @@
 {
+  "compilerOptions": {
+    "strict": true
+  },
   "files": [],
   "references": [
     { "path": "./packages/core" },
