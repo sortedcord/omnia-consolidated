@@ -1,0 +1,12 @@
+{
+  "files": [],
+  "references": [
+    { "path": "./packages/core" },
+    { "path": "./packages/intent" },
+    { "path": "./packages/architect" },
+    { "path": "./packages/memory" },
+    { "path": "./packages/spatial" },
+    { "path": "./packages/llm" },
+    { "path": "./cli" }
+  ]
+}
