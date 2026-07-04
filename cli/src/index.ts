@@ -44,7 +44,7 @@ export class Attribute {
     this.visibility = AttributeVisibility.PRIVATE;
   }
 
-  grandAccess(objectId: string) {
+  grantAccess(objectId: string) {
     if (this.visibility === AttributeVisibility.PRIVATE) {
       this.allowedEntities.add(objectId);
     }
@@ -79,11 +79,18 @@ export abstract class AttributableObject implements IAttribute {
   addAttribute(
     name: string,
     value: string,
-    visibility: AttributeVisibility,
+    visibility: AttributeVisibility = AttributeVisibility.PRIVATE,
+    allowedEntities: Set<string> | null = null,
   ): void {
     if (this.attributes.has(name))
       throw Error(`Attribute ${name} already exists`);
+
     this.attributes.set(name, new Attribute(name, value, visibility));
+    if (visibility === AttributeVisibility.PRIVATE && allowedEntities != null) {
+      for (const entity of allowedEntities) {
+        this.attributes.get(name)?.grantAccess(entity);
+      }
+    }
   }
 
   removeAttribute(name: string): void {
@@ -96,5 +103,11 @@ export abstract class AttributableObject implements IAttribute {
     return Array.from(this.attributes.values()).filter((attr) =>
       attr.hasAccess(viewerId),
     );
+  }
+}
+
+export class Entity extends AttributableObject {
+  constructor(name: string) {
+    super();
   }
 }
