@@ -98,7 +98,7 @@ omnia/
 
 ## Origin
 
-This repository is a consolidation, not a fresh start. It reconciles four earlier prototypes and one long design conversation into a single monorepo so decisions that used to get re-litigated every session are made once and written down. 
+This repository is a consolidation, not a fresh start. It reconciles four earlier prototypes and months long research experiments into a single monorepo
 
 *   [`omnia` (Python)](https://github.com/sortedcord/omnia): The original manifesto. World-state-outside-the-model, patch merging, tick engine. Scaffolding dropped, ideas kept.
 *   [`omnia-faiss`](https://github.com/sortedcord/omnia-faiss): The first thing that genuinely ran end-to-end. Stands as the reference implementation for behavior.
