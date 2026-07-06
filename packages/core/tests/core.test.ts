@@ -168,3 +168,36 @@ describe("SQLiteRepository Unit Tests (Tier 1)", () => {
     db.close();
   });
 });
+
+describe("Serializer Unit Tests (Tier 1)", () => {
+  test("AttributableObject serialization", () => {
+    const obj = new MockAttributable("obj-1");
+    obj.addAttribute("health", "100", AttributeVisibility.PUBLIC);
+    obj.addAttribute("secret", "key-123", AttributeVisibility.PRIVATE, new Set(["alice"]));
+
+    const result = obj.serialize();
+    expect(result).toContain("* health: 100 (Visibility: PUBLIC)");
+    expect(result).toContain("* secret: key-123 (Visibility: PRIVATE) (Visible to: alice)");
+  });
+
+  test("WorldState serialization", () => {
+    const world = new WorldState("world-1");
+    world.addAttribute("gravity", "9.8", AttributeVisibility.PUBLIC);
+
+    const alice = new Entity("alice");
+    alice.addAttribute("role", "warrior", AttributeVisibility.PUBLIC);
+    world.addEntity(alice);
+
+    const bob = new Entity("bob"); // no attributes
+    world.addEntity(bob);
+
+    const result = world.serialize();
+    expect(result).toContain("World Attributes:");
+    expect(result).toContain("  * gravity: 9.8 (Visibility: PUBLIC)");
+    expect(result).toContain("Entities:");
+    expect(result).toContain("  - Entity [ID: alice]:");
+    expect(result).toContain("      * role: warrior (Visibility: PUBLIC)");
+    expect(result).toContain("  - Entity [ID: bob]:");
+    expect(result).toContain("      * (No attributes)");
+  });
+});
