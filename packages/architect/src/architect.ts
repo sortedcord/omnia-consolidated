@@ -2,6 +2,7 @@ import { WorldState, SQLiteRepository } from "@omnia/core";
 import { LLMValidator, ValidationResult } from "./llm-validator.js";
 import { TimeDeltaGenerator, TimeDelta } from "./delta.js";
 import { ILLMProvider } from "@omnia/llm";
+import { Intent } from "@omnia/intent";
 
 export interface ProcessResult extends ValidationResult {
   timeDelta?: TimeDelta;
@@ -22,10 +23,9 @@ export class Architect {
    */
   async validateIntent(
     worldState: WorldState,
-    actorId: string,
-    actionIntent: string,
+    intent: Intent,
   ): Promise<ValidationResult> {
-    return this.validator.validate(worldState, actorId, actionIntent);
+    return this.validator.validate(worldState, intent);
   }
 
   /**
@@ -34,11 +34,10 @@ export class Architect {
    */
   async processIntent(
     worldState: WorldState,
-    actorId: string,
-    actionIntent: string,
+    intent: Intent,
   ): Promise<ProcessResult> {
     // 1. Validate the intent action
-    const validation = await this.validateIntent(worldState, actorId, actionIntent);
+    const validation = await this.validateIntent(worldState, intent);
     if (!validation.isValid) {
       return validation;
     }
@@ -46,8 +45,7 @@ export class Architect {
     // 2. Generate time delta for the valid action
     const timeDelta = await this.timeDeltaGenerator.generate(
       worldState,
-      actorId,
-      actionIntent,
+      intent,
     );
 
     // 3. Apply the time delta to the world state clock

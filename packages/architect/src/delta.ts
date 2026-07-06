@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { WorldState, serializeObjectiveWorldState } from "@omnia/core";
 import { ILLMProvider } from "@omnia/llm";
+import { Intent } from "@omnia/intent";
 
 export const TimeDeltaSchema = z.object({
   minutesToAdvance: z.number().int().nonnegative(),
@@ -12,8 +13,7 @@ export type TimeDelta = z.infer<typeof TimeDeltaSchema>;
 export interface IDeltaGenerator<T> {
   generate(
     worldState: WorldState,
-    actorId: string,
-    actionIntent: string,
+    intent: Intent,
   ): Promise<T>;
 }
 
@@ -22,8 +22,7 @@ export class TimeDeltaGenerator implements IDeltaGenerator<TimeDelta> {
 
   async generate(
     worldState: WorldState,
-    actorId: string,
-    actionIntent: string,
+    intent: Intent,
   ): Promise<TimeDelta> {
     const systemPrompt = `
 You are the Time Delta Generator for the World Architect.
@@ -44,8 +43,11 @@ World Details:
 ${serializeObjectiveWorldState(worldState)}
 
 === ACTION ===
-Actor ID: ${actorId}
-Action: "${actionIntent}"
+Actor ID: ${intent.actorId}
+Type: ${intent.type}
+Description: "${intent.description}"
+Original Text: "${intent.originalText}"
+Target IDs: ${intent.targetIds.join(", ") || "(None)"}
 `.trim();
 
     const response = await this.llmProvider.generateStructuredResponse({

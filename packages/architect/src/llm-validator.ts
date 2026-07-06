@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { WorldState, serializeObjectiveWorldState } from "@omnia/core";
 import { ILLMProvider } from "@omnia/llm";
+import { Intent } from "@omnia/intent";
 
 export const ValidationResultSchema = z.object({
   isValid: z.boolean(),
@@ -17,14 +18,13 @@ export class LLMValidator {
    */
   async validate(
     worldState: WorldState,
-    actorId: string,
-    actionIntent: string,
+    intent: Intent,
   ): Promise<ValidationResult> {
-    const actor = worldState.getEntity(actorId);
+    const actor = worldState.getEntity(intent.actorId);
     if (!actor) {
       return {
         isValid: false,
-        reason: `Actor entity with ID "${actorId}" does not exist in the world state.`,
+        reason: `Actor entity with ID "${intent.actorId}" does not exist in the world state.`,
       };
     }
 
@@ -54,8 +54,11 @@ Entities & Attributes:
 ${serializedWorld}
 
 === PROPOSED ACTION ===
-Actor ID: ${actorId}
-Proposed Action: "${actionIntent}"
+Actor ID: ${intent.actorId}
+Type: ${intent.type}
+Description: "${intent.description}"
+Original Text: "${intent.originalText}"
+Target IDs: ${intent.targetIds.join(", ") || "(None)"}
 
 Decide if the proposed action is logically valid and physically possible.
 `.trim();

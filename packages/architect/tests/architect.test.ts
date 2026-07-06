@@ -3,6 +3,7 @@ import Database from "better-sqlite3";
 import { WorldState, Entity, SQLiteRepository } from "@omnia/core";
 import { MockLLMProvider } from "@omnia/llm";
 import { Architect } from "@omnia/architect";
+import { Intent } from "@omnia/intent";
 
 describe("Architect & LLMValidator Unit Tests (Tier 1)", () => {
   test("returns valid response when LLM validates intent as successful", async () => {
@@ -17,11 +18,15 @@ describe("Architect & LLMValidator Unit Tests (Tier 1)", () => {
     const llmProvider = new MockLLMProvider([mockResponse]);
     const architect = new Architect(llmProvider);
 
-    const result = await architect.validateIntent(
-      world,
-      "alice",
-      "open the chest and read the scroll",
-    );
+    const intent: Intent = {
+      type: "action",
+      originalText: "open the chest and read the scroll",
+      description: "Open the chest and read the scroll",
+      actorId: "alice",
+      targetIds: [],
+    };
+
+    const result = await architect.validateIntent(world, intent);
 
     expect(result.isValid).toBe(true);
     expect(result.reason).toBe(
@@ -42,11 +47,15 @@ describe("Architect & LLMValidator Unit Tests (Tier 1)", () => {
     const llmProvider = new MockLLMProvider([mockResponse]);
     const architect = new Architect(llmProvider);
 
-    const result = await architect.validateIntent(
-      world,
-      "bob",
-      "unlock the gate and escape",
-    );
+    const intent: Intent = {
+      type: "action",
+      originalText: "unlock the gate and escape",
+      description: "Unlock the gate and escape",
+      actorId: "bob",
+      targetIds: [],
+    };
+
+    const result = await architect.validateIntent(world, intent);
 
     expect(result.isValid).toBe(false);
     expect(result.reason).toBe("Bob does not have the key to the iron gate.");
@@ -59,11 +68,15 @@ describe("Architect & LLMValidator Unit Tests (Tier 1)", () => {
     const llmProvider = new MockLLMProvider([]); // No mock responses because it shouldn't be called
     const architect = new Architect(llmProvider);
 
-    const result = await architect.validateIntent(
-      world,
-      "ghost",
-      "haunt the mansion",
-    );
+    const intent: Intent = {
+      type: "action",
+      originalText: "haunt the mansion",
+      description: "Haunt the mansion",
+      actorId: "ghost",
+      targetIds: [],
+    };
+
+    const result = await architect.validateIntent(world, intent);
 
     expect(result.isValid).toBe(false);
     expect(result.reason).toContain(
@@ -93,11 +106,15 @@ describe("TimeDeltaGenerator & Architect.processIntent Unit Tests (Tier 1)", () 
 
     const architect = new Architect(llmProvider, repo);
 
-    const result = await architect.processIntent(
-      world,
-      "alice",
-      "pick the lock of the wooden chest",
-    );
+    const intent: Intent = {
+      type: "action",
+      originalText: "pick the lock of the wooden chest",
+      description: "Pick the lock of the wooden chest",
+      actorId: "alice",
+      targetIds: [],
+    };
+
+    const result = await architect.processIntent(world, intent);
 
     // Assert results
     expect(result.isValid).toBe(true);
@@ -131,11 +148,15 @@ describe("TimeDeltaGenerator & Architect.processIntent Unit Tests (Tier 1)", () 
 
     const architect = new Architect(llmProvider, repo);
 
-    const result = await architect.processIntent(
-      world,
-      "bob",
-      "run away",
-    );
+    const intent: Intent = {
+      type: "action",
+      originalText: "run away",
+      description: "Run away",
+      actorId: "bob",
+      targetIds: [],
+    };
+
+    const result = await architect.processIntent(world, intent);
 
     expect(result.isValid).toBe(false);
     expect(result.reason).toBe("Bob is bound by chains.");

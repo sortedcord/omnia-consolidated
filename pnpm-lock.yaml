@@ -302,6 +302,9 @@ importers:
       '@omnia/core':
         specifier: workspace:*
         version: link:../core
+      '@omnia/intent':
+        specifier: workspace:*
+        version: link:../intent
       '@omnia/llm':
         specifier: workspace:*
         version: link:../llm
