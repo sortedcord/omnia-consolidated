@@ -46,3 +46,28 @@ There are will a [standard set of Validators]() that dictate if an action is pos
 > Documenting story flattening problem.
 
 Since we're have such complex systems for action validation, it's possible that the LLM would naturally steer towards low stakes actions or actions with minimal consequences. That way the narrative would simply flatten out. Which is why there needs to exist a noise layer that would allow for random (slightly non-sensible) actions to take place to introduce Spontaneity and unexpectedness into the system. (See dynamic temperature tweaking)
+
+## Delta Generators
+
+Delta Generators are single-responsibility components in the Architect Layer tasked with computing discrete state updates ("deltas") from validated intents.
+
+### How They Function
+1. **Validation Prerequisite**: Delta generators execute *only* if the `LLMValidator` (or other validator layers) returns `isValid: true`.
+2. **Specialized Responsibility**: Each generator isolates a specific aspect of state transition (e.g., advancing the clock, updating positions, modifying attributes). This keeps prompts focused and avoids single monolithic LLM calls trying to update everything.
+3. **Structured Outputs**: Generators query the LLM using Zod schemas to ensure type-safe and validated change deltas.
+4. **Application and Persistence**: Once generated, the delta is applied to the live `WorldState` by deterministic code, and the changes are persisted to the database.
+
+### Core Generators
+
+#### Time Delta Generator
+Calculates the physical time duration (in minutes) that a validated action takes to complete:
+* **Inputs**: The validated action and the serialized objective `WorldState`.
+* **Output (Zod Schema)**:
+  ```json
+  {
+    "minutesToAdvance": 25,
+    "explanation": "Searching a locked desk thoroughly takes time."
+  }
+  ```
+* **Resolution**: The Architect advances `worldState.clock` by the returned minutes, then saves the updated world state to `SQLiteRepository`.
+
