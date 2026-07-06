@@ -5,5 +5,8 @@
   "type": "module",
   "exports": {
     ".": "./dist/index.js"
+  },
+  "dependencies": {
+    "@types/node": "^26.1.0"
   }
 }
