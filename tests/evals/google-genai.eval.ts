@@ -1,7 +1,6 @@
 import { describe, test, expect } from "vitest";
 import { z } from "zod";
-import { GeminiProvider } from "../../packages/llm/src/providers/google-genai.js";
-import { llmConfig } from "../../packages/llm/src/config.js";
+import { GeminiProvider, llmConfig } from "@omnia/llm";
 
 describe("GeminiProvider Eval", () => {
   test("structured JSON response against live API", async () => {

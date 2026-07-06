@@ -4,11 +4,11 @@ import {
   Attribute,
   AttributeVisibility,
   AttributableObject,
-} from "../src/attribute.js";
-import { Entity } from "../src/entity.js";
-import { WorldClock } from "../src/clock.js";
-import { WorldState } from "../src/world.js";
-import { SQLiteRepository } from "../src/repository.js";
+  Entity,
+  WorldClock,
+  WorldState,
+  SQLiteRepository,
+} from "@omnia/core";
 
 // A concrete implementation of AttributableObject for testing
 class MockAttributable extends AttributableObject {}

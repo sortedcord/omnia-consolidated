@@ -5,5 +5,10 @@
   "type": "module",
   "exports": {
     ".": "./dist/index.js"
+  },
+  "dependencies": {
+    "@omnia/core": "workspace:*",
+    "@omnia/llm": "workspace:*",
+    "zod": "^4.4.3"
   }
 }
