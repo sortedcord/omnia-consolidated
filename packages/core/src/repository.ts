@@ -18,6 +18,7 @@ export class SQLiteRepository {
         id TEXT PRIMARY KEY,
         type TEXT NOT NULL,
         world_id TEXT,
+        clock_iso TEXT,
         FOREIGN KEY (world_id) REFERENCES objects(id) ON DELETE CASCADE
       );
 
@@ -38,20 +39,35 @@ export class SQLiteRepository {
         FOREIGN KEY (object_id, attribute_name) REFERENCES attributes(object_id, name) ON DELETE CASCADE
       );
     `);
+
+    // Safely add clock_iso column if it does not exist in an existing database
+    try {
+      this.db.exec("ALTER TABLE objects ADD COLUMN clock_iso TEXT;");
+    } catch {
+      // Column already exists, ignore error
+    }
   }
 
   save(obj: AttributableObject, type: string, worldId?: string): void {
     const saveTx = this.db.transaction(() => {
+      let clockIso: string | null = null;
+      if (obj instanceof WorldState) {
+        clockIso = obj.clock.get().toISOString();
+      }
+
       // 1. Insert or ignore the object in the objects table
       this.db
         .prepare(
           `
-        INSERT INTO objects (id, type, world_id)
-        VALUES (?, ?, ?)
-        ON CONFLICT(id) DO UPDATE SET type = excluded.type, world_id = excluded.world_id
+        INSERT INTO objects (id, type, world_id, clock_iso)
+        VALUES (?, ?, ?, ?)
+        ON CONFLICT(id) DO UPDATE SET 
+          type = excluded.type, 
+          world_id = excluded.world_id,
+          clock_iso = excluded.clock_iso
       `,
         )
-        .run(obj.id, type, worldId || null);
+        .run(obj.id, type, worldId || null, clockIso);
 
       // Get current attributes from db to delete the ones that are no longer present
       const existingAttrs = this.db
@@ -155,16 +171,17 @@ export class SQLiteRepository {
     const objRow = this.db
       .prepare(
         `
-      SELECT type FROM objects WHERE id = ?
+      SELECT type, clock_iso FROM objects WHERE id = ?
     `,
       )
-      .get(id) as { type: string } | undefined;
+      .get(id) as { type: string; clock_iso: string | null } | undefined;
 
     if (!objRow || objRow.type !== "world") {
       return null;
     }
 
-    const worldState = new WorldState(id);
+    const startTime = objRow.clock_iso ? new Date(objRow.clock_iso) : undefined;
+    const worldState = new WorldState(id, startTime);
     this.reconstituteAttributes(worldState);
 
     // Reconstitute all entities belonging to this world
