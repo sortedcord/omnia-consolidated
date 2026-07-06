@@ -126,7 +126,7 @@ describe("SQLiteRepository Unit Tests (Tier 1)", () => {
     world.addAttribute("location", "Outer Rim", AttributeVisibility.PUBLIC);
 
     // 2. Setup Entities and add attributes with ACL grants
-    const alice = new Entity("alice");
+    const alice = new Entity("alice", "location-a");
     alice.addAttribute("name", "Alice Smith", AttributeVisibility.PUBLIC);
     // Secret attribute visible only to 'bob'
     alice.addAttribute("diaries", "Private thoughts", AttributeVisibility.PRIVATE, new Set(["bob"]));
@@ -156,6 +156,8 @@ describe("SQLiteRepository Unit Tests (Tier 1)", () => {
     expect(loadedBob).toBeDefined();
 
     // 7. Assert entity attributes and access controls are preserved
+    expect(loadedAlice!.locationId).toBe("location-a");
+    expect(loadedBob!.locationId).toBeNull();
     expect(loadedAlice!.attributes.get("name")?.getValue()).toBe("Alice Smith");
     expect(loadedAlice!.attributes.get("name")?.visibility).toBe(AttributeVisibility.PUBLIC);
 
@@ -184,7 +186,7 @@ describe("Serializer Unit Tests (Tier 1)", () => {
     const world = new WorldState("world-1");
     world.addAttribute("gravity", "9.8", AttributeVisibility.PUBLIC);
 
-    const alice = new Entity("alice");
+    const alice = new Entity("alice", "location-a");
     alice.addAttribute("role", "warrior", AttributeVisibility.PUBLIC);
     world.addEntity(alice);
 
@@ -196,6 +198,7 @@ describe("Serializer Unit Tests (Tier 1)", () => {
     expect(result).toContain("  * gravity: 9.8 (Visibility: PUBLIC)");
     expect(result).toContain("Entities:");
     expect(result).toContain("  - Entity [ID: alice]:");
+    expect(result).toContain("      * Location ID: location-a");
     expect(result).toContain("      * role: warrior (Visibility: PUBLIC)");
     expect(result).toContain("  - Entity [ID: bob]:");
     expect(result).toContain("      * (No attributes)");

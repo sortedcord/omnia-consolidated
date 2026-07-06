@@ -331,7 +331,11 @@ importers:
 
   packages/memory: {}
 
-  packages/spatial: {}
+  packages/spatial:
+    dependencies:
+      '@omnia/core':
+        specifier: workspace:*
+        version: link:../core
 
   web/landing:
     devDependencies:

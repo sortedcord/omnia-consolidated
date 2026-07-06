@@ -39,6 +39,7 @@ Exempt dialogue or speech actions from validation (consider them always valid).
 Enforce logical boundaries such as:
 - Spatial boundaries (an actor cannot grab an object in another location unless they are there).
 - Physical boundaries (an actor cannot open a locked drawer without a key or breaking it).
+- State Boundaries (an actor cannot perform a task if their state doesn't allow them to do so).
 - State/Attribute constraints.
 
 You must respond with a JSON object containing:

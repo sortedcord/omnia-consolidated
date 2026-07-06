@@ -1,12 +1,19 @@
-import { WorldState } from "@omnia/core";
+import { WorldState, SQLiteRepository } from "@omnia/core";
 import { LLMValidator, ValidationResult } from "./llm-validator.js";
+import { TimeDeltaGenerator, TimeDelta } from "./delta.js";
 import { ILLMProvider } from "@omnia/llm";
+
+export interface ProcessResult extends ValidationResult {
+  timeDelta?: TimeDelta;
+}
 
 export class Architect {
   private validator: LLMValidator;
+  private timeDeltaGenerator: TimeDeltaGenerator;
 
-  constructor(llmProvider: ILLMProvider) {
+  constructor(llmProvider: ILLMProvider, private repo?: SQLiteRepository) {
     this.validator = new LLMValidator(llmProvider);
+    this.timeDeltaGenerator = new TimeDeltaGenerator(llmProvider);
   }
 
   /**
@@ -19,5 +26,42 @@ export class Architect {
     actionIntent: string,
   ): Promise<ValidationResult> {
     return this.validator.validate(worldState, actorId, actionIntent);
+  }
+
+  /**
+   * Processes, validates, generates deltas, applies them to the world state,
+   * and persists the changes to the database.
+   */
+  async processIntent(
+    worldState: WorldState,
+    actorId: string,
+    actionIntent: string,
+  ): Promise<ProcessResult> {
+    // 1. Validate the intent action
+    const validation = await this.validateIntent(worldState, actorId, actionIntent);
+    if (!validation.isValid) {
+      return validation;
+    }
+
+    // 2. Generate time delta for the valid action
+    const timeDelta = await this.timeDeltaGenerator.generate(
+      worldState,
+      actorId,
+      actionIntent,
+    );
+
+    // 3. Apply the time delta to the world state clock
+    worldState.clock.advance(timeDelta.minutesToAdvance);
+
+    // 4. Save and persist the updated world state
+    if (this.repo) {
+      this.repo.saveWorldState(worldState);
+    }
+
+    return {
+      isValid: true,
+      reason: validation.reason,
+      timeDelta,
+    };
   }
 }

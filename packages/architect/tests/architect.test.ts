@@ -1,6 +1,6 @@
 import { describe, test, expect } from "vitest";
-import { WorldState } from "@omnia/core";
-import { Entity } from "@omnia/core";
+import Database from "better-sqlite3";
+import { WorldState, Entity, SQLiteRepository } from "@omnia/core";
 import { MockLLMProvider } from "@omnia/llm";
 import { Architect } from "@omnia/architect";
 
@@ -69,5 +69,85 @@ describe("Architect & LLMValidator Unit Tests (Tier 1)", () => {
     expect(result.reason).toContain(
       'Actor entity with ID "ghost" does not exist',
     );
+  });
+});
+
+describe("TimeDeltaGenerator & Architect.processIntent Unit Tests (Tier 1)", () => {
+  test("processIntent advances clock and saves state for a valid intent", async () => {
+    const db = new Database(":memory:");
+    const repo = new SQLiteRepository(db);
+
+    const world = new WorldState("world-xyz", new Date("2026-07-06T12:00:00.000Z"));
+    const alice = new Entity("alice");
+    world.addEntity(alice);
+
+    // Initial save so it exists in db
+    repo.saveWorldState(world);
+
+    // Setup mock LLM responses:
+    // First call: validateIntent (ValidationResult)
+    // Second call: TimeDeltaGenerator (TimeDelta)
+    const mockValidation = { isValid: true, reason: "Alice has the lockpick kit and skill." };
+    const mockTimeDelta = { minutesToAdvance: 20, explanation: "Picking a lock takes time." };
+    const llmProvider = new MockLLMProvider([mockValidation, mockTimeDelta]);
+
+    const architect = new Architect(llmProvider, repo);
+
+    const result = await architect.processIntent(
+      world,
+      "alice",
+      "pick the lock of the wooden chest",
+    );
+
+    // Assert results
+    expect(result.isValid).toBe(true);
+    expect(result.reason).toBe("Alice has the lockpick kit and skill.");
+    expect(result.timeDelta).toBeDefined();
+    expect(result.timeDelta!.minutesToAdvance).toBe(20);
+
+    // Verify clock was advanced locally
+    const expectedTime = new Date(new Date("2026-07-06T12:00:00.000Z").getTime() + 20 * 60_000);
+    expect(world.clock.get().toISOString()).toBe(expectedTime.toISOString());
+
+    // Verify it was persisted to the database
+    const loaded = repo.loadWorldState("world-xyz")!;
+    expect(loaded.clock.get().toISOString()).toBe(expectedTime.toISOString());
+
+    db.close();
+  });
+
+  test("processIntent does not advance clock or save state for an invalid intent", async () => {
+    const db = new Database(":memory:");
+    const repo = new SQLiteRepository(db);
+
+    const startTime = new Date("2026-07-06T12:00:00.000Z");
+    const world = new WorldState("world-xyz", startTime);
+    const bob = new Entity("bob");
+    world.addEntity(bob);
+    repo.saveWorldState(world);
+
+    const mockValidation = { isValid: false, reason: "Bob is bound by chains." };
+    const llmProvider = new MockLLMProvider([mockValidation]); // TimeDeltaGenerator shouldn't be called
+
+    const architect = new Architect(llmProvider, repo);
+
+    const result = await architect.processIntent(
+      world,
+      "bob",
+      "run away",
+    );
+
+    expect(result.isValid).toBe(false);
+    expect(result.reason).toBe("Bob is bound by chains.");
+    expect(result.timeDelta).toBeUndefined();
+
+    // Verify clock did not advance
+    expect(world.clock.get().toISOString()).toBe(startTime.toISOString());
+
+    // Verify database value remained unchanged
+    const loaded = repo.loadWorldState("world-xyz")!;
+    expect(loaded.clock.get().toISOString()).toBe(startTime.toISOString());
+
+    db.close();
   });
 });
