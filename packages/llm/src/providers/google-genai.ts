@@ -9,7 +9,7 @@ export class GeminiProvider implements ILLMProvider {
   constructor(apiKey: string) {
     this.model = new ChatGoogleGenerativeAI({
       apiKey,
-      model: "gemini-3-flash",
+      model: "gemini-2.5-flash",
     });
   }
 
