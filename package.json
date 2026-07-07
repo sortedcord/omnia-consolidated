@@ -14,9 +14,9 @@
     "format": "prettier . --write",
     "format:check": "prettier . --check",
     "watch": "tsc -b --watch",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "test:evals": "vitest run --config vitest.config.evals.ts"
+    "test": "vitest run --project unit",
+    "test:watch": "vitest --project unit",
+    "test:evals": "vitest run --project evals"
   },
   "keywords": [],
   "author": "",

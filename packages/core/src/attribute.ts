@@ -72,6 +72,7 @@ export interface IAttribute {
     name: string,
     value: string,
     visibility: AttributeVisibility,
+    allowedEntities: Set<string> | null,
   ): void;
   getVisibleAttributesFor(viewerId: string): Attribute[];
 }
@@ -118,8 +119,11 @@ export function serializeAttributes(attributes: Attribute[]): string {
   const lines: string[] = [];
   for (const attr of attributes) {
     const aclList = Array.from(attr.getAllowedEntities());
-    const aclStr = aclList.length > 0 ? ` (Visible to: ${aclList.join(", ")})` : "";
-    lines.push(`* ${attr.name}: ${attr.getValue()} (Visibility: ${attr.getVisibility()})${aclStr}`);
+    const aclStr =
+      aclList.length > 0 ? ` (Visible to: ${aclList.join(", ")})` : "";
+    lines.push(
+      `* ${attr.name}: ${attr.getValue()} (Visibility: ${attr.getVisibility()})${aclStr}`,
+    );
   }
   return lines.join("\n");
 }

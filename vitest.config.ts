@@ -6,13 +6,6 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 export default defineConfig({
-  test: {
-    exclude: [
-      "**/node_modules/**",
-      "**/dist/**",
-      "tests/evals/**"
-    ]
-  },
   resolve: {
     alias: {
       "@omnia/core": path.resolve(__dirname, "./packages/core/src"),
@@ -21,7 +14,27 @@ export default defineConfig({
       "@omnia/intent": path.resolve(__dirname, "./packages/intent/src"),
       "@omnia/memory": path.resolve(__dirname, "./packages/memory/src"),
       "@omnia/spatial": path.resolve(__dirname, "./packages/spatial/src"),
-      "@omnia/cli": path.resolve(__dirname, "./cli/src")
-    }
-  }
+      "@omnia/cli": path.resolve(__dirname, "./cli/src"),
+    },
+  },
+  test: {
+    projects: [
+      {
+        extends: true,
+        test: {
+          name: "unit",
+          exclude: ["**/node_modules/**", "**/dist/**", "tests/evals/**"],
+        },
+      },
+      {
+        extends: true,
+        test: {
+          name: "evals",
+          include: ["tests/evals/**/*.eval.ts"],
+          exclude: ["**/node_modules/**", "**/dist/**"],
+          setupFiles: ["./tests/evals/setup.ts"],
+        },
+      },
+    ],
+  },
 });
