@@ -297,6 +297,21 @@ importers:
         specifier: ^5
         version: 5.9.3
 
+  content/scenario-core:
+    dependencies:
+      '@omnia/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      '@omnia/memory':
+        specifier: workspace:*
+        version: link:../../packages/memory
+      '@omnia/spatial':
+        specifier: workspace:*
+        version: link:../../packages/spatial
+      zod:
+        specifier: ^4.4.3
+        version: 4.4.3
+
   packages/actor:
     dependencies:
       '@omnia/core':

@@ -64,6 +64,13 @@ export class SQLiteRepository {
     } catch {
       // Column already exists, ignore error
     }
+
+    // Safely add connections_json column if it does not exist in an existing database
+    try {
+      this.db.exec("ALTER TABLE objects ADD COLUMN connections_json TEXT;");
+    } catch {
+      // Column already exists, ignore error
+    }
   }
 
   save(obj: AttributableObject, type: string, worldId?: string): void {
@@ -75,26 +82,38 @@ export class SQLiteRepository {
 
       let locationId: string | null = null;
       let aliasesJson: string | null = null;
+      let connectionsJson: string | null = null;
+
       if (obj instanceof Entity) {
         locationId = obj.locationId;
         aliasesJson = JSON.stringify(Array.from(obj.aliases.entries()));
+      }
+
+      // Check if it's a location (using duck typing to avoid circular import of Location)
+      if (type === "location") {
+        const loc = obj as { parentId?: string | null; connections?: unknown[] };
+        locationId = loc.parentId ?? null;
+        if (loc.connections) {
+          connectionsJson = JSON.stringify(loc.connections);
+        }
       }
 
       // 1. Insert or ignore the object in the objects table
       this.db
         .prepare(
           `
-        INSERT INTO objects (id, type, world_id, clock_iso, location_id, aliases_json)
-        VALUES (?, ?, ?, ?, ?, ?)
+        INSERT INTO objects (id, type, world_id, clock_iso, location_id, aliases_json, connections_json)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
         ON CONFLICT(id) DO UPDATE SET 
           type = excluded.type, 
           world_id = excluded.world_id,
           clock_iso = excluded.clock_iso,
           location_id = excluded.location_id,
-          aliases_json = excluded.aliases_json
+          aliases_json = excluded.aliases_json,
+          connections_json = excluded.connections_json
       `,
         )
-        .run(obj.id, type, worldId || null, clockIso, locationId, aliasesJson);
+        .run(obj.id, type, worldId || null, clockIso, locationId, aliasesJson, connectionsJson);
 
       // Get current attributes from db to delete the ones that are no longer present
       const existingAttrs = this.db
@@ -166,6 +185,10 @@ export class SQLiteRepository {
     this.save(entity, "entity", worldId);
   }
 
+  saveLocation(location: AttributableObject, worldId?: string): void {
+    this.save(location, "location", worldId);
+  }
+
   saveWorldState(worldState: WorldState): void {
     const saveWorldTx = this.db.transaction(() => {
       this.save(worldState, "world");
@@ -198,6 +221,54 @@ export class SQLiteRepository {
     }
     this.reconstituteAttributes(entity);
     return entity;
+  }
+
+  loadLocation<T extends AttributableObject>(
+    id: string,
+    factory: (id: string, parentId: string | null) => T,
+  ): T | null {
+    const objRow = this.db
+      .prepare(
+        `
+      SELECT type, location_id, connections_json FROM objects WHERE id = ?
+    `,
+      )
+      .get(id) as { type: string; location_id: string | null; connections_json: string | null } | undefined;
+
+    if (!objRow || objRow.type !== "location") {
+      return null;
+    }
+
+    const location = factory(id, objRow.location_id);
+    if (objRow.connections_json) {
+      (location as { connections?: unknown[] }).connections = JSON.parse(objRow.connections_json);
+    }
+    this.reconstituteAttributes(location);
+    return location;
+  }
+
+  listLocations<T extends AttributableObject>(
+    worldId: string,
+    factory: (id: string, parentId: string | null) => T,
+  ): T[] {
+    const rows = this.db
+      .prepare(
+        `
+      SELECT id, location_id, connections_json FROM objects WHERE type = 'location' AND world_id = ?
+    `,
+      )
+      .all(worldId) as { id: string; location_id: string | null; connections_json: string | null }[];
+
+    const locations: T[] = [];
+    for (const row of rows) {
+      const loc = factory(row.id, row.location_id);
+      if (row.connections_json) {
+        (loc as { connections?: unknown[] }).connections = JSON.parse(row.connections_json);
+      }
+      this.reconstituteAttributes(loc);
+      locations.push(loc);
+    }
+    return locations;
   }
 
   loadWorldState(id: string): WorldState | null {
