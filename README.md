@@ -1,4 +1,4 @@
-![Omnia Logo](./docs/assets/img/logo.png)
+![Omnia Logo](web/docs/src/assets/img/logo.png)
 
 An LLM-assisted narrative simulation engine where the <b>world state lives outside the model</b>, characters act through <b>intents that get validated</b> and applied by engine code, and each character's knowledge, memory, and emotional state are subjective and partial by construction.
 
