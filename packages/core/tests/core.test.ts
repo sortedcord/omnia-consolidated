@@ -171,6 +171,26 @@ describe("SQLiteRepository Unit Tests (Tier 1)", () => {
 
     db.close();
   });
+
+  test("Save and load entity aliases", () => {
+    const db = new Database(":memory:");
+    const repo = new SQLiteRepository(db);
+
+    const world = new WorldState("world-xyz");
+    const alice = new Entity("alice");
+    alice.aliases.set("bob", "the hooded man");
+    alice.aliases.set("charlie", "the baker");
+    world.addEntity(alice);
+
+    repo.saveWorldState(world);
+
+    const loadedWorld = repo.loadWorldState("world-xyz")!;
+    const loadedAlice = loadedWorld.getEntity("alice")!;
+    expect(loadedAlice.aliases.get("bob")).toBe("the hooded man");
+    expect(loadedAlice.aliases.get("charlie")).toBe("the baker");
+
+    db.close();
+  });
 });
 
 describe("Serializer & serializeObjectiveWorldState Unit Tests (Tier 1)", () => {

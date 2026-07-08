@@ -342,7 +342,17 @@ importers:
         specifier: ^26.1.0
         version: 26.1.0
 
-  packages/memory: {}
+  packages/memory:
+    dependencies:
+      '@omnia/core':
+        specifier: workspace:*
+        version: link:../core
+      '@omnia/intent':
+        specifier: workspace:*
+        version: link:../intent
+      zod:
+        specifier: ^4.4.3
+        version: 4.4.3
 
   packages/spatial:
     dependencies:

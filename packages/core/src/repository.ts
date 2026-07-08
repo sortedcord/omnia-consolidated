@@ -22,6 +22,7 @@ export class SQLiteRepository {
         world_id TEXT,
         clock_iso TEXT,
         location_id TEXT,
+        aliases_json TEXT,
         FOREIGN KEY (world_id) REFERENCES objects(id) ON DELETE CASCADE
       );
 
@@ -56,6 +57,13 @@ export class SQLiteRepository {
     } catch {
       // Column already exists, ignore error
     }
+
+    // Safely add aliases_json column if it does not exist in an existing database
+    try {
+      this.db.exec("ALTER TABLE objects ADD COLUMN aliases_json TEXT;");
+    } catch {
+      // Column already exists, ignore error
+    }
   }
 
   save(obj: AttributableObject, type: string, worldId?: string): void {
@@ -66,24 +74,27 @@ export class SQLiteRepository {
       }
 
       let locationId: string | null = null;
+      let aliasesJson: string | null = null;
       if (obj instanceof Entity) {
         locationId = obj.locationId;
+        aliasesJson = JSON.stringify(Array.from(obj.aliases.entries()));
       }
 
       // 1. Insert or ignore the object in the objects table
       this.db
         .prepare(
           `
-        INSERT INTO objects (id, type, world_id, clock_iso, location_id)
-        VALUES (?, ?, ?, ?, ?)
+        INSERT INTO objects (id, type, world_id, clock_iso, location_id, aliases_json)
+        VALUES (?, ?, ?, ?, ?, ?)
         ON CONFLICT(id) DO UPDATE SET 
           type = excluded.type, 
           world_id = excluded.world_id,
           clock_iso = excluded.clock_iso,
-          location_id = excluded.location_id
+          location_id = excluded.location_id,
+          aliases_json = excluded.aliases_json
       `,
         )
-        .run(obj.id, type, worldId || null, clockIso, locationId);
+        .run(obj.id, type, worldId || null, clockIso, locationId, aliasesJson);
 
       // Get current attributes from db to delete the ones that are no longer present
       const existingAttrs = this.db
@@ -169,16 +180,22 @@ export class SQLiteRepository {
     const objRow = this.db
       .prepare(
         `
-      SELECT type, location_id FROM objects WHERE id = ?
+      SELECT type, location_id, aliases_json FROM objects WHERE id = ?
     `,
       )
-      .get(id) as { type: string; location_id: string | null } | undefined;
+      .get(id) as { type: string; location_id: string | null; aliases_json: string | null } | undefined;
 
     if (!objRow || objRow.type !== "entity") {
       return null;
     }
 
     const entity = new Entity(id, objRow.location_id);
+    if (objRow.aliases_json) {
+      const entries = JSON.parse(objRow.aliases_json) as [string, string][];
+      for (const [k, v] of entries) {
+        entity.aliases.set(k, v);
+      }
+    }
     this.reconstituteAttributes(entity);
     return entity;
   }
@@ -204,13 +221,19 @@ export class SQLiteRepository {
     const entityRows = this.db
       .prepare(
         `
-      SELECT id, location_id FROM objects WHERE type = 'entity' AND world_id = ?
+      SELECT id, location_id, aliases_json FROM objects WHERE type = 'entity' AND world_id = ?
     `,
       )
-      .all(id) as { id: string; location_id: string | null }[];
+      .all(id) as { id: string; location_id: string | null; aliases_json: string | null }[];
 
     for (const row of entityRows) {
       const entity = new Entity(row.id, row.location_id);
+      if (row.aliases_json) {
+        const entries = JSON.parse(row.aliases_json) as [string, string][];
+        for (const [k, v] of entries) {
+          entity.aliases.set(k, v);
+        }
+      }
       this.reconstituteAttributes(entity);
       worldState.addEntity(entity);
     }
@@ -222,14 +245,20 @@ export class SQLiteRepository {
     const rows = this.db
       .prepare(
         `
-      SELECT id FROM objects WHERE type = 'entity'
+      SELECT id, aliases_json FROM objects WHERE type = 'entity'
     `,
       )
-      .all() as { id: string }[];
+      .all() as { id: string; aliases_json: string | null }[];
 
     const entities: Entity[] = [];
     for (const row of rows) {
       const entity = new Entity(row.id);
+      if (row.aliases_json) {
+        const entries = JSON.parse(row.aliases_json) as [string, string][];
+        for (const [k, v] of entries) {
+          entity.aliases.set(k, v);
+        }
+      }
       this.reconstituteAttributes(entity);
       entities.push(entity);
     }

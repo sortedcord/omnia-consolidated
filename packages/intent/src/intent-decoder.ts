@@ -20,6 +20,12 @@ export class IntentDecoder {
     narrativeProse: string,
   ): Promise<IntentSequence> {
     const entityIds = Array.from(worldState.entities.keys());
+    const actor = worldState.getEntity(actorId);
+
+    const aliasEntries = actor ? Array.from(actor.aliases.entries()) : [];
+    const aliasContext = aliasEntries.length > 0
+      ? aliasEntries.map(([targetId, alias]) => `- "${alias}" refers to entity ID: "${targetId}"`).join("\n")
+      : "(No known aliases)";
 
     const systemPrompt = `
 You are the Intent Decoder for a narrative simulation engine.
@@ -32,7 +38,7 @@ For each intent you must:
 2. Extract the original text fragment from the prose that corresponds to this intent.
 3. Write a concise, structured description of the intent (what is being done or said). Include as much detail about the action as possible that was extracted from the narrative prose. Do not make up qualities.
 4. Identify the actorId (the entity performing the intent — this will always be "${actorId}").
-5. Identify targetIds — the entity IDs of the receiving parties. Use only IDs from the known entities list. If no specific target, use an empty array.
+5. Identify targetIds — the entity IDs of the receiving parties. Use the "KNOWN ENTITY IDS" and "ACTOR ALIASES" mapping to resolve any subjective names, descriptions, or nicknames used in the prose to their correct system entity IDs. If no specific target, use an empty array.
 
 Rules:
 - Preserve the chronological order of intents as they appear in the prose.
@@ -45,6 +51,10 @@ Rules:
     const userContext = `
 === KNOWN ENTITY IDS ===
 ${entityIds.length > 0 ? entityIds.join(", ") : "(No entities)"}
+
+=== ACTOR ALIASES ===
+The actor refers to other entities using these subjective names/aliases:
+${aliasContext}
 
 === WORLD STATE ===
 ${serializeObjectiveWorldState(worldState)}
