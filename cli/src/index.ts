@@ -199,6 +199,26 @@ async function main() {
         console.log(systemPrompt);
         console.log("\n--- USER CONTEXT ---");
         console.log(userContext);
+        console.log("\n--- CONTEXT BREAKDOWN ---");
+        
+        const userSections = userContext.split("\n\n");
+        const momentSection = userSections.find(s => s.startsWith("=== CURRENT MOMENT ===")) || "";
+        const worldSection = userSections.find(s => s.startsWith("=== THE WORLD AS YOU PERCEIVE IT ===")) || "";
+        const memorySection = userSections.find(s => s.startsWith("=== YOUR RECENT MEMORY ===")) || "";
+        
+        const systemChars = systemPrompt.length;
+        const momentChars = momentSection.length;
+        const worldChars = worldSection.length;
+        const memoryChars = memorySection.length;
+        const totalChars = systemChars + userContext.length;
+        
+        const estTokens = (chars: number) => Math.ceil(chars / 4);
+        
+        console.log(`  ├─ System Instructions:   ${systemChars.toLocaleString()} chars (~${estTokens(systemChars)} tokens)`);
+        console.log(`  ├─ Current Moment Context: ${momentChars.toLocaleString()} chars (~${estTokens(momentChars)} tokens)`);
+        console.log(`  ├─ World Perception:      ${worldChars.toLocaleString()} chars (~${estTokens(worldChars)} tokens)`);
+        console.log(`  ├─ Recent Memory Buffer:  ${memoryChars.toLocaleString()} chars (~${estTokens(memoryChars)} tokens)`);
+        console.log(`  └─ TOTAL ESTIMATED INPUT: ${totalChars.toLocaleString()} chars (~${estTokens(totalChars)} tokens)`);
         console.log(
           "--------------------------------------------------------------------------------",
         );
