@@ -13,6 +13,6 @@
     { "path": "../packages/architect" },
     { "path": "../packages/actor" },
     { "path": "../packages/llm" },
-    { "path": "../content/scenario-core" }
+    { "path": "../packages/scenario" }
   ]
 }

@@ -11,7 +11,7 @@
     { "path": "./packages/spatial" },
     { "path": "./packages/llm" },
     { "path": "./packages/actor" },
-    { "path": "./content/scenario-core" },
+    { "path": "./packages/scenario" },
     { "path": "./cli" }
   ]
 }

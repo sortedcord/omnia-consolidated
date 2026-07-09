@@ -6,8 +6,8 @@
   },
   "include": ["src"],
   "references": [
-    { "path": "../../packages/core" },
-    { "path": "../../packages/spatial" },
-    { "path": "../../packages/memory" }
+    { "path": "../core" },
+    { "path": "../spatial" },
+    { "path": "../memory" }
   ]
 }

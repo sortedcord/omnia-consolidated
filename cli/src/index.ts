@@ -13,7 +13,7 @@ import {
   buildBufferEntryForIntent,
 } from "@omnia/actor";
 import { GeminiProvider } from "@omnia/llm";
-import { ScenarioLoader } from "@omnia/scenario-core";
+import { ScenarioLoader } from "@omnia/scenario";
 
 // Load environment variables
 dotenv.config();
