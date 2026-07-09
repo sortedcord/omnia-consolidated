@@ -7,11 +7,17 @@
     "dev": "astro dev",
     "start": "astro dev",
     "build": "astro build",
-    "preview": "astro preview"
+    "preview": "astro preview",
+    "preview:wrangler": "astro build && wrangler dev"
   },
   "dependencies": {
     "@astrojs/starlight": "^0.41.3",
     "astro": "^7.0.7",
+    "astro-mermaid": "^2.1.0",
+    "mermaid": "^11.16.0",
     "sharp": "^0.33.5"
+  },
+  "devDependencies": {
+    "wrangler": "^4.107.1"
   }
 }

@@ -5,6 +5,7 @@ import mermaid from "astro-mermaid";
 export default defineConfig({
   site: "https://omnia.omniasimulation.com",
   base: "/docs",
+  outDir: "./dist/docs",
   integrations: [
     mermaid(),
     starlight({

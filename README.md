@@ -26,9 +26,9 @@ Single-agent, single-context systems (AI Dungeon and its descendants) prompt one
 - **Consequences Evaporate:** Betray someone, apologize, and they forgive you a turn later because nothing is tracking the betrayal as a persistent fact.
 - **Emotional Drift:** Emotional state is either frozen into a meaningless number (`trust: 40`) or handed to the model to grade itself, producing drifting, arbitrary values.
 - **World Rot:** The world state slowly contradicts itself because the model has no structured place to keep it. The locked door is open, then locked, then never existed.
-- **Everyone Is One Person:** Every character shares one context, so every character shares one mind. They can't genuinely surprise each other, lie to each other, or know different things — they're sock puppets on the same hand.
+- **Everyone Is One Person:** Every character shares one context, so every character shares one mind. They can't genuinely surprise each other, lie to each other, or know different things. They're sock puppets on the hands of one puppetmaster.
 
-The root cause is the same in every case: the model is being asked to be the database, the physics engine and the whole cast simultaneously inside a sliding context window.
+The model should not be the database, the physics engine and the whole cast simultaneously inside a sliding context window.
 
 ## The Omnia Solution
 
@@ -36,7 +36,7 @@ Omnia answers every one of these failures with the same move: **pull the thing t
 
 - **World State:** Lives in a DB, not a context window. It cannot drift, because nothing regenerates it. The world state only changes through validated deltas.
 - **Actions:** Actions are proposals (Intents) that engine code validates and applies; they are never direct edits the model makes to the world. The model proposes; deterministic code disposes.
-- **Epistemic Privacy:** Knowledge, memory, and emotion are modeled per character and kept partial on purpose. A character literally cannot reach for what it has not earned the right to know — the secret is not in its prompt, so there is nothing to jailbreak out of it.
+- **Epistemic Privacy:** Knowledge, memory, and emotion are modeled per character and kept partial on purpose. A character literally cannot reach for what it has not earned the right to know. The secret is not in its prompt, so there is **nothing to jailbreak out of it**.
 
 ## What This Buys You
 
