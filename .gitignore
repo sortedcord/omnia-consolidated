@@ -46,6 +46,12 @@ Thumbs.db
 
 # Database
 omnia.db
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+**/data/*.db
+data/
 
 # Environment Files
 .env

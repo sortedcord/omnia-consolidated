@@ -11,6 +11,21 @@ export interface LLMResponse<T> {
   success: boolean;
   data?: T;
   error?: string;
+  usage?: {
+    inputTokens: number;
+    outputTokens: number;
+    totalTokens: number;
+  };
+}
+
+export interface LLMCallRecord {
+  systemPrompt: string;
+  userContext: string;
+  usage?: {
+    inputTokens: number;
+    outputTokens: number;
+    totalTokens: number;
+  };
 }
 
 export interface ILLMProvider {
@@ -19,4 +34,5 @@ export interface ILLMProvider {
   generateStructuredResponse<T extends z.ZodTypeAny>(
     request: LLMRequest<T>,
   ): Promise<LLMResponse<z.infer<T>>>;
+  lastCalls?: LLMCallRecord[];
 }

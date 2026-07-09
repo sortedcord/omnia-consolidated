@@ -5,7 +5,7 @@ import tseslint from "typescript-eslint";
 
 export default [
   {
-    ignores: ["**/dist/**", "**/node_modules/**", "**/.astro/**"],
+    ignores: ["**/dist/**", "**/node_modules/**", "**/.astro/**", "**/.next/**"],
   },
 
   js.configs.recommended,
@@ -16,6 +16,13 @@ export default [
     files: ["**/*.ts"],
     languageOptions: {
       globals: globals.node,
+    },
+  },
+
+  {
+    files: ["**/*.tsx"],
+    languageOptions: {
+      globals: { ...globals.browser, ...globals.node },
     },
   },
 
