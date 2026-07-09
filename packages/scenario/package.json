@@ -1,5 +1,5 @@
 {
-  "name": "@omnia/scenario-core",
+  "name": "@omnia/scenario",
   "version": "0.0.0",
   "private": true,
   "type": "module",

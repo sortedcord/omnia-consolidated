@@ -136,9 +136,8 @@ omnia/
     memory/      verbatim buffer; later the vector archive, dossier, and affect vectors
     spatial/     location and POI graph, portal-based perception
     llm/         ILLMProvider interface plus Gemini and deterministic mock implementations
+    scenario/    scenario JSON schema and loader (JSON → SQLite)
   content/
-    scenario-core/     scenario JSON schema and loader (JSON → SQLite)
-    scenario-builder/  Next.js web UI for authoring worlds
     demo/              bundled scenarios (talking-room)
   cli/           the playable loop (human or LLM actors, --scenario / --play flags)
   tests/

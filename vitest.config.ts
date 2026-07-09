@@ -15,7 +15,7 @@ export default defineConfig({
       "@omnia/memory": path.resolve(__dirname, "./packages/memory/src"),
       "@omnia/spatial": path.resolve(__dirname, "./packages/spatial/src"),
       "@omnia/actor": path.resolve(__dirname, "./packages/actor/src"),
-      "@omnia/scenario-core": path.resolve(__dirname, "./content/scenario-core/src"),
+      "@omnia/scenario": path.resolve(__dirname, "./packages/scenario/src"),
       "@omnia/cli": path.resolve(__dirname, "./cli/src"),
     },
   },

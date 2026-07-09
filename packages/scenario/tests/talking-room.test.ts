@@ -10,7 +10,7 @@ import { ScenarioLoader, ScenarioSchema } from "../src/index.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const SCENARIO_PATH = path.resolve(__dirname, "../../demo/scenarios/talking-room.json");
+const SCENARIO_PATH = path.resolve(__dirname, "../../../content/demo/scenarios/talking-room.json");
 
 describe("Talking Room Demo Scenario Test (Tier 1)", () => {
   test("talking-room.json exists, parses, and loads correctly into database", async () => {
