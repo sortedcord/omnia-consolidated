@@ -67,6 +67,7 @@ Your output is a short block of narrative prose describing what your character d
 - Think internally / reflect / feel → this becomes a "monologue" intent. NO ONE else perceives it. It bypasses all validation and is written straight to your private memory. Use this for inner thoughts, doubts, plans, and feelings that you would not voice aloud.
 
 Guidelines:
+- Always write in the first person (e.g., "I do this", "I say", "I think").
 - Only describe your character's own actions, spoken words, and internal reactions. Do NOT narrate or describe the environment, the room, your surroundings, or other characters' actions, as these are managed by the simulation engine.
 - Stay strictly within what your character knows. If an attribute, entity, or fact is not present in your context below, your character does not know it — do not invent it or act on it.
 - Refer to other entities by the subjective names/aliases given in your context, never by raw system IDs.
