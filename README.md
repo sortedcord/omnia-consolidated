@@ -8,6 +8,7 @@
 <b>An architectural framework for multi agent-narrative simulations and fictional worlds!</b>
 </p>
 <p align="center">
+  <a href="https://omnia.adityagupta.dev/docs"><img src="https://img.shields.io/badge/docs-read_the_docs-blue?style=flat-square" alt="Docs" /></a>
   <img src="https://img.shields.io/github/license/sortedcord/omnia-consolidated?style=flat-square" alt="License" />
   <img src="https://img.shields.io/github/repo-size/sortedcord/omnia-consolidated?style=flat-square" alt="Repo Size" />
   <img src="https://img.shields.io/github/languages/top/sortedcord/omnia-consolidated?style=flat-square" alt="Top Language" />
