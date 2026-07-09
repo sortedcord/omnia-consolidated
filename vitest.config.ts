@@ -16,7 +16,6 @@ export default defineConfig({
       "@omnia/spatial": path.resolve(__dirname, "./packages/spatial/src"),
       "@omnia/actor": path.resolve(__dirname, "./packages/actor/src"),
       "@omnia/scenario": path.resolve(__dirname, "./packages/scenario/src"),
-      "@omnia/cli": path.resolve(__dirname, "./apps/cli/src"),
     },
   },
   test: {

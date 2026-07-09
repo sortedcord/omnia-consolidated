@@ -251,39 +251,6 @@ importers:
         specifier: ^4.4.3
         version: 4.4.3
 
-  apps/cli:
-    dependencies:
-      '@omnia/actor':
-        specifier: workspace:*
-        version: link:../../packages/actor
-      '@omnia/architect':
-        specifier: workspace:*
-        version: link:../../packages/architect
-      '@omnia/core':
-        specifier: workspace:*
-        version: link:../../packages/core
-      '@omnia/intent':
-        specifier: workspace:*
-        version: link:../../packages/intent
-      '@omnia/llm':
-        specifier: workspace:*
-        version: link:../../packages/llm
-      '@omnia/memory':
-        specifier: workspace:*
-        version: link:../../packages/memory
-      '@omnia/scenario':
-        specifier: workspace:*
-        version: link:../../packages/scenario
-      '@omnia/spatial':
-        specifier: workspace:*
-        version: link:../../packages/spatial
-      better-sqlite3:
-        specifier: ^12.11.1
-        version: 12.11.1
-      dotenv:
-        specifier: ^17.4.2
-        version: 17.4.2
-
   apps/gui:
     dependencies:
       '@omnia/actor':
