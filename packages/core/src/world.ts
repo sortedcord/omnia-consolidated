@@ -209,7 +209,7 @@ export function serializeSubjectiveWorldState(
     lines.push("  Entities present with you:");
     for (const e of coLocated) {
       const alias = resolveAliasViewer(viewer, e.id);
-      lines.push(`    - ${alias} (ID: ${e.id}):`);
+      lines.push(`    - ${alias}:`);
       const eVisible = e.getVisibleAttributesFor(viewerId);
       lines.push(serializeVisibleAttributes(eVisible).split("\n").map((l) => "      " + l).join("\n"));
     }
@@ -221,7 +221,7 @@ export function serializeSubjectiveWorldState(
     lines.push("  Other presences you are aware of (elsewhere):");
     for (const e of elsewhere) {
       const alias = resolveAliasViewer(viewer, e.id);
-      lines.push(`    - ${alias} (ID: ${e.id}) [elsewhere]`);
+      lines.push(`    - ${alias} [elsewhere]`);
     }
   }
 

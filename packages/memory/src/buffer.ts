@@ -32,10 +32,14 @@ export function serializeSubjectiveBufferEntry(
   );
 
   let details: string;
+  const content = entry.intent.description.trim() || entry.intent.originalText.trim();
+
   if (entry.intent.type === "dialogue") {
-    details = `spoke to ${targetAliases.join(", ") || "someone"}: "${entry.intent.description}"`;
+    details = `spoke to ${targetAliases.join(", ") || "someone"}: "${content}"`;
+  } else if (entry.intent.type === "monologue") {
+    details = `thought: "${content}"`;
   } else {
-    details = `${entry.intent.description}`;
+    details = content;
     if (entry.outcome) {
       details += ` (Outcome: ${entry.outcome.isValid ? "Succeeded" : `Failed - ${entry.outcome.reason}`})`;
     }

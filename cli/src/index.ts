@@ -186,6 +186,40 @@ async function main() {
     process.exit(1);
   }
 
+  // Resolve playEntityId to actual entity UUID if name/ID substring matches
+  let resolvedPlayEntityId: string | undefined = undefined;
+  if (playEntityId) {
+    let matched = worldState.getEntity(playEntityId);
+    if (!matched) {
+      for (const ent of worldState.entities.values()) {
+        const nameAttr = ent.attributes.get("name")?.getValue();
+        if (nameAttr && nameAttr.toLowerCase() === playEntityId.toLowerCase()) {
+          matched = ent;
+          break;
+        }
+      }
+    }
+    if (!matched) {
+      for (const ent of worldState.entities.values()) {
+        const nameAttr = ent.attributes.get("name")?.getValue();
+        if (
+          (nameAttr && nameAttr.toLowerCase().includes(playEntityId.toLowerCase())) ||
+          ent.id.toLowerCase().includes(playEntityId.toLowerCase())
+        ) {
+          matched = ent;
+          break;
+        }
+      }
+    }
+
+    if (matched) {
+      resolvedPlayEntityId = matched.id;
+      console.log(`Resolved player character "${playEntityId}" to entity ID "${matched.id}" (Name: ${matched.attributes.get("name")?.getValue() || "Unnamed"})`);
+    } else {
+      console.warn(`Warning: Could not find any entity matching "${playEntityId}". Running in observer mode.`);
+    }
+  }
+
   // 3. Ensure API Key exists if we are running LLMs
   const apiKey = process.env.GOOGLE_API_KEY;
   if (!apiKey) {
@@ -205,8 +239,9 @@ async function main() {
   );
   console.log(`SIMULATION STARTED: "${scenarioJson.name}"`);
   console.log(`Description: ${scenarioJson.description}`);
-  if (playEntityId) {
-    console.log(`Player Role: Controlling entity "${playEntityId}"`);
+  if (resolvedPlayEntityId) {
+    const matched = worldState.getEntity(resolvedPlayEntityId);
+    console.log(`Player Role: Controlling entity "${resolvedPlayEntityId}" (Name: ${matched?.attributes.get("name")?.getValue() || "Unnamed"})`);
   } else {
     console.log("Player Role: Observing fully autonomous NPC run");
   }
@@ -238,7 +273,7 @@ async function main() {
 
     for (const entity of entities) {
       // 1. Determine the ActorAgent generator: CLI input for player, LLM for NPCs
-      const isPlayer = playEntityId && entity.id === playEntityId;
+      const isPlayer = resolvedPlayEntityId && entity.id === resolvedPlayEntityId;
       const generator = isPlayer ? new CLIProseGenerator() : undefined;
 
       const agent = new ActorAgent(llmProvider, bufferRepo, 20, generator);
