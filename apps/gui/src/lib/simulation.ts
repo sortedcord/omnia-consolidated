@@ -25,7 +25,7 @@ import {
   IActorProseGenerator,
   buildBufferEntryForIntent,
 } from "@omnia/actor";
-import { GeminiProvider, ILLMProvider, MockLLMProvider, ProviderManager } from "@omnia/llm";
+import { GeminiProvider, ILLMProvider, MockLLMProvider, ProviderManager, OpenRouterProvider } from "@omnia/llm";
 import { ScenarioLoader } from "@omnia/scenario";
 
 import type {
@@ -231,9 +231,12 @@ class SimulationManager {
 
       const key = inst ? inst.apiKey : (process.env.GOOGLE_API_KEY || "");
       const providerName = inst ? inst.providerName : "google-genai";
+      const modelName = inst ? inst.modelName : undefined;
 
       if (providerName === "google-genai") {
-        return new GeminiProvider(key);
+        return new GeminiProvider(key, modelName);
+      } else if (providerName === "openrouter") {
+        return new OpenRouterProvider(key, modelName);
       } else {
         return new MockLLMProvider([]);
       }
@@ -668,7 +671,9 @@ class SimulationManager {
         }
 
         if (inst.providerName === "google-genai") {
-          return new GeminiProvider(inst.apiKey);
+          return new GeminiProvider(inst.apiKey, inst.modelName);
+        } else if (inst.providerName === "openrouter") {
+          return new OpenRouterProvider(inst.apiKey, inst.modelName);
         } else {
           return new MockLLMProvider([]);
         }

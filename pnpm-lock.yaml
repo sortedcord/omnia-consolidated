@@ -209,7 +209,10 @@ importers:
     dependencies:
       '@langchain/google-genai':
         specifier: ^2.2.0
-        version: 2.2.0(@langchain/core@1.2.1(ws@8.21.0))
+        version: 2.2.0(@langchain/core@1.2.1(openai@6.45.0(ws@8.21.0)(zod@4.4.3))(ws@8.21.0))
+      '@langchain/openrouter':
+        specifier: ^0.4.3
+        version: 0.4.3(@langchain/core@1.2.1(openai@6.45.0(ws@8.21.0)(zod@4.4.3))(ws@8.21.0))(ws@8.21.0)(zod@4.4.3)
       '@types/node':
         specifier: ^20.19.43
         version: 20.19.43
@@ -340,7 +343,7 @@ importers:
     dependencies:
       '@langchain/google-genai':
         specifier: ^2.2.0
-        version: 2.2.0(@langchain/core@1.2.1(ws@8.21.0))
+        version: 2.2.0(@langchain/core@1.2.1(openai@6.45.0(ws@8.21.0)(zod@4.4.3))(ws@8.21.0))
       '@types/node':
         specifier: ^26.1.0
         version: 26.1.0
@@ -1219,6 +1222,18 @@ packages:
     engines: {node: '>=20'}
     peerDependencies:
       '@langchain/core': ^1.2.0
+
+  '@langchain/openai@1.5.3':
+    resolution: {integrity: sha512-OStS2AUvy9oe/hEf/3ndBOFztUDOfuJYLNXh89m3iiJAI2Cp5Dp0n/pvpO27MO0b+VgENd+xSHVyQZ7fe+ulxg==}
+    engines: {node: '>=20'}
+    peerDependencies:
+      '@langchain/core': ^1.2.1
+
+  '@langchain/openrouter@0.4.3':
+    resolution: {integrity: sha512-LUul0i3VAlQBkhOg0EH1N20DUOxHGAZ1gqQtX1IRO/jYbDL3HZ7uHUupjMnerDaULiyAJZT3DxDw6Cr1QMT4ng==}
+    engines: {node: '>=20'}
+    peerDependencies:
+      '@langchain/core': ^1.0.0
 
   '@mdx-js/mdx@3.1.1':
     resolution: {integrity: sha512-f6ZO2ifpwAQIpzGWaBQT2TXxPv6z3RBzQKpVftEWN78Vl/YweF1uwussDx8ECAXVtr3Rs89fKyG9YlzUs9DyGQ==}
@@ -2353,6 +2368,10 @@ packages:
   eventemitter3@5.0.4:
     resolution: {integrity: sha512-mlsTRyGaPBjPedk6Bvw+aqbsXDtoAyAzm5MO7JgU+yVRyMQ5O8bD4Kcci7BS85f93veegeCPkL8R4GLClnjLFw==}
 
+  eventsource-parser@3.1.0:
+    resolution: {integrity: sha512-kJezFj9YFAMLeORyi7aCLxLbD5/qWMQnoMVlVPyHIll7lgRJCc3JVln9Vgl9nwQi0YkMnhdGTMNn7CkRRAptMg==}
+    engines: {node: '>=18.0.0'}
+
   expand-template@2.0.3:
     resolution: {integrity: sha512-XYfuKMvj4O35f/pOXLObndIRvyQ+/+6AhODh+OKWj9S9498pHHn/IMszH+gt0fBCRWMNfk1ZSp5x3AifmnI2vg==}
     engines: {node: '>=6'}
@@ -3063,6 +3082,26 @@ packages:
 
   oniguruma-to-es@4.3.6:
     resolution: {integrity: sha512-csuQ9x3Yr0cEIs/Zgx/OEt9iBw9vqIunAPQkx19R/fiMq2oGVTgcMqO/V3Ybqefr1TBvosI6jU539ksaBULJyA==}
+
+  openai@6.45.0:
+    resolution: {integrity: sha512-5DQVNErssk0afNpTTHUm/qZPU4iKR9OYdNid8Ib4puq4gHNNvGWZht2zY4h9a8JMF949Ik6m8gQutllVPbjdnw==}
+    peerDependencies:
+      '@aws-sdk/credential-provider-node': '>=3.972.0 <4'
+      '@smithy/hash-node': '>=4.3.0 <5'
+      '@smithy/signature-v4': '>=5.4.0 <6'
+      ws: ^8.18.0
+      zod: ^3.25 || ^4.0
+    peerDependenciesMeta:
+      '@aws-sdk/credential-provider-node':
+        optional: true
+      '@smithy/hash-node':
+        optional: true
+      '@smithy/signature-v4':
+        optional: true
+      ws:
+        optional: true
+      zod:
+        optional: true
 
   optionator@0.9.4:
     resolution: {integrity: sha512-6IpQ7mKUxRcZNLIObR0hz7lxsapSSIYNZJwXPGeF0mTVqGKFIXj1DQcMoT22S3ROcLyY/rz0PWaWZ9ayWmad9g==}
@@ -4460,12 +4499,12 @@ snapshots:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.5
 
-  '@langchain/core@1.2.1(ws@8.21.0)':
+  '@langchain/core@1.2.1(openai@6.45.0(ws@8.21.0)(zod@4.4.3))(ws@8.21.0)':
     dependencies:
       '@cfworker/json-schema': 4.1.1
       '@standard-schema/spec': 1.1.0
       js-tiktoken: 1.0.21
-      langsmith: 0.7.15(ws@8.21.0)
+      langsmith: 0.7.15(openai@6.45.0(ws@8.21.0)(zod@4.4.3))(ws@8.21.0)
       mustache: 4.2.0
       p-queue: 6.6.2
       zod: 4.4.3
@@ -4476,10 +4515,35 @@ snapshots:
       - openai
       - ws
 
-  '@langchain/google-genai@2.2.0(@langchain/core@1.2.1(ws@8.21.0))':
+  '@langchain/google-genai@2.2.0(@langchain/core@1.2.1(openai@6.45.0(ws@8.21.0)(zod@4.4.3))(ws@8.21.0))':
     dependencies:
       '@google/generative-ai': 0.24.1
-      '@langchain/core': 1.2.1(ws@8.21.0)
+      '@langchain/core': 1.2.1(openai@6.45.0(ws@8.21.0)(zod@4.4.3))(ws@8.21.0)
+
+  '@langchain/openai@1.5.3(@langchain/core@1.2.1(openai@6.45.0(ws@8.21.0)(zod@4.4.3))(ws@8.21.0))(ws@8.21.0)':
+    dependencies:
+      '@langchain/core': 1.2.1(openai@6.45.0(ws@8.21.0)(zod@4.4.3))(ws@8.21.0)
+      js-tiktoken: 1.0.21
+      openai: 6.45.0(ws@8.21.0)(zod@4.4.3)
+      zod: 4.4.3
+    transitivePeerDependencies:
+      - '@aws-sdk/credential-provider-node'
+      - '@smithy/hash-node'
+      - '@smithy/signature-v4'
+      - ws
+
+  '@langchain/openrouter@0.4.3(@langchain/core@1.2.1(openai@6.45.0(ws@8.21.0)(zod@4.4.3))(ws@8.21.0))(ws@8.21.0)(zod@4.4.3)':
+    dependencies:
+      '@langchain/core': 1.2.1(openai@6.45.0(ws@8.21.0)(zod@4.4.3))(ws@8.21.0)
+      '@langchain/openai': 1.5.3(@langchain/core@1.2.1(openai@6.45.0(ws@8.21.0)(zod@4.4.3))(ws@8.21.0))(ws@8.21.0)
+      eventsource-parser: 3.1.0
+      openai: 6.45.0(ws@8.21.0)(zod@4.4.3)
+    transitivePeerDependencies:
+      - '@aws-sdk/credential-provider-node'
+      - '@smithy/hash-node'
+      - '@smithy/signature-v4'
+      - ws
+      - zod
 
   '@mdx-js/mdx@3.1.1':
     dependencies:
@@ -5746,6 +5810,8 @@ snapshots:
 
   eventemitter3@5.0.4: {}
 
+  eventsource-parser@3.1.0: {}
+
   expand-template@2.0.3: {}
 
   expect-type@1.4.0: {}
@@ -6125,10 +6191,11 @@ snapshots:
 
   klona@2.0.6: {}
 
-  langsmith@0.7.15(ws@8.21.0):
+  langsmith@0.7.15(openai@6.45.0(ws@8.21.0)(zod@4.4.3))(ws@8.21.0):
     dependencies:
       p-queue: 6.6.2
     optionalDependencies:
+      openai: 6.45.0(ws@8.21.0)(zod@4.4.3)
       ws: 8.21.0
 
   layout-base@1.0.2: {}
@@ -6799,6 +6866,11 @@ snapshots:
       oniguruma-parser: 0.12.2
       regex: 6.1.0
       regex-recursion: 6.0.2
+
+  openai@6.45.0(ws@8.21.0)(zod@4.4.3):
+    optionalDependencies:
+      ws: 8.21.0
+      zod: 4.4.3
 
   optionator@0.9.4:
     dependencies:

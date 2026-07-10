@@ -21,9 +21,10 @@ export interface ILLMProvider {
 }
 ```
 
-The codebase provides two primary implementations:
+The codebase provides three primary implementations:
 1. **`GeminiProvider`:** The production provider utilizing Google's Gemini Models via the `@langchain/google-genai` SDK.
-2. **`MockLLMProvider`:** A stateless, pre-programmed mock provider used for fast, deterministic unit testing and local integration tests.
+2. **`OpenRouterProvider`:** The production provider utilizing OpenRouter via the `@langchain/openrouter` SDK, allowing routing through various third-party and local models.
+3. **`MockLLMProvider`:** A stateless, pre-programmed mock provider used for fast, deterministic unit testing and local integration tests.
 
 ---
 
@@ -43,10 +44,10 @@ export interface LLMProviderInstance {
 ```
 
 Users can register multiple provider instances in the **Configuration Page** under the GUI. Each instance is given:
-* A friendly, human-readable name (e.g., `"Gemini Production Key"`, `"Experimental Gemini Pro"`).
-* A provider type (e.g., `google-genai`, `mock`).
+* A friendly, human-readable name (e.g., `"Gemini Production Key"`, `"OpenRouter Claude Key"`).
+* A provider type (e.g., `google-genai`, `openrouter`, `mock`).
 * An API key credential.
-* A custom target model name (e.g., `gemini-2.5-flash` or `gemini-2.5-pro`).
+* A custom target model name (e.g., `gemini-2.5-flash`, `anthropic/claude-3-5-sonnet`, or local model paths).
 * An **Active** status flag (one key is marked as globally active).
 
 Configurations are stored globally in `data/settings.db` (separated from specific simulation run databases like `data/sim-*.db` to keep key storage and audit logs isolated).
@@ -59,10 +60,10 @@ During a simulation run, the engine executes four distinct LLM operations. To op
 
 | Task Name | Key ID | Description | Default Model |
 | :--- | :--- | :--- | :--- |
-| **Actor Prose Generation** | `actor-prose` | Generates roleplay and narrative behavioral prose for Non-Player Characters. | `gemini-2.5-flash` |
-| **LLM Validator** | `llm-validator` | Arbitrates and validates proposed actions against the world state rules and constraints. | `gemini-2.5-flash` |
-| **Intent Decoder** | `intent-decoder` | Parses and splits free-text actions/prose into structured intent sequences. | `gemini-2.5-flash` |
-| **TimeDelta Generator** | `timedelta` | Calculates the duration of character actions to advance the game clock. | `gemini-2.5-flash` |
+| **Actor Prose Generation** | `actor-prose` | Generates roleplay and narrative behavioral prose for Non-Player Characters. | `gemini-2.5-flash` / `google/gemini-2.5-flash` |
+| **LLM Validator** | `llm-validator` | Arbitrates and validates proposed actions against the world state rules and constraints. | `gemini-2.5-flash` / `google/gemini-2.5-flash` |
+| **Intent Decoder** | `intent-decoder` | Parses and splits free-text actions/prose into structured intent sequences. | `gemini-2.5-flash` / `google/gemini-2.5-flash` |
+| **TimeDelta Generator** | `timedelta` | Calculates the duration of character actions to advance the game clock. | `gemini-2.5-flash` / `google/gemini-2.5-flash` |
 
 If no specific provider instance is mapped to a task, the task automatically routes to the globally marked **Active** provider instance.
 
@@ -72,7 +73,7 @@ If no specific provider instance is mapped to a task, the task automatically rou
 
 To maintain backwards-compatibility and support headless runs, live evaluation suites, and automated unit tests without requiring database pre-configuration, the config manager supports **self-bootstrapping**:
 
-1. When the provider manager queries the active key instance, if `data/settings.db` contains **0 registered keys**, it checks the process environment for `GOOGLE_API_KEY`.
+1. When the provider manager queries the active key instance, if `data/settings.db` contains **0 registered keys**, it checks the process environment for `GOOGLE_API_KEY` or `OPENROUTER_API_KEY`.
 2. If `process.env.GOOGLE_API_KEY` is present, it automatically creates, saves, and activates a default provider instance (`Default (Env)`) in `settings.db`.
 3. If database write locks occur (e.g., during high-concurrency Vitest test suites), the system seamlessly returns a temporary in-memory `LLMProviderInstance` to keep execution fluent and error-free.
 
