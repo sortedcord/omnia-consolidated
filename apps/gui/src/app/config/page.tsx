@@ -174,44 +174,57 @@ export default function ConfigPage() {
   };
 
   return (
-    <div className="config-page">
-      <h1>Configuration</h1>
+    <div className="mx-auto max-w-[800px] px-4 py-8">
+      <h1 className="mb-6 text-2xl">Configuration</h1>
 
       {loading && <p>Loading configuration...</p>}
-      {error && <div className="error-banner">{error}</div>}
+      {error && (
+        <div className="mb-4 rounded border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-700">
+          {error}
+        </div>
+      )}
 
       {config && !loading && (
         <>
-          <section className="config-section">
-            <h2>LLM Provider Instances</h2>
-            <div className="provider-split-container">
-              
+          <section className="mb-8 border-b border-gray-200 pb-6">
+            <h2 className="mb-3 text-lg">LLM Provider Instances</h2>
+            <div className="mt-4 grid min-h-[400px] grid-cols-1 overflow-hidden rounded-xl border border-gray-200 bg-white md:grid-cols-[30%_70%]">
               {/* 30% area */}
-              <div className="provider-list-pane">
-                <div className="pane-header">
-                  <h3>Instances</h3>
+              <div className="flex flex-col border-r border-gray-200 bg-gray-50">
+                <div className="flex items-center justify-between border-b border-gray-200 bg-gray-100 px-4 py-4">
+                  <h3 className="m-0 text-[0.95rem] font-semibold text-[#111]">Instances</h3>
                   <button
                     onClick={() => setSelectedInstanceId("new")}
-                    className="btn-add-inst"
+                    className="cursor-pointer rounded-md bg-emerald-500 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-emerald-600"
                     type="button"
                   >
                     + Add
                   </button>
                 </div>
-                <div className="pane-list">
+                <div className="flex flex-1 flex-col overflow-y-auto">
                   {instances.length === 0 ? (
-                    <div className="no-instances-msg">No instances configured</div>
+                    <div className="px-4 py-8 text-center text-xs text-gray-400">
+                      No instances configured
+                    </div>
                   ) : (
                     instances.map((inst) => (
                       <div
                         key={inst.id}
                         onClick={() => setSelectedInstanceId(inst.id)}
-                        className={`instance-list-item ${selectedInstanceId === inst.id ? "active" : ""}`}
+                        className={`cursor-pointer border-b border-gray-200 border-l-[3px] px-4 py-4 transition-all hover:bg-gray-100 ${
+                          selectedInstanceId === inst.id
+                            ? "border-l-blue-500 bg-blue-50"
+                            : "border-l-transparent"
+                        }`}
                       >
-                        <div className="item-name">{inst.name}</div>
-                        <div className="item-meta">
+                        <div className="text-sm font-medium text-[#111]">{inst.name}</div>
+                        <div className="mt-1 flex items-center justify-between text-xs text-gray-500">
                           <span>{inst.providerName}</span>
-                          {inst.isActive && <span className="active-pill">Active</span>}
+                          {inst.isActive && (
+                            <span className="rounded-full bg-green-100 px-1.5 py-[1px] text-[0.65rem] font-semibold text-green-700">
+                              Active
+                            </span>
+                          )}
                         </div>
                       </div>
                     ))
@@ -220,17 +233,19 @@ export default function ConfigPage() {
               </div>
 
               {/* 70% area */}
-              <div className="provider-form-pane">
-                <form onSubmit={handleSave} className="provider-config-form">
-                  <div className="form-scroll-content">
-                    <h3>
+              <div className="flex flex-col bg-white">
+                <form onSubmit={handleSave} className="flex h-full flex-col justify-between">
+                  <div className="flex flex-1 flex-col gap-5 p-6">
+                    <h3 className="m-0 mb-2 text-lg font-semibold text-[#111]">
                       {selectedInstanceId === "new"
                         ? "Create New Provider Instance"
                         : `Configure: ${editName}`}
                     </h3>
 
-                    <div className="form-group">
-                      <label htmlFor="formName">Friendly Name</label>
+                    <div className="flex flex-col gap-1.5">
+                      <label htmlFor="formName" className="text-xs font-medium text-gray-700">
+                        Friendly Name
+                      </label>
                       <input
                         id="formName"
                         type="text"
@@ -238,15 +253,19 @@ export default function ConfigPage() {
                         onChange={(e) => setEditName(e.target.value)}
                         placeholder="e.g. Gemini - Production"
                         required
+                        className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm outline-none transition-[border-color,box-shadow] focus:border-blue-500 focus:ring-3 focus:ring-blue-500/15"
                       />
                     </div>
 
-                    <div className="form-group">
-                      <label htmlFor="formProvider">Provider Type</label>
+                    <div className="flex flex-col gap-1.5">
+                      <label htmlFor="formProvider" className="text-xs font-medium text-gray-700">
+                        Provider Type
+                      </label>
                       <select
                         id="formProvider"
                         value={editProvider}
                         onChange={(e) => handleProviderChange(e.target.value)}
+                        className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm outline-none transition-[border-color,box-shadow] focus:border-blue-500 focus:ring-3 focus:ring-blue-500/15"
                       >
                         {availableProviders.map((p) => (
                           <option key={p.id} value={p.id}>
@@ -255,14 +274,16 @@ export default function ConfigPage() {
                         ))}
                       </select>
                       {editProvider && availableProviders.length > 0 && (
-                        <span className="config-hint" style={{ marginTop: "0.25rem", background: "#f3f4f6", border: "1px solid #e5e7eb", color: "#4b5563" }}>
+                        <span className="mt-1 block rounded border border-gray-200 bg-gray-100 px-3 py-2 text-xs text-gray-600">
                           {availableProviders.find((p) => p.id === editProvider)?.description}
                         </span>
                       )}
                     </div>
 
-                    <div className="form-group">
-                      <label htmlFor="formKey">API Key</label>
+                    <div className="flex flex-col gap-1.5">
+                      <label htmlFor="formKey" className="text-xs font-medium text-gray-700">
+                        API Key
+                      </label>
                       <input
                         id="formKey"
                         type="password"
@@ -274,76 +295,92 @@ export default function ConfigPage() {
                             : "•••••••• (unchanged)"
                         }
                         required={selectedInstanceId === "new"}
+                        className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm outline-none transition-[border-color,box-shadow] focus:border-blue-500 focus:ring-3 focus:ring-blue-500/15"
                       />
                     </div>
 
-                    <div className="form-group">
-                      <label htmlFor="formModel">Model Name</label>
+                    <div className="flex flex-col gap-1.5">
+                      <label htmlFor="formModel" className="text-xs font-medium text-gray-700">
+                        Model Name
+                      </label>
                       <input
                         id="formModel"
                         type="text"
                         value={editModel}
                         onChange={(e) => setEditModel(e.target.value)}
                         placeholder="e.g. gemini-2.5-flash, gemini-2.5-pro"
+                        className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm outline-none transition-[border-color,box-shadow] focus:border-blue-500 focus:ring-3 focus:ring-blue-500/15"
                       />
                     </div>
 
-                    <div className="form-group checkbox-group">
+                    <div className="mt-1 flex flex-row items-center gap-2">
                       <input
                         id="formActive"
                         type="checkbox"
                         checked={editIsActive}
                         onChange={(e) => setEditIsActive(e.target.checked)}
+                        className="h-4 w-4 cursor-pointer"
                       />
-                      <label htmlFor="formActive">Set as Active Instance</label>
+                      <label htmlFor="formActive" className="cursor-pointer text-xs font-medium text-gray-700">
+                        Set as Active Instance
+                      </label>
                     </div>
                   </div>
 
-                  <div className="form-actions-bar">
-                    <div className="action-left">
+                  <div className="flex items-center justify-between border-t border-gray-200 bg-gray-50 px-6 py-4">
+                    <div>
                       {selectedInstanceId !== "new" && (
                         <button
                           type="button"
                           onClick={handleDelete}
                           disabled={loading}
-                          className="btn-delete-pane"
+                          className="cursor-pointer rounded-md bg-red-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-600 disabled:opacity-50"
                         >
                           Delete
                         </button>
                       )}
                     </div>
-                    <div className="action-right">
-                      <button type="submit" disabled={loading} className="btn-save-pane">
+                    <div>
+                      <button
+                        type="submit"
+                        disabled={loading}
+                        className="cursor-pointer rounded-md bg-blue-600 px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700 disabled:opacity-50"
+                      >
                         {loading ? "Saving..." : "Save"}
                       </button>
                     </div>
                   </div>
                 </form>
               </div>
-
             </div>
           </section>
 
-          <section className="config-section">
-            <h2>Task Provider Routing</h2>
-            <p className="config-hint" style={{ background: "#eff6ff", border: "1px solid #bfdbfe", color: "#1e3a8a", margin: "1rem 0" }}>
-              Configure which LLM Provider Key Instance should handle each specific simulation task. Mappings default to the currently <strong>Active</strong> instance if not specified.
+          <section className="mb-8 border-b border-gray-200 pb-6">
+            <h2 className="mb-3 text-lg">Task Provider Routing</h2>
+            <p className="my-4 rounded border border-blue-200 bg-blue-50 px-3 py-2 text-xs text-blue-800">
+              Configure which LLM Provider Key Instance should handle each specific simulation
+              task. Mappings default to the currently <strong>Active</strong> instance if not
+              specified.
             </p>
-            <div className="mappings-grid">
+            <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
               {[
                 { key: "actor-prose", label: "Actor Prose Generation", desc: "Generates roleplay/narrative prose for Non-Player Characters." },
                 { key: "llm-validator", label: "LLM Validator", desc: "Arbitrates and validates proposed actions against the world state rules." },
                 { key: "intent-decoder", label: "Intent Decoder", desc: "Splits raw prose actions into structured intents (Player and NPC)." },
                 { key: "timedelta", label: "TimeDelta Generator", desc: "Calculates the duration of character actions to advance the game clock." },
               ].map((task) => (
-                <div key={task.key} className="mapping-card">
-                  <div className="mapping-info">
-                    <strong>{task.label}</strong>
-                    <span className="text-gray" style={{ fontSize: "0.75rem", marginTop: "0.125rem" }}>{task.desc}</span>
+                <div
+                  key={task.key}
+                  className="flex flex-col justify-between gap-3 rounded-lg border border-gray-200 bg-gray-50 p-4"
+                >
+                  <div className="flex flex-col gap-1 text-xs">
+                    <strong className="text-sm text-[#111]">{task.label}</strong>
+                    <span className="mt-0.5 text-gray-500">{task.desc}</span>
                   </div>
                   <select
                     value={mappings[task.key] || ""}
                     onChange={(e) => handleUpdateMapping(task.key, e.target.value)}
+                    className="w-full rounded border border-gray-300 bg-white px-2 py-1.5 text-xs"
                   >
                     <option value="">-- Use Active Key (Default) --</option>
                     {instances.map((inst) => (
@@ -357,21 +394,21 @@ export default function ConfigPage() {
             </div>
           </section>
 
-          <section className="config-section">
-            <h2>Environment Variables Default</h2>
-            <div className="config-row">
-              <span className="config-label">Default Model</span>
-              <span className="config-value">
-                <code>{config.model}</code>
+          <section className="mb-8 border-b border-gray-200 pb-6">
+            <h2 className="mb-3 text-lg">Environment Variables Default</h2>
+            <div className="flex justify-between border-b border-gray-100 py-1.5">
+              <span className="text-sm text-gray-500">Default Model</span>
+              <span className="text-sm">
+                <code className="font-mono text-sm">{config.model}</code>
               </span>
             </div>
-            <div className="config-row">
-              <span className="config-label">Default API Key (.env)</span>
+            <div className="flex justify-between border-b border-gray-100 py-1.5">
+              <span className="text-sm text-gray-500">Default API Key (.env)</span>
               <span
                 className={
                   config.apiKeySet
-                    ? "config-value status-ok"
-                    : "config-value status-error"
+                    ? "text-sm text-green-600"
+                    : "text-sm font-medium text-red-600"
                 }
               >
                 {config.apiKeySet
@@ -381,26 +418,30 @@ export default function ConfigPage() {
             </div>
           </section>
 
-          <section className="config-section">
-            <h2>Available Scenarios</h2>
+          <section className="mb-8 border-b border-gray-200 pb-6">
+            <h2 className="mb-3 text-lg">Available Scenarios</h2>
             {config.availableScenarios.length === 0 ? (
-              <p className="config-hint">
-                No scenarios found in <code>content/demo/scenarios/</code>.
+              <p className="mt-3 rounded border border-amber-200 bg-amber-100 px-3 py-2 text-xs text-amber-800">
+                No scenarios found in <code className="font-mono text-xs">content/demo/scenarios/</code>.
               </p>
             ) : (
-              <table className="scenario-table">
+              <table className="w-full border-collapse text-sm">
                 <thead>
                   <tr>
-                    <th>Name</th>
-                    <th>Path</th>
+                    <th className="border-b-2 border-gray-200 p-2 text-left font-medium text-gray-500">
+                      Name
+                    </th>
+                    <th className="border-b-2 border-gray-200 p-2 text-left font-medium text-gray-500">
+                      Path
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
                   {config.availableScenarios.map((s) => (
                     <tr key={s.path}>
-                      <td>{s.name}</td>
-                      <td>
-                        <code>{s.path}</code>
+                      <td className="border-b border-gray-100 p-2">{s.name}</td>
+                      <td className="border-b border-gray-100 p-2">
+                        <code className="font-mono text-xs text-blue-600">{s.path}</code>
                       </td>
                     </tr>
                   ))}
@@ -409,392 +450,18 @@ export default function ConfigPage() {
             )}
           </section>
 
-          <section className="config-section">
-            <h2>Engine Packages</h2>
-            <p className="config-hint">
-              All <code>@omnia/*</code> workspace packages are consumed via{" "}
-              <code>transpilePackages</code> in <code>next.config.ts</code>.
-              The native <code>better-sqlite3</code> module is externalized via{" "}
-              <code>serverExternalPackages</code>.
+          <section className="mb-8 border-b border-gray-200 pb-6">
+            <h2 className="mb-3 text-lg">Engine Packages</h2>
+            <p className="mt-3 rounded border border-amber-200 bg-amber-100 px-3 py-2 text-xs text-amber-800">
+              All <code className="font-mono text-xs">@omnia/*</code> workspace packages are
+              consumed via <code className="font-mono text-xs">transpilePackages</code> in{" "}
+              <code className="font-mono text-xs">next.config.ts</code>. The native{" "}
+              <code className="font-mono text-xs">better-sqlite3</code> module is externalized
+              via <code className="font-mono text-xs">serverExternalPackages</code>.
             </p>
           </section>
         </>
       )}
-
-      <style>{`
-        .config-page {
-          max-width: 800px;
-          margin: 0 auto;
-          padding: 2rem 1rem;
-        }
-        .config-page h1 {
-          font-size: 1.5rem;
-          margin-bottom: 1.5rem;
-        }
-        .config-section {
-          margin-bottom: 2rem;
-          padding-bottom: 1.5rem;
-          border-bottom: 1px solid #e5e7eb;
-        }
-        .config-section h2 {
-          font-size: 1.125rem;
-          margin-bottom: 0.75rem;
-        }
-        .config-row {
-          display: flex;
-          justify-content: space-between;
-          padding: 0.375rem 0;
-          border-bottom: 1px solid #f3f4f6;
-        }
-        .config-label {
-          color: #555;
-          font-size: 0.875rem;
-        }
-        .config-value {
-          font-size: 0.875rem;
-        }
-        .status-ok {
-          color: #16a34a;
-        }
-        .status-error {
-          color: #dc2626;
-          font-weight: 500;
-        }
-        .config-hint {
-          margin-top: 0.75rem;
-          padding: 0.5rem 0.75rem;
-          background: #fef3c7;
-          border: 1px solid #fde68a;
-          border-radius: 4px;
-          font-size: 0.8125rem;
-          color: #92400e;
-        }
-        .config-hint code {
-          background: rgba(0,0,0,0.06);
-          padding: 0.125rem 0.25rem;
-          border-radius: 2px;
-          font-size: 0.75rem;
-        }
-        .error-banner {
-          background: #fef2f2;
-          color: #b91c1c;
-          border: 1px solid #fca5a5;
-          border-radius: 4px;
-          padding: 0.5rem 0.75rem;
-          font-size: 0.875rem;
-          margin-bottom: 1rem;
-        }
-        .scenario-table {
-          width: 100%;
-          border-collapse: collapse;
-          font-size: 0.875rem;
-        }
-        .scenario-table th {
-          text-align: left;
-          padding: 0.5rem;
-          border-bottom: 2px solid #e5e7eb;
-          color: #555;
-          font-weight: 500;
-        }
-        .scenario-table td {
-          padding: 0.5rem;
-          border-bottom: 1px solid #f3f4f6;
-        }
-        .scenario-table code {
-          font-size: 0.8125rem;
-          color: #2563eb;
-        }
-        code {
-          font-family: monospace;
-          font-size: 0.875rem;
-        }
-
-        /* Pill and List Styles */
-        .status-pill {
-          display: inline-block;
-          padding: 0.125rem 0.5rem;
-          border-radius: 9999px;
-          font-size: 0.75rem;
-          font-weight: 600;
-        }
-        .status-pill.active {
-          background: #dcfce7;
-          color: #15803d;
-        }
-        .status-pill.inactive {
-          background: #f3f4f6;
-          color: #4b5563;
-        }
-        .action-buttons {
-          display: flex;
-          gap: 0.5rem;
-          align-items: center;
-        }
-        .btn-sm {
-          padding: 0.25rem 0.5rem;
-          font-size: 0.75rem;
-          background: #3b82f6;
-          color: #fff;
-          border: none;
-          border-radius: 4px;
-          cursor: pointer;
-        }
-        .btn-sm:hover {
-          background: #2563eb;
-        }
-        .btn-sm.delete-btn {
-          background: #ef4444;
-        }
-        .btn-sm.delete-btn:hover {
-          background: #dc2626;
-        }
-        /* Split container */
-        .provider-split-container {
-          display: grid;
-          grid-template-columns: 1fr;
-          border: 1px solid #e5e7eb;
-          border-radius: 12px;
-          overflow: hidden;
-          background: #fff;
-          margin-top: 1rem;
-          min-height: 400px;
-        }
-        @media (min-width: 768px) {
-          .provider-split-container {
-            grid-template-columns: 30% 70%;
-          }
-        }
-
-        /* 30% List Pane */
-        .provider-list-pane {
-          border-right: 1px solid #e5e7eb;
-          background: #f9fafb;
-          display: flex;
-          flex-direction: column;
-        }
-        .pane-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          padding: 1rem;
-          border-bottom: 1px solid #e5e7eb;
-          background: #f3f4f6;
-        }
-        .pane-header h3 {
-          margin: 0;
-          font-size: 0.95rem;
-          font-weight: 600;
-          color: #111;
-        }
-        .btn-add-inst {
-          padding: 0.375rem 0.75rem;
-          font-size: 0.8125rem;
-          font-weight: 500;
-          background: #10b981;
-          color: #fff;
-          border: none;
-          border-radius: 6px;
-          cursor: pointer;
-          transition: background 0.2s;
-        }
-        .btn-add-inst:hover {
-          background: #059669;
-        }
-        .pane-list {
-          overflow-y: auto;
-          flex: 1;
-          display: flex;
-          flex-direction: column;
-        }
-        .no-instances-msg {
-          padding: 2rem 1rem;
-          text-align: center;
-          color: #6b7280;
-          font-size: 0.8125rem;
-        }
-        .instance-list-item {
-          padding: 1rem;
-          border-bottom: 1px solid #e5e7eb;
-          cursor: pointer;
-          transition: background 0.15s, border-left 0.15s;
-          border-left: 3px solid transparent;
-        }
-        .instance-list-item:hover {
-          background: #f3f4f6;
-        }
-        .instance-list-item.active {
-          background: #eff6ff;
-          border-left: 3px solid #3b82f6;
-        }
-        .item-name {
-          font-weight: 500;
-          font-size: 0.875rem;
-          color: #111;
-        }
-        .item-meta {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-top: 0.25rem;
-          font-size: 0.75rem;
-          color: #6b7280;
-        }
-        .active-pill {
-          background: #dcfce7;
-          color: #15803d;
-          font-weight: 600;
-          padding: 0.0625rem 0.375rem;
-          border-radius: 9999px;
-        }
-
-        /* 70% Form Pane */
-        .provider-form-pane {
-          background: #fff;
-          display: flex;
-          flex-direction: column;
-        }
-        .provider-config-form {
-          display: flex;
-          flex-direction: column;
-          height: 100%;
-          justify-content: space-between;
-        }
-        .form-scroll-content {
-          padding: 1.5rem;
-          flex: 1;
-          display: flex;
-          flex-direction: column;
-          gap: 1.25rem;
-        }
-        .form-scroll-content h3 {
-          margin: 0 0 0.5rem 0;
-          font-size: 1.125rem;
-          font-weight: 600;
-          color: #111;
-        }
-        .form-group {
-          display: flex;
-          flex-direction: column;
-          gap: 0.375rem;
-        }
-        .form-group label {
-          font-size: 0.8125rem;
-          font-weight: 500;
-          color: #374151;
-        }
-        .form-group input[type="text"],
-        .form-group input[type="password"],
-        .form-group select {
-          padding: 0.5rem 0.75rem;
-          font-size: 0.875rem;
-          border: 1px solid #d1d5db;
-          border-radius: 6px;
-          background: #fff;
-          outline: none;
-          transition: border-color 0.15s, box-shadow 0.15s;
-        }
-        .form-group input:focus,
-        .form-group select:focus {
-          border-color: #3b82f6;
-          box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
-        }
-        .checkbox-group {
-          flex-direction: row;
-          align-items: center;
-          gap: 0.5rem;
-          margin-top: 0.25rem;
-        }
-        .checkbox-group label {
-          cursor: pointer;
-        }
-        .checkbox-group input {
-          width: 1rem;
-          height: 1rem;
-          cursor: pointer;
-        }
-
-        /* Action bar */
-        .form-actions-bar {
-          padding: 1rem 1.5rem;
-          border-top: 1px solid #e5e7eb;
-          background: #f9fafb;
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-        }
-        .btn-delete-pane {
-          padding: 0.5rem 1rem;
-          font-size: 0.875rem;
-          font-weight: 500;
-          background: #ef4444;
-          color: #fff;
-          border: none;
-          border-radius: 6px;
-          cursor: pointer;
-          transition: background 0.2s;
-        }
-        .btn-delete-pane:hover {
-          background: #dc2626;
-        }
-        .btn-save-pane {
-          padding: 0.5rem 1.25rem;
-          font-size: 0.875rem;
-          font-weight: 500;
-          background: #2563eb;
-          color: #fff;
-          border: none;
-          border-radius: 6px;
-          cursor: pointer;
-          transition: background 0.2s;
-        }
-        .btn-save-pane:hover {
-          background: #1d4ed8;
-        }
-
-        /* Task Provider Routing Styles */
-        .mappings-grid {
-          display: grid;
-          grid-template-columns: 1fr;
-          gap: 1rem;
-          margin-top: 1rem;
-        }
-        @media (min-width: 768px) {
-          .mappings-grid {
-            grid-template-columns: 1fr 1fr;
-          }
-        }
-        .mapping-card {
-          border: 1px solid #e5e7eb;
-          background: #f9fafb;
-          border-radius: 8px;
-          padding: 1rem;
-          display: flex;
-          flex-direction: column;
-          justify-content: space-between;
-          gap: 0.75rem;
-        }
-        .mapping-info {
-          display: flex;
-          flex-direction: column;
-          gap: 0.25rem;
-          font-size: 0.8125rem;
-        }
-        .mapping-info strong {
-          font-size: 0.875rem;
-          color: #111;
-        }
-        .mapping-card select {
-          padding: 0.375rem 0.5rem;
-          font-size: 0.8125rem;
-          border: 1px solid #ccc;
-          border-radius: 4px;
-          background: #fff;
-          width: 100%;
-        }
-        .text-gray {
-          color: #6b7280;
-        }
-      `}</style>
     </div>
   );
 }
