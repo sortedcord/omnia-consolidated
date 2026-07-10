@@ -124,13 +124,6 @@ class SimulationManager {
       : ProviderManager.getActive();
 
     if (!activeInstance) {
-      const envKey = process.env.GOOGLE_API_KEY;
-      if (envKey) {
-        activeInstance = ProviderManager.create("Default (Env)", "google-genai", envKey);
-      }
-    }
-
-    if (!activeInstance) {
       return {
         id: "",
         status: "error",
@@ -658,12 +651,6 @@ class SimulationManager {
         let inst = mappedId ? list.find((p) => p.id === mappedId) : null;
         if (!inst) {
           inst = active;
-        }
-        if (!inst) {
-          const envKey = process.env.GOOGLE_API_KEY;
-          if (envKey) {
-            inst = ProviderManager.create("Default (Env)", "google-genai", envKey);
-          }
         }
 
         if (!inst) {

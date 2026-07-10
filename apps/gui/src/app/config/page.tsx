@@ -29,7 +29,7 @@ export default function ConfigPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  const [selectedInstanceId, setSelectedInstanceId] = useState<string | "new">("new");
+  const [selectedInstanceId, setSelectedInstanceId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
   const [editProvider, setEditProvider] = useState("google-genai");
   const [editKey, setEditKey] = useState("");
@@ -37,7 +37,13 @@ export default function ConfigPage() {
   const [editIsActive, setEditIsActive] = useState(false);
 
   useEffect(() => {
-    if (selectedInstanceId === "new") {
+    if (selectedInstanceId === null) {
+      setEditName("");
+      setEditProvider("google-genai");
+      setEditKey("");
+      setEditModel("gemini-2.5-flash");
+      setEditIsActive(false);
+    } else if (selectedInstanceId === "new") {
       setEditName("");
       const defaultProvider = "google-genai";
       setEditProvider(defaultProvider);
@@ -144,14 +150,14 @@ export default function ConfigPage() {
   };
 
   const handleDelete = async () => {
-    if (selectedInstanceId === "new") return;
+    if (selectedInstanceId === "new" || selectedInstanceId === null) return;
     if (!confirm("Are you sure you want to delete this provider instance?")) return;
 
     try {
       setLoading(true);
       setError("");
       await deleteProviderInstance(selectedInstanceId);
-      setSelectedInstanceId("new");
+      setSelectedInstanceId(null);
       await loadInstances();
       await loadMappings();
     } catch (err) {
@@ -234,123 +240,129 @@ export default function ConfigPage() {
 
               {/* 70% area */}
               <div className="flex flex-col bg-white">
-                <form onSubmit={handleSave} className="flex h-full flex-col justify-between">
-                  <div className="flex flex-1 flex-col gap-5 p-6">
-                    <h3 className="m-0 mb-2 text-lg font-semibold text-[#111]">
-                      {selectedInstanceId === "new"
-                        ? "Create New Provider Instance"
-                        : `Configure: ${editName}`}
-                    </h3>
-
-                    <div className="flex flex-col gap-1.5">
-                      <label htmlFor="formName" className="text-xs font-medium text-gray-700">
-                        Friendly Name
-                      </label>
-                      <input
-                        id="formName"
-                        type="text"
-                        value={editName}
-                        onChange={(e) => setEditName(e.target.value)}
-                        placeholder="e.g. Gemini - Production"
-                        required
-                        className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm outline-none transition-[border-color,box-shadow] focus:border-blue-500 focus:ring-3 focus:ring-blue-500/15"
-                      />
-                    </div>
-
-                    <div className="flex flex-col gap-1.5">
-                      <label htmlFor="formProvider" className="text-xs font-medium text-gray-700">
-                        Provider Type
-                      </label>
-                      <select
-                        id="formProvider"
-                        value={editProvider}
-                        onChange={(e) => handleProviderChange(e.target.value)}
-                        className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm outline-none transition-[border-color,box-shadow] focus:border-blue-500 focus:ring-3 focus:ring-blue-500/15"
-                      >
-                        {availableProviders.map((p) => (
-                          <option key={p.id} value={p.id}>
-                            {p.displayName}
-                          </option>
-                        ))}
-                      </select>
-                      {editProvider && availableProviders.length > 0 && (
-                        <span className="mt-1 block rounded border border-gray-200 bg-gray-100 px-3 py-2 text-xs text-gray-600">
-                          {availableProviders.find((p) => p.id === editProvider)?.description}
-                        </span>
-                      )}
-                    </div>
-
-                    <div className="flex flex-col gap-1.5">
-                      <label htmlFor="formKey" className="text-xs font-medium text-gray-700">
-                        API Key
-                      </label>
-                      <input
-                        id="formKey"
-                        type="password"
-                        value={editKey}
-                        onChange={(e) => setEditKey(e.target.value)}
-                        placeholder={
-                          selectedInstanceId === "new"
-                            ? "AIzaSy..."
-                            : "•••••••• (unchanged)"
-                        }
-                        required={selectedInstanceId === "new"}
-                        className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm outline-none transition-[border-color,box-shadow] focus:border-blue-500 focus:ring-3 focus:ring-blue-500/15"
-                      />
-                    </div>
-
-                    <div className="flex flex-col gap-1.5">
-                      <label htmlFor="formModel" className="text-xs font-medium text-gray-700">
-                        Model Name
-                      </label>
-                      <input
-                        id="formModel"
-                        type="text"
-                        value={editModel}
-                        onChange={(e) => setEditModel(e.target.value)}
-                        placeholder="e.g. gemini-2.5-flash, gemini-2.5-pro"
-                        className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm outline-none transition-[border-color,box-shadow] focus:border-blue-500 focus:ring-3 focus:ring-blue-500/15"
-                      />
-                    </div>
-
-                    <div className="mt-1 flex flex-row items-center gap-2">
-                      <input
-                        id="formActive"
-                        type="checkbox"
-                        checked={editIsActive}
-                        onChange={(e) => setEditIsActive(e.target.checked)}
-                        className="h-4 w-4 cursor-pointer"
-                      />
-                      <label htmlFor="formActive" className="cursor-pointer text-xs font-medium text-gray-700">
-                        Set as Active Instance
-                      </label>
-                    </div>
+                {selectedInstanceId === null ? (
+                  <div className="flex flex-1 flex-col items-center justify-center p-6 text-center text-sm text-gray-400">
+                    Press + to add or select an existing Instance to edit
                   </div>
+                ) : (
+                  <form onSubmit={handleSave} className="flex h-full flex-col justify-between">
+                    <div className="flex flex-1 flex-col gap-5 p-6">
+                      <h3 className="m-0 mb-2 text-lg font-semibold text-[#111]">
+                        {selectedInstanceId === "new"
+                          ? "Create New Provider Instance"
+                          : `Configure: ${editName}`}
+                      </h3>
 
-                  <div className="flex items-center justify-between border-t border-gray-200 bg-gray-50 px-6 py-4">
-                    <div>
-                      {selectedInstanceId !== "new" && (
-                        <button
-                          type="button"
-                          onClick={handleDelete}
-                          disabled={loading}
-                          className="cursor-pointer rounded-md bg-red-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-600 disabled:opacity-50"
+                      <div className="flex flex-col gap-1.5">
+                        <label htmlFor="formName" className="text-xs font-medium text-gray-700">
+                          Friendly Name
+                        </label>
+                        <input
+                          id="formName"
+                          type="text"
+                          value={editName}
+                          onChange={(e) => setEditName(e.target.value)}
+                          placeholder="e.g. Gemini - Production"
+                          required
+                          className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm outline-none transition-[border-color,box-shadow] focus:border-blue-500 focus:ring-3 focus:ring-blue-500/15"
+                        />
+                      </div>
+
+                      <div className="flex flex-col gap-1.5">
+                        <label htmlFor="formProvider" className="text-xs font-medium text-gray-700">
+                          Provider Type
+                        </label>
+                        <select
+                          id="formProvider"
+                          value={editProvider}
+                          onChange={(e) => handleProviderChange(e.target.value)}
+                          className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm outline-none transition-[border-color,box-shadow] focus:border-blue-500 focus:ring-3 focus:ring-blue-500/15"
                         >
-                          Delete
+                          {availableProviders.map((p) => (
+                            <option key={p.id} value={p.id}>
+                              {p.displayName}
+                            </option>
+                          ))}
+                        </select>
+                        {editProvider && availableProviders.length > 0 && (
+                          <span className="mt-1 block rounded border border-gray-200 bg-gray-100 px-3 py-2 text-xs text-gray-600">
+                            {availableProviders.find((p) => p.id === editProvider)?.description}
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="flex flex-col gap-1.5">
+                        <label htmlFor="formKey" className="text-xs font-medium text-gray-700">
+                          API Key
+                        </label>
+                        <input
+                          id="formKey"
+                          type="password"
+                          value={editKey}
+                          onChange={(e) => setEditKey(e.target.value)}
+                          placeholder={
+                            selectedInstanceId === "new"
+                              ? "AIzaSy..."
+                              : "•••••••• (unchanged)"
+                          }
+                          required={selectedInstanceId === "new"}
+                          className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm outline-none transition-[border-color,box-shadow] focus:border-blue-500 focus:ring-3 focus:ring-blue-500/15"
+                        />
+                      </div>
+
+                      <div className="flex flex-col gap-1.5">
+                        <label htmlFor="formModel" className="text-xs font-medium text-gray-700">
+                          Model Name
+                        </label>
+                        <input
+                          id="formModel"
+                          type="text"
+                          value={editModel}
+                          onChange={(e) => setEditModel(e.target.value)}
+                          placeholder="e.g. gemini-2.5-flash, gemini-2.5-pro"
+                          className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm outline-none transition-[border-color,box-shadow] focus:border-blue-500 focus:ring-3 focus:ring-blue-500/15"
+                        />
+                      </div>
+
+                      <div className="mt-1 flex flex-row items-center gap-2">
+                        <input
+                          id="formActive"
+                          type="checkbox"
+                          checked={editIsActive}
+                          onChange={(e) => setEditIsActive(e.target.checked)}
+                          className="h-4 w-4 cursor-pointer"
+                        />
+                        <label htmlFor="formActive" className="cursor-pointer text-xs font-medium text-gray-700">
+                          Set as Active Instance
+                        </label>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between border-t border-gray-200 bg-gray-50 px-6 py-4">
+                      <div>
+                        {selectedInstanceId !== "new" && (
+                          <button
+                            type="button"
+                            onClick={handleDelete}
+                            disabled={loading}
+                            className="cursor-pointer rounded-md bg-red-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-600 disabled:opacity-50"
+                          >
+                            Delete
+                          </button>
+                        )}
+                      </div>
+                      <div>
+                        <button
+                          type="submit"
+                          disabled={loading}
+                          className="cursor-pointer rounded-md bg-blue-600 px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700 disabled:opacity-50"
+                        >
+                          {loading ? "Saving..." : "Save"}
                         </button>
-                      )}
+                      </div>
                     </div>
-                    <div>
-                      <button
-                        type="submit"
-                        disabled={loading}
-                        className="cursor-pointer rounded-md bg-blue-600 px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700 disabled:opacity-50"
-                      >
-                        {loading ? "Saving..." : "Save"}
-                      </button>
-                    </div>
-                  </div>
-                </form>
+                  </form>
+                )}
               </div>
             </div>
           </section>
@@ -382,7 +394,7 @@ export default function ConfigPage() {
                     onChange={(e) => handleUpdateMapping(task.key, e.target.value)}
                     className="w-full rounded border border-gray-300 bg-white px-2 py-1.5 text-xs"
                   >
-                    <option value="">-- Use Active Key (Default) --</option>
+                    <option value="">Use Default Provider</option>
                     {instances.map((inst) => (
                       <option key={inst.id} value={inst.id}>
                         {inst.name} ({inst.providerName}){inst.isActive ? " [Active]" : ""}

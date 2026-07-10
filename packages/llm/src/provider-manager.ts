@@ -3,6 +3,17 @@ import path from "path";
 import fs from "fs";
 import type { LLMProviderInstance } from "./llm.js";
 
+let dbPathOverride: string | null = null;
+let hasBootstrapped = false;
+
+export function setDbPathOverride(p: string | null) {
+  dbPathOverride = p;
+}
+
+export function resetHasBootstrapped() {
+  hasBootstrapped = false;
+}
+
 function getWorkspaceRoot() {
   let current = process.cwd();
   while (current !== "/" && current !== path.parse(current).root) {
@@ -20,12 +31,17 @@ function getWorkspaceRoot() {
 }
 
 function getSettingsDb() {
-  const wsRoot = getWorkspaceRoot();
-  const dbDir = path.resolve(wsRoot, "data");
-  if (!fs.existsSync(dbDir)) {
-    fs.mkdirSync(dbDir, { recursive: true });
+  let dbPath: string;
+  if (dbPathOverride) {
+    dbPath = dbPathOverride;
+  } else {
+    const wsRoot = getWorkspaceRoot();
+    const dbDir = path.resolve(wsRoot, "data");
+    if (!fs.existsSync(dbDir)) {
+      fs.mkdirSync(dbDir, { recursive: true });
+    }
+    dbPath = path.join(dbDir, "settings.db");
   }
-  const dbPath = path.join(dbDir, "settings.db");
   const db = new Database(dbPath);
   
   db.prepare(`
@@ -43,6 +59,39 @@ function getSettingsDb() {
     db.prepare(`ALTER TABLE provider_instances ADD COLUMN modelName TEXT`).run();
   } catch {
     // ignore
+  }
+
+  // Auto-bootstrap environment variables if DB contains 0 instances
+  try {
+    if (!hasBootstrapped) {
+      const totalCount = db.prepare(`SELECT COUNT(*) as count FROM provider_instances`).get() as { count: number };
+      if (totalCount.count === 0) {
+        const googleKey = process.env.GOOGLE_API_KEY;
+        const openRouterKey = process.env.OPENROUTER_API_KEY;
+        let hasInserted = false;
+
+        if (googleKey && googleKey.trim()) {
+          const id = "provider-default-google";
+          db.prepare(`
+            INSERT INTO provider_instances (id, name, providerName, apiKey, isActive, modelName)
+            VALUES (?, ?, ?, ?, ?, ?)
+          `).run(id, "Gemini (Env)", "google-genai", googleKey.trim(), 1, "gemini-2.5-flash");
+          hasInserted = true;
+        }
+
+        if (openRouterKey && openRouterKey.trim()) {
+          const id = "provider-default-openrouter";
+          const isActive = hasInserted ? 0 : 1;
+          db.prepare(`
+            INSERT INTO provider_instances (id, name, providerName, apiKey, isActive, modelName)
+            VALUES (?, ?, ?, ?, ?, ?)
+          `).run(id, "OpenRouter (Env)", "openrouter", openRouterKey.trim(), isActive, "google/gemini-2.5-flash");
+        }
+      }
+      hasBootstrapped = true;
+    }
+  } catch {
+    // ignore write lock issues or other DB errors during bootstrap
   }
   
   return db;
@@ -153,28 +202,25 @@ export class ProviderManager {
       } | undefined;
 
       if (!row) {
-        // Check if there are any rows at all
-        const totalCount = db.prepare(`SELECT COUNT(*) as count FROM provider_instances`).get() as { count: number };
-        if (totalCount.count === 0) {
-          // Database is completely empty! Check if GOOGLE_API_KEY env is set.
-          const envKey = process.env.GOOGLE_API_KEY;
-          if (envKey && envKey.trim()) {
-            // Auto-bootstrap default active instance from env
-            const id = "provider-default-env";
-            db.prepare(`
-              INSERT INTO provider_instances (id, name, providerName, apiKey, isActive, modelName)
-              VALUES (?, ?, ?, ?, ?, ?)
-            `).run(id, "Default (Env)", "google-genai", envKey, 1, "gemini-2.5-flash");
-
-            return {
-              id,
-              name: "Default (Env)",
-              providerName: "google-genai",
-              apiKey: envKey,
-              isActive: true,
-              modelName: "gemini-2.5-flash",
-            };
-          }
+        // If there's no active row but some rows exist, return the first one as active, or update it
+        const firstRow = db.prepare(`SELECT * FROM provider_instances LIMIT 1`).get() as {
+          id: string;
+          name: string;
+          providerName: string;
+          apiKey: string;
+          isActive: number;
+          modelName?: string;
+        } | undefined;
+        if (firstRow) {
+          db.prepare(`UPDATE provider_instances SET isActive = 1 WHERE id = ?`).run(firstRow.id);
+          return {
+            id: firstRow.id,
+            name: firstRow.name,
+            providerName: firstRow.providerName,
+            apiKey: firstRow.apiKey,
+            isActive: true,
+            modelName: firstRow.modelName || undefined,
+          };
         }
         return null;
       }
@@ -189,15 +235,26 @@ export class ProviderManager {
       };
     } catch {
       // Lock or write issue fallback: return an in-memory active key if env key exists
-      const envKey = process.env.GOOGLE_API_KEY;
-      if (envKey) {
+      const googleKey = process.env.GOOGLE_API_KEY;
+      if (googleKey && googleKey.trim()) {
         return {
           id: "provider-default-env-fallback",
-          name: "Default (Env Fallback)",
+          name: "Gemini (Env Fallback)",
           providerName: "google-genai",
-          apiKey: envKey,
+          apiKey: googleKey.trim(),
           isActive: true,
           modelName: "gemini-2.5-flash",
+        };
+      }
+      const openRouterKey = process.env.OPENROUTER_API_KEY;
+      if (openRouterKey && openRouterKey.trim()) {
+        return {
+          id: "provider-default-env-fallback",
+          name: "OpenRouter (Env Fallback)",
+          providerName: "openrouter",
+          apiKey: openRouterKey.trim(),
+          isActive: true,
+          modelName: "google/gemini-2.5-flash",
         };
       }
       return null;
