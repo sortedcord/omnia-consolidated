@@ -38,7 +38,11 @@ Omnia answers every one of these failures with the same move: **pull the thing t
 - **Actions:** Actions are proposals (Intents) that engine code validates and applies; they are never direct edits the model makes to the world. The model proposes; deterministic code disposes.
 - **Epistemic Privacy:** Knowledge, memory, and emotion are modeled per character and kept partial on purpose. A character literally cannot reach for what it has not earned the right to know. The secret is not in its prompt, so there is **nothing to jailbreak out of it**.
 
-## What This Buys You
+## What this buys you
+
+<p align="center">
+  <img src="./web/docs/src/assets/img/features.webp" />
+</p>
 
 The payoff is scenario complexity that **uni-agent systems structurally cannot represent, no matter how good the model gets**.
 
