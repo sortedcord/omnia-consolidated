@@ -510,7 +510,7 @@ export function PlayView() {
                   )}
                 </select>
               </div>
-              <button type="submit" disabled={loading}>
+              <button type="submit" disabled={loading || providerInstances.length === 0}>
                 {loading ? "Starting..." : "Start Simulation"}
               </button>
             </form>
@@ -534,7 +534,7 @@ export function PlayView() {
                       </span>
                     </div>
                     <div className="card-actions">
-                      <button onClick={() => handleResume(s.id)} disabled={loading}>
+                      <button onClick={() => handleResume(s.id)} disabled={loading || providerInstances.length === 0}>
                         Resume
                       </button>
                       <button
