@@ -10,8 +10,9 @@ import {
   getProviderMappings,
   setProviderMapping,
   updateProviderInstance,
+  getAvailableProviders,
 } from "@/app/play/actions";
-import type { LLMProviderInstance } from "@omnia/llm";
+import type { LLMProviderInstance, LLMProviderMeta } from "@omnia/llm";
 
 interface ConfigStatus {
   apiKeySet: boolean;
@@ -24,6 +25,7 @@ export default function ConfigPage() {
   const [config, setConfig] = useState<ConfigStatus | null>(null);
   const [instances, setInstances] = useState<LLMProviderInstance[]>([]);
   const [mappings, setMappings] = useState<Record<string, string>>({});
+  const [availableProviders, setAvailableProviders] = useState<LLMProviderMeta[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -37,9 +39,11 @@ export default function ConfigPage() {
   useEffect(() => {
     if (selectedInstanceId === "new") {
       setEditName("");
-      setEditProvider("google-genai");
+      const defaultProvider = "google-genai";
+      setEditProvider(defaultProvider);
       setEditKey("");
-      setEditModel("gemini-2.5-flash");
+      const pMeta = availableProviders.find((p) => p.id === defaultProvider);
+      setEditModel(pMeta?.defaultModel || "gemini-2.5-flash");
       setEditIsActive(false);
     } else {
       const inst = instances.find((i) => i.id === selectedInstanceId);
@@ -47,11 +51,20 @@ export default function ConfigPage() {
         setEditName(inst.name);
         setEditProvider(inst.providerName);
         setEditKey("");
-        setEditModel(inst.modelName || "gemini-2.5-flash");
+        const pMeta = availableProviders.find((p) => p.id === inst.providerName);
+        setEditModel(inst.modelName || pMeta?.defaultModel || "gemini-2.5-flash");
         setEditIsActive(inst.isActive);
       }
     }
-  }, [selectedInstanceId, instances]);
+  }, [selectedInstanceId, instances, availableProviders]);
+
+  const handleProviderChange = (providerId: string) => {
+    setEditProvider(providerId);
+    const pMeta = availableProviders.find((p) => p.id === providerId);
+    if (pMeta) {
+      setEditModel(pMeta.defaultModel);
+    }
+  };
 
   const loadInstances = useCallback(async () => {
     try {
@@ -79,6 +92,8 @@ export default function ConfigPage() {
       setConfig(result);
       await loadInstances();
       await loadMappings();
+      const provs = await getAvailableProviders();
+      setAvailableProviders(provs);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -231,11 +246,19 @@ export default function ConfigPage() {
                       <select
                         id="formProvider"
                         value={editProvider}
-                        onChange={(e) => setEditProvider(e.target.value)}
+                        onChange={(e) => handleProviderChange(e.target.value)}
                       >
-                        <option value="google-genai">Google Gemini (Gemini-2.5-flash)</option>
-                        <option value="mock">Mock LLM Provider</option>
+                        {availableProviders.map((p) => (
+                          <option key={p.id} value={p.id}>
+                            {p.displayName}
+                          </option>
+                        ))}
                       </select>
+                      {editProvider && availableProviders.length > 0 && (
+                        <span className="config-hint" style={{ marginTop: "0.25rem", background: "#f3f4f6", border: "1px solid #e5e7eb", color: "#4b5563" }}>
+                          {availableProviders.find((p) => p.id === editProvider)?.description}
+                        </span>
+                      )}
                     </div>
 
                     <div className="form-group">

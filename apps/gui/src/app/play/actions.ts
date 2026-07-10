@@ -4,7 +4,7 @@ import path from "path";
 import fs from "fs";
 import { simulationManager } from "@/lib/simulation";
 import type { SimSnapshot } from "@/lib/simulation";
-import { ProviderManager, LLMProviderInstance } from "@omnia/llm";
+import { ProviderManager, LLMProviderInstance, AVAILABLE_PROVIDERS, LLMProviderMeta } from "@omnia/llm";
 
 function resolveScenarioPath(relative: string): string {
   const cwd = process.cwd();
@@ -273,4 +273,8 @@ export async function setProviderMapping(
   providerInstanceId: string,
 ): Promise<void> {
   ProviderManager.setMapping(task, providerInstanceId);
+}
+
+export async function getAvailableProviders(): Promise<LLMProviderMeta[]> {
+  return AVAILABLE_PROVIDERS;
 }

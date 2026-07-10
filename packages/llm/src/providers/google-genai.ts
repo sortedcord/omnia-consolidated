@@ -5,6 +5,11 @@ import { llmConfig } from "../config.js";
 import { ProviderManager } from "../provider-manager.js";
 
 export class GeminiProvider implements ILLMProvider {
+  static readonly providerId = "google-genai";
+  static readonly displayName = "Google Gemini";
+  static readonly description = "Official Gemini integration using Google Gen AI SDK";
+  static readonly defaultModel = "gemini-2.5-flash";
+
   providerName = "Gemini";
   private model: ChatGoogleGenerativeAI;
   lastCalls: LLMCallRecord[] = [];

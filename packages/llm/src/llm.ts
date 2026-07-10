@@ -45,3 +45,31 @@ export interface LLMProviderInstance {
   isActive: boolean;
   modelName?: string;
 }
+
+export interface LLMProviderMeta {
+  id: string;
+  displayName: string;
+  description: string;
+  defaultModel: string;
+}
+
+export const AVAILABLE_PROVIDERS: LLMProviderMeta[] = [
+  {
+    id: "google-genai",
+    displayName: "Google Gemini",
+    description: "Official Gemini integration using Google Gen AI SDK",
+    defaultModel: "gemini-2.5-flash",
+  },
+  {
+    id: "openrouter",
+    displayName: "OpenRouter",
+    description: "Multi-model router supporting Anthropic, OpenAI, DeepSeek, and local models",
+    defaultModel: "google/gemini-2.5-flash",
+  },
+  {
+    id: "mock",
+    displayName: "Mock LLM Provider",
+    description: "Stateless mock provider for testing and offline development",
+    defaultModel: "mock",
+  },
+];

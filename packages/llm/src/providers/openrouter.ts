@@ -5,6 +5,11 @@ import { llmConfig } from "../config.js";
 import { ProviderManager } from "../provider-manager.js";
 
 export class OpenRouterProvider implements ILLMProvider {
+  static readonly providerId = "openrouter";
+  static readonly displayName = "OpenRouter";
+  static readonly description = "Multi-model router supporting Anthropic, OpenAI, DeepSeek, and local models";
+  static readonly defaultModel = "google/gemini-2.5-flash";
+
   providerName = "OpenRouter";
   private model: ChatOpenRouter;
   lastCalls: LLMCallRecord[] = [];

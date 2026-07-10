@@ -2,6 +2,11 @@ import { z } from "zod";
 import { ILLMProvider, LLMRequest, LLMResponse, LLMCallRecord } from "../llm.js";
 
 export class MockLLMProvider implements ILLMProvider {
+  static readonly providerId = "mock";
+  static readonly displayName = "Mock LLM Provider";
+  static readonly description = "Stateless mock provider for testing and offline development";
+  static readonly defaultModel = "mock";
+
   providerName = "mock";
   private callCount = 0;
   lastCalls: LLMCallRecord[] = [];
