@@ -40,6 +40,11 @@ export class LedgerRepository {
         PRIMARY KEY (entry_id, entity_id),
         FOREIGN KEY (entry_id) REFERENCES ledger_entries(id) ON DELETE CASCADE
       );
+
+      CREATE INDEX IF NOT EXISTS idx_ledger_owner ON ledger_entries(owner_id);
+      CREATE INDEX IF NOT EXISTS idx_ledger_location ON ledger_entries(location_id);
+      CREATE INDEX IF NOT EXISTS idx_ledger_importance ON ledger_entries(importance);
+      CREATE INDEX IF NOT EXISTS idx_ledger_involved_entity ON ledger_involved_entities(entity_id);
     `);
   }
 
