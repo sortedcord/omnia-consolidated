@@ -30,46 +30,55 @@ export interface LLMCallRecord {
 
 export interface ILLMProvider {
   providerName: string;
-  // We use Zod to ensure the generic T matches the schema
   generateStructuredResponse<T extends z.ZodTypeAny>(
     request: LLMRequest<T>,
   ): Promise<LLMResponse<z.infer<T>>>;
   lastCalls?: LLMCallRecord[];
 }
 
-export interface LLMProviderInstance {
+export interface IEmbeddingProvider {
+  providerName: string;
+  embed(text: string): Promise<number[]>;
+}
+
+export interface ModelProviderInstance {
   id: string;
   name: string;
   providerName: string;
   apiKey: string;
   isActive: boolean;
   modelName?: string;
+  type: "generative" | "embedding";
 }
 
-export interface LLMProviderMeta {
+export interface ModelProviderMeta {
   id: string;
   displayName: string;
   description: string;
   defaultModel: string;
+  defaultEmbeddingModel: string;
 }
 
-export const AVAILABLE_PROVIDERS: LLMProviderMeta[] = [
+export const AVAILABLE_PROVIDERS: ModelProviderMeta[] = [
   {
     id: "google-genai",
     displayName: "Google Gemini",
     description: "Official Gemini integration using Google Gen AI SDK",
     defaultModel: "gemini-2.5-flash",
+    defaultEmbeddingModel: "gemini-embedding-001",
   },
   {
     id: "openrouter",
     displayName: "OpenRouter",
     description: "Multi-model router supporting Anthropic, OpenAI, DeepSeek, and local models",
     defaultModel: "google/gemini-2.5-flash",
+    defaultEmbeddingModel: "openai/text-embedding-3-small",
   },
   {
     id: "mock",
     displayName: "Mock LLM Provider",
     description: "Stateless mock provider for testing and offline development",
     defaultModel: "mock",
+    defaultEmbeddingModel: "mock-embeddings",
   },
 ];

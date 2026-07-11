@@ -1,6 +1,6 @@
 import { z } from "zod";
-import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
-import { ILLMProvider, LLMRequest, LLMResponse, LLMCallRecord } from "../llm.js";
+import { ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings } from "@langchain/google-genai";
+import { ILLMProvider, LLMRequest, LLMResponse, LLMCallRecord, IEmbeddingProvider } from "../llm.js";
 import { llmConfig } from "../config.js";
 import { ProviderManager } from "../provider-manager.js";
 
@@ -19,7 +19,7 @@ export class GeminiProvider implements ILLMProvider {
     let model = modelName;
 
     if (!key) {
-      const active = ProviderManager.getActive();
+      const active = ProviderManager.getActive("generative");
       if (active) {
         key = active.apiKey;
         if (!model) {
@@ -76,5 +76,45 @@ export class GeminiProvider implements ILLMProvider {
     });
 
     return { success: true, data: parsed, usage };
+  }
+}
+
+export class GeminiEmbeddingProvider implements IEmbeddingProvider {
+  static readonly providerId = "google-genai";
+  static readonly displayName = "Google Gemini Embeddings";
+
+  providerName = "Gemini";
+  private model: GoogleGenerativeAIEmbeddings;
+
+  constructor(apiKey?: string, modelName?: string) {
+    let key = apiKey;
+    let model = modelName;
+
+    if (!key) {
+      const active = ProviderManager.getActive("embedding");
+      if (active) {
+        key = active.apiKey;
+        if (!model) {
+          model = active.modelName;
+        }
+      }
+    }
+
+    if (!key) {
+      key = llmConfig.GOOGLE_API_KEY;
+    }
+
+    if (!key) {
+      throw new Error("GOOGLE_API_KEY is required to initialize GeminiEmbeddingProvider");
+    }
+
+    this.model = new GoogleGenerativeAIEmbeddings({
+      apiKey: key,
+      modelName: model || "gemini-embedding-001",
+    });
+  }
+
+  async embed(text: string): Promise<number[]> {
+    return this.model.embedQuery(text);
   }
 }

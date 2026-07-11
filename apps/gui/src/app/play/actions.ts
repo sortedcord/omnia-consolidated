@@ -4,7 +4,7 @@ import path from "path";
 import fs from "fs";
 import { simulationManager } from "@/lib/simulation";
 import type { SimSnapshot } from "@/lib/simulation";
-import { ProviderManager, LLMProviderInstance, AVAILABLE_PROVIDERS, LLMProviderMeta } from "@omnia/llm";
+import { ProviderManager, ModelProviderInstance, AVAILABLE_PROVIDERS, ModelProviderMeta } from "@omnia/llm";
 
 function resolveScenarioPath(relative: string): string {
   const cwd = process.cwd();
@@ -233,7 +233,7 @@ export async function deleteSimulation(simId: string): Promise<
   }
 }
 
-export async function listProviderInstances(): Promise<LLMProviderInstance[]> {
+export async function listProviderInstances(): Promise<ModelProviderInstance[]> {
   return ProviderManager.list();
 }
 
@@ -242,8 +242,9 @@ export async function createProviderInstance(
   providerName: string,
   apiKey: string,
   modelName?: string,
-): Promise<LLMProviderInstance> {
-  return ProviderManager.create(name, providerName, apiKey, modelName);
+  type: "generative" | "embedding" = "generative",
+): Promise<ModelProviderInstance> {
+  return ProviderManager.create(name, providerName, apiKey, modelName, type);
 }
 
 export async function deleteProviderInstance(id: string): Promise<void> {
@@ -260,8 +261,9 @@ export async function updateProviderInstance(
   providerName: string,
   apiKey?: string,
   modelName?: string,
+  type: "generative" | "embedding" = "generative",
 ): Promise<void> {
-  ProviderManager.update(id, name, providerName, apiKey, modelName);
+  ProviderManager.update(id, name, providerName, apiKey, modelName, type);
 }
 
 export async function getProviderMappings(): Promise<Record<string, string>> {
@@ -275,6 +277,10 @@ export async function setProviderMapping(
   ProviderManager.setMapping(task, providerInstanceId);
 }
 
-export async function getAvailableProviders(): Promise<LLMProviderMeta[]> {
+export async function getAvailableProviders(): Promise<ModelProviderMeta[]> {
   return AVAILABLE_PROVIDERS;
+}
+
+export async function regenerateEmbeddings(newProviderInstanceId?: string): Promise<void> {
+  await simulationManager.regenerateAllEmbeddings(newProviderInstanceId);
 }

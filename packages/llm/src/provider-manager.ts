@@ -1,7 +1,7 @@
 import Database from "better-sqlite3";
 import path from "path";
 import fs from "fs";
-import type { LLMProviderInstance } from "./llm.js";
+import type { ModelProviderInstance } from "./llm.js";
 
 function getWorkspaceRoot() {
   let current = process.cwd();
@@ -35,7 +35,8 @@ function getSettingsDb() {
       providerName TEXT NOT NULL,
       apiKey TEXT NOT NULL,
       isActive INTEGER NOT NULL DEFAULT 0,
-      modelName TEXT
+      modelName TEXT,
+      type TEXT NOT NULL DEFAULT 'generative'
     )
   `).run();
 
@@ -44,12 +45,18 @@ function getSettingsDb() {
   } catch {
     // ignore
   }
+
+  try {
+    db.prepare(`ALTER TABLE provider_instances ADD COLUMN type TEXT NOT NULL DEFAULT 'generative'`).run();
+  } catch {
+    // ignore
+  }
   
   return db;
 }
 
 export class ProviderManager {
-  static list(): LLMProviderInstance[] {
+  static list(): ModelProviderInstance[] {
     const db = getSettingsDb();
     try {
       const rows = db.prepare(`SELECT * FROM provider_instances`).all() as {
@@ -59,6 +66,7 @@ export class ProviderManager {
         apiKey: string;
         isActive: number;
         modelName?: string;
+        type: string;
       }[];
       return rows.map((r) => ({
         id: r.id,
@@ -67,25 +75,34 @@ export class ProviderManager {
         apiKey: r.apiKey,
         isActive: r.isActive === 1,
         modelName: r.modelName || undefined,
+        type: (r.type as "generative" | "embedding") || "generative",
       }));
     } finally {
       db.close();
     }
   }
 
-  static create(name: string, providerName: string, apiKey: string, modelName?: string): LLMProviderInstance {
+  static create(
+    name: string,
+    providerName: string,
+    apiKey: string,
+    modelName?: string,
+    type: "generative" | "embedding" = "generative"
+  ): ModelProviderInstance {
     const db = getSettingsDb();
     try {
       const id = "provider-" + Date.now();
-      const activeCount = db.prepare(`SELECT COUNT(*) as count FROM provider_instances WHERE isActive = 1`).get() as { count: number };
+      const activeCount = db
+        .prepare(`SELECT COUNT(*) as count FROM provider_instances WHERE isActive = 1 AND type = ?`)
+        .get(type) as { count: number };
       const isActive = activeCount.count === 0 ? 1 : 0;
       
       db.prepare(`
-        INSERT INTO provider_instances (id, name, providerName, apiKey, isActive, modelName)
-        VALUES (?, ?, ?, ?, ?, ?)
-      `).run(id, name, providerName, apiKey, isActive, modelName || null);
+        INSERT INTO provider_instances (id, name, providerName, apiKey, isActive, modelName, type)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+      `).run(id, name, providerName, apiKey, isActive, modelName || null, type);
       
-      return { id, name, providerName, apiKey, isActive: isActive === 1, modelName };
+      return { id, name, providerName, apiKey, isActive: isActive === 1, modelName, type };
     } finally {
       db.close();
     }
@@ -94,11 +111,13 @@ export class ProviderManager {
   static delete(id: string): void {
     const db = getSettingsDb();
     try {
-      const provider = db.prepare(`SELECT isActive FROM provider_instances WHERE id = ?`).get(id) as { isActive: number } | undefined;
+      const provider = db.prepare(`SELECT isActive, type FROM provider_instances WHERE id = ?`).get(id) as { isActive: number; type: string } | undefined;
       db.prepare(`DELETE FROM provider_instances WHERE id = ?`).run(id);
       
       if (provider && provider.isActive === 1) {
-        const next = db.prepare(`SELECT id FROM provider_instances LIMIT 1`).get() as { id: string } | undefined;
+        const next = db
+          .prepare(`SELECT id FROM provider_instances WHERE type = ? LIMIT 1`)
+          .get(provider.type) as { id: string } | undefined;
         if (next) {
           db.prepare(`UPDATE provider_instances SET isActive = 1 WHERE id = ?`).run(next.id);
         }
@@ -111,60 +130,85 @@ export class ProviderManager {
   static setActive(id: string): void {
     const db = getSettingsDb();
     try {
-      db.prepare(`UPDATE provider_instances SET isActive = 0`).run();
-      db.prepare(`UPDATE provider_instances SET isActive = 1 WHERE id = ?`).run(id);
-    } finally {
-      db.close();
-    }
-  }
-
-  static update(id: string, name: string, providerName: string, apiKey?: string, modelName?: string): void {
-    const db = getSettingsDb();
-    try {
-      if (apiKey && apiKey.trim()) {
-        db.prepare(`
-          UPDATE provider_instances
-          SET name = ?, providerName = ?, apiKey = ?, modelName = ?
-          WHERE id = ?
-        `).run(name, providerName, apiKey, modelName || null, id);
-      } else {
-        db.prepare(`
-          UPDATE provider_instances
-          SET name = ?, providerName = ?, modelName = ?
-          WHERE id = ?
-        `).run(name, providerName, modelName || null, id);
+      const target = db.prepare(`SELECT type FROM provider_instances WHERE id = ?`).get(id) as { type: string } | undefined;
+      if (target) {
+        db.prepare(`UPDATE provider_instances SET isActive = 0 WHERE type = ?`).run(target.type);
+        db.prepare(`UPDATE provider_instances SET isActive = 1 WHERE id = ?`).run(id);
       }
     } finally {
       db.close();
     }
   }
 
-  static getActive(): LLMProviderInstance | null {
+  static update(
+    id: string,
+    name: string,
+    providerName: string,
+    apiKey?: string,
+    modelName?: string,
+    type: "generative" | "embedding" = "generative"
+  ): void {
     const db = getSettingsDb();
     try {
-      // Query the DB
-      const row = db.prepare(`SELECT * FROM provider_instances WHERE isActive = 1`).get() as {
+      if (apiKey && apiKey.trim()) {
+        db.prepare(`
+          UPDATE provider_instances
+          SET name = ?, providerName = ?, apiKey = ?, modelName = ?, type = ?
+          WHERE id = ?
+        `).run(name, providerName, apiKey, modelName || null, type, id);
+      } else {
+        db.prepare(`
+          UPDATE provider_instances
+          SET name = ?, providerName = ?, modelName = ?, type = ?
+          WHERE id = ?
+        `).run(name, providerName, modelName || null, type, id);
+      }
+    } finally {
+      db.close();
+    }
+  }
+
+  static getActive(type: "generative" | "embedding" = "generative"): ModelProviderInstance | null {
+    const db = getSettingsDb();
+    try {
+      const row = db.prepare(`SELECT * FROM provider_instances WHERE isActive = 1 AND type = ?`).get(type) as {
         id: string;
         name: string;
         providerName: string;
         apiKey: string;
         isActive: number;
         modelName?: string;
+        type: string;
       } | undefined;
 
       if (!row) {
-        // Check if there are any rows at all
         const totalCount = db.prepare(`SELECT COUNT(*) as count FROM provider_instances`).get() as { count: number };
         if (totalCount.count === 0) {
-          // Database is completely empty! Check if GOOGLE_API_KEY env is set.
           const envKey = process.env.GOOGLE_API_KEY;
           if (envKey && envKey.trim()) {
-            // Auto-bootstrap default active instance from env
             const id = "provider-default-env";
             db.prepare(`
-              INSERT INTO provider_instances (id, name, providerName, apiKey, isActive, modelName)
-              VALUES (?, ?, ?, ?, ?, ?)
-            `).run(id, "Default (Env)", "google-genai", envKey, 1, "gemini-2.5-flash");
+              INSERT INTO provider_instances (id, name, providerName, apiKey, isActive, modelName, type)
+              VALUES (?, ?, ?, ?, ?, ?, ?)
+            `).run(id, "Default (Env)", "google-genai", envKey, 1, "gemini-2.5-flash", "generative");
+
+            const embedId = "provider-default-env-embed";
+            db.prepare(`
+              INSERT INTO provider_instances (id, name, providerName, apiKey, isActive, modelName, type)
+              VALUES (?, ?, ?, ?, ?, ?, ?)
+            `).run(embedId, "Default Embed (Env)", "google-genai", envKey, 1, "gemini-embedding-001", "embedding");
+
+            if (type === "embedding") {
+              return {
+                id: embedId,
+                name: "Default Embed (Env)",
+                providerName: "google-genai",
+                apiKey: envKey,
+                isActive: true,
+                modelName: "gemini-embedding-001",
+                type: "embedding",
+              };
+            }
 
             return {
               id,
@@ -173,6 +217,7 @@ export class ProviderManager {
               apiKey: envKey,
               isActive: true,
               modelName: "gemini-2.5-flash",
+              type: "generative",
             };
           }
         }
@@ -186,11 +231,22 @@ export class ProviderManager {
         apiKey: row.apiKey,
         isActive: true,
         modelName: row.modelName || undefined,
+        type: (row.type as "generative" | "embedding") || "generative",
       };
     } catch {
-      // Lock or write issue fallback: return an in-memory active key if env key exists
       const envKey = process.env.GOOGLE_API_KEY;
       if (envKey) {
+        if (type === "embedding") {
+          return {
+            id: "provider-default-env-embed-fallback",
+            name: "Default Embed (Env Fallback)",
+            providerName: "google-genai",
+            apiKey: envKey,
+            isActive: true,
+            modelName: "gemini-embedding-001",
+            type: "embedding",
+          };
+        }
         return {
           id: "provider-default-env-fallback",
           name: "Default (Env Fallback)",
@@ -198,6 +254,7 @@ export class ProviderManager {
           apiKey: envKey,
           isActive: true,
           modelName: "gemini-2.5-flash",
+          type: "generative",
         };
       }
       return null;

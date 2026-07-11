@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { ILLMProvider, LLMRequest, LLMResponse, LLMCallRecord } from "../llm.js";
+import { ILLMProvider, LLMRequest, LLMResponse, LLMCallRecord, IEmbeddingProvider } from "../llm.js";
 
 export class MockLLMProvider implements ILLMProvider {
   static readonly providerId = "mock";
@@ -32,5 +32,23 @@ export class MockLLMProvider implements ILLMProvider {
     } catch (e) {
       return { success: false, error: e instanceof Error ? e.message : String(e) };
     }
+  }
+}
+
+export class MockEmbeddingProvider implements IEmbeddingProvider {
+  static readonly providerId = "mock";
+
+  providerName = "mock";
+
+  constructor(private modelName?: string) {}
+
+  async embed(text: string): Promise<number[]> {
+    // Return a deterministic mock 768-dimensional vector based on the text
+    const vec = new Array(768).fill(0).map((_, i) => {
+      // Return a predictable float between -1.0 and 1.0
+      const charCode = text.charCodeAt(i % text.length) || 0;
+      return Math.sin(charCode + i);
+    });
+    return vec;
   }
 }

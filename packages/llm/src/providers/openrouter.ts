@@ -19,7 +19,7 @@ export class OpenRouterProvider implements ILLMProvider {
     let model = modelName;
 
     if (!key) {
-      const active = ProviderManager.getActive();
+      const active = ProviderManager.getActive("generative");
       if (active) {
         key = active.apiKey;
         if (!model) {

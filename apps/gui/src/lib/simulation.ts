@@ -25,7 +25,7 @@ import {
   IActorProseGenerator,
   buildBufferEntryForIntent,
 } from "@omnia/actor";
-import { GeminiProvider, ILLMProvider, MockLLMProvider, ProviderManager, OpenRouterProvider } from "@omnia/llm";
+import { GeminiProvider, ILLMProvider, MockLLMProvider, ProviderManager, OpenRouterProvider, IEmbeddingProvider, GeminiEmbeddingProvider, MockEmbeddingProvider, ModelProviderInstance } from "@omnia/llm";
 import { ScenarioLoader } from "@omnia/scenario";
 
 import type {
@@ -102,6 +102,7 @@ interface SimSession {
   validatorProvider: ILLMProvider;
   decoderProvider: ILLMProvider;
   timedeltaProvider: ILLMProvider;
+  embeddingProvider: IEmbeddingProvider;
   architect: Architect;
   aliasGenerator: AliasDeltaGenerator;
   log: LogEntry[];
@@ -120,14 +121,14 @@ class SimulationManager {
     playEntityName?: string,
     providerInstanceId?: string,
   ): Promise<SimSnapshot> {
-    let activeInstance = providerInstanceId
-      ? ProviderManager.list().find((p) => p.id === providerInstanceId)
-      : ProviderManager.getActive();
+    let activeInstance: ModelProviderInstance | null = providerInstanceId
+      ? ProviderManager.list().find((p) => p.id === providerInstanceId) || null
+      : ProviderManager.getActive("generative");
 
     if (!activeInstance) {
       const envKey = process.env.GOOGLE_API_KEY;
       if (envKey) {
-        activeInstance = ProviderManager.create("Default (Env)", "google-genai", envKey);
+        activeInstance = ProviderManager.create("Default (Env)", "google-genai", envKey, undefined, "generative");
       }
     }
 
@@ -221,13 +222,13 @@ class SimulationManager {
     }
 
     const list = ProviderManager.list();
-    const active = ProviderManager.getActive() || activeInstance;
+    const active = ProviderManager.getActive("generative") || activeInstance;
     const mappings = ProviderManager.getMappings();
 
     const resolveProviderForTask = (task: string): ILLMProvider => {
       const mappedId = mappings[task];
       let inst = mappedId ? list.find((p) => p.id === mappedId) : null;
-      if (!inst) {
+      if (!inst || inst.type !== "generative") {
         inst = active;
       }
 
@@ -244,10 +245,29 @@ class SimulationManager {
       }
     };
 
+    const resolveEmbeddingProvider = (): IEmbeddingProvider => {
+      const mappedId = mappings["embeddings"];
+      let inst = mappedId ? list.find((p) => p.id === mappedId) : null;
+      if (!inst || inst.type !== "embedding") {
+        inst = ProviderManager.getActive("embedding");
+      }
+
+      const key = inst ? inst.apiKey : (process.env.GOOGLE_API_KEY || "");
+      const providerName = inst ? inst.providerName : "google-genai";
+      const modelName = inst ? inst.modelName : undefined;
+
+      if (providerName === "google-genai") {
+        return new GeminiEmbeddingProvider(key, modelName);
+      } else {
+        return new MockEmbeddingProvider(modelName);
+      }
+    };
+
     const actorProvider = resolveProviderForTask("actor-prose");
     const validatorProvider = resolveProviderForTask("llm-validator");
     const decoderProvider = resolveProviderForTask("intent-decoder");
     const timedeltaProvider = resolveProviderForTask("timedelta");
+    const embeddingProvider = resolveEmbeddingProvider();
 
     const architect = new Architect(
       { validator: validatorProvider, timedelta: timedeltaProvider },
@@ -261,9 +281,9 @@ class SimulationManager {
       coreRepo,
       bufferRepo,
       ledgerRepo,
-      worldInstanceId,
+      worldInstanceId: worldInstanceId,
       scenarioName: scenarioJson.name,
-      scenarioDescription: scenarioJson.description,
+      scenarioDescription: scenarioJson.description || "",
       turn: 1,
       maxTurns: 20,
       entities: entityInfos,
@@ -273,6 +293,7 @@ class SimulationManager {
       validatorProvider,
       decoderProvider,
       timedeltaProvider,
+      embeddingProvider,
       architect,
       aliasGenerator,
       log: [],
@@ -655,19 +676,19 @@ class SimulationManager {
       }
 
       const list = ProviderManager.list();
-      const active = ProviderManager.getActive();
+      const active = ProviderManager.getActive("generative");
       const mappings = state.providerMappings || {};
 
       const resolveProviderForTask = (task: string): ILLMProvider => {
         const mappedId = mappings[task];
         let inst = mappedId ? list.find((p) => p.id === mappedId) : null;
-        if (!inst) {
+        if (!inst || inst.type !== "generative") {
           inst = active;
         }
         if (!inst) {
           const envKey = process.env.GOOGLE_API_KEY;
           if (envKey) {
-            inst = ProviderManager.create("Default (Env)", "google-genai", envKey);
+            inst = ProviderManager.create("Default (Env)", "google-genai", envKey, undefined, "generative");
           }
         }
 
@@ -684,6 +705,30 @@ class SimulationManager {
         }
       };
 
+      const resolveEmbeddingProvider = (): IEmbeddingProvider => {
+        const mappedId = mappings["embeddings"];
+        let inst = mappedId ? list.find((p) => p.id === mappedId) : null;
+        if (!inst || inst.type !== "embedding") {
+          inst = ProviderManager.getActive("embedding");
+        }
+        if (!inst) {
+          const envKey = process.env.GOOGLE_API_KEY;
+          if (envKey) {
+            inst = ProviderManager.create("Default Embed (Env)", "google-genai", envKey, "gemini-embedding-001", "embedding");
+          }
+        }
+
+        if (!inst) {
+          throw new Error(`No active Embedding Provider Instance found for task "embeddings". Please configure an embedding key in Settings first.`);
+        }
+
+        if (inst.providerName === "google-genai") {
+          return new GeminiEmbeddingProvider(inst.apiKey, inst.modelName);
+        } else {
+          return new MockEmbeddingProvider(inst.modelName);
+        }
+      };
+
       const coreRepo = new SQLiteRepository(db);
       const bufferRepo = new BufferRepository(db);
       const ledgerRepo = new LedgerRepository(db);
@@ -692,6 +737,7 @@ class SimulationManager {
       const validatorProvider = resolveProviderForTask("llm-validator");
       const decoderProvider = resolveProviderForTask("intent-decoder");
       const timedeltaProvider = resolveProviderForTask("timedelta");
+      const embeddingProvider = resolveEmbeddingProvider();
 
       const architect = new Architect(
         { validator: validatorProvider, timedelta: timedeltaProvider },
@@ -717,6 +763,7 @@ class SimulationManager {
         validatorProvider,
         decoderProvider,
         timedeltaProvider,
+        embeddingProvider,
         architect,
         aliasGenerator,
         log: state.log || [],
@@ -782,6 +829,53 @@ class SimulationManager {
       const tsB = parseInt(b.id.replace("sim-", ""), 10) || 0;
       return tsB - tsA;
     });
+  }
+
+  async regenerateAllEmbeddings(newProviderInstanceId?: string): Promise<void> {
+    const dbDir = path.resolve(process.cwd(), "data");
+    if (!fs.existsSync(dbDir)) return;
+
+    const files = fs.readdirSync(dbDir).filter(f => f.startsWith("sim-") && f.endsWith(".db"));
+
+    const list = ProviderManager.list();
+    let inst = newProviderInstanceId ? list.find((p) => p.id === newProviderInstanceId) : null;
+    if (!inst || inst.type !== "embedding") {
+      inst = ProviderManager.getActive("embedding");
+    }
+
+    const key = inst ? inst.apiKey : (process.env.GOOGLE_API_KEY || "");
+    const providerName = inst ? inst.providerName : "google-genai";
+    const modelName = inst ? inst.modelName : undefined;
+
+    let embeddingProvider: IEmbeddingProvider;
+    if (providerName === "google-genai") {
+      embeddingProvider = new GeminiEmbeddingProvider(key, modelName);
+    } else {
+      embeddingProvider = new MockEmbeddingProvider(modelName);
+    }
+
+    for (const file of files) {
+      const dbPath = path.join(dbDir, file);
+      const id = file.replace(".db", "");
+      const activeSession = this.sessions.get(id);
+      const db = activeSession ? activeSession.db : new Database(dbPath);
+
+      try {
+        const rows = db.prepare(`SELECT id, content FROM ledger_entries`).all() as { id: string; content: string }[];
+        
+        for (const row of rows) {
+          const vector = await embeddingProvider.embed(row.content);
+          const buffer = Buffer.from(new Float32Array(vector).buffer);
+          db.prepare(`UPDATE ledger_entries SET embedding = ? WHERE id = ?`).run(buffer, row.id);
+        }
+      } catch (err) {
+        console.error(`Failed to regenerate embeddings for ${file}:`, err);
+      } finally {
+        if (!activeSession) {
+          db.close();
+        }
+      }
+    }
   }
 
   private save(session: SimSession): void {

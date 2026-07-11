@@ -11,8 +11,9 @@ import {
   setProviderMapping,
   updateProviderInstance,
   getAvailableProviders,
+  regenerateEmbeddings,
 } from "@/app/play/actions";
-import type { LLMProviderInstance, LLMProviderMeta } from "@omnia/llm";
+import type { ModelProviderInstance, ModelProviderMeta } from "@omnia/llm";
 
 interface ConfigStatus {
   apiKeySet: boolean;
@@ -23,9 +24,9 @@ interface ConfigStatus {
 
 export default function ConfigPage() {
   const [config, setConfig] = useState<ConfigStatus | null>(null);
-  const [instances, setInstances] = useState<LLMProviderInstance[]>([]);
+  const [instances, setInstances] = useState<ModelProviderInstance[]>([]);
   const [mappings, setMappings] = useState<Record<string, string>>({});
-  const [availableProviders, setAvailableProviders] = useState<LLMProviderMeta[]>([]);
+  const [availableProviders, setAvailableProviders] = useState<ModelProviderMeta[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -35,6 +36,7 @@ export default function ConfigPage() {
   const [editKey, setEditKey] = useState("");
   const [editModel, setEditModel] = useState("gemini-2.5-flash");
   const [editIsActive, setEditIsActive] = useState(false);
+  const [editType, setEditType] = useState<"generative" | "embedding">("generative");
 
   useEffect(() => {
     if (selectedInstanceId === "new") {
@@ -42,6 +44,7 @@ export default function ConfigPage() {
       const defaultProvider = "google-genai";
       setEditProvider(defaultProvider);
       setEditKey("");
+      setEditType("generative");
       const pMeta = availableProviders.find((p) => p.id === defaultProvider);
       setEditModel(pMeta?.defaultModel || "gemini-2.5-flash");
       setEditIsActive(false);
@@ -51,8 +54,9 @@ export default function ConfigPage() {
         setEditName(inst.name);
         setEditProvider(inst.providerName);
         setEditKey("");
+        setEditType(inst.type || "generative");
         const pMeta = availableProviders.find((p) => p.id === inst.providerName);
-        setEditModel(inst.modelName || pMeta?.defaultModel || "gemini-2.5-flash");
+        setEditModel(inst.modelName || (inst.type === "embedding" ? pMeta?.defaultEmbeddingModel : pMeta?.defaultModel) || "gemini-2.5-flash");
         setEditIsActive(inst.isActive);
       }
     }
@@ -62,7 +66,15 @@ export default function ConfigPage() {
     setEditProvider(providerId);
     const pMeta = availableProviders.find((p) => p.id === providerId);
     if (pMeta) {
-      setEditModel(pMeta.defaultModel);
+      setEditModel(editType === "embedding" ? pMeta.defaultEmbeddingModel : pMeta.defaultModel);
+    }
+  };
+
+  const handleTypeChange = (type: "generative" | "embedding") => {
+    setEditType(type);
+    const pMeta = availableProviders.find((p) => p.id === editProvider);
+    if (pMeta) {
+      setEditModel(type === "embedding" ? pMeta.defaultEmbeddingModel : pMeta.defaultModel);
     }
   };
 
@@ -116,19 +128,42 @@ export default function ConfigPage() {
       setLoading(true);
       setError("");
 
+      let shouldRegenerate = false;
+      let targetInstanceId = selectedInstanceId;
+
       if (selectedInstanceId === "new") {
         if (!editKey.trim()) {
           setError("API Key is required for new instances.");
           setLoading(false);
           return;
         }
-        const created = await createProviderInstance(editName, editProvider, editKey, editModel || undefined);
+        const created = await createProviderInstance(editName, editProvider, editKey, editModel || undefined, editType);
         if (editIsActive) {
           await setActiveProviderInstance(created.id);
         }
+        targetInstanceId = created.id;
         setSelectedInstanceId(created.id);
       } else {
-        await updateProviderInstance(selectedInstanceId, editName, editProvider, editKey || undefined, editModel || undefined);
+        const inst = instances.find((i) => i.id === selectedInstanceId);
+        if (inst && inst.type === "embedding") {
+          const isMapped = mappings["embeddings"] === selectedInstanceId;
+          const isActive = inst.isActive && !mappings["embeddings"];
+          if (isMapped || isActive) {
+            const hasChanged = inst.providerName !== editProvider || inst.modelName !== editModel;
+            if (hasChanged) {
+              const confirmChange = window.confirm(
+                "You have changed the configuration of the active embedding provider. This will delete all existing embeddings and regenerate them from scratch. Are you sure you want to do this?"
+              );
+              if (!confirmChange) {
+                setLoading(false);
+                return;
+              }
+              shouldRegenerate = true;
+            }
+          }
+        }
+
+        await updateProviderInstance(selectedInstanceId, editName, editProvider, editKey || undefined, editModel || undefined, editType);
         if (editIsActive) {
           await setActiveProviderInstance(selectedInstanceId);
         }
@@ -136,6 +171,10 @@ export default function ConfigPage() {
 
       await loadInstances();
       await loadMappings();
+
+      if (shouldRegenerate && targetInstanceId !== "new") {
+        await regenerateEmbeddings(targetInstanceId);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -162,9 +201,19 @@ export default function ConfigPage() {
   };
 
   const handleUpdateMapping = async (task: string, providerInstanceId: string) => {
+    if (task === "embeddings" && mappings[task] !== providerInstanceId) {
+      const confirmChange = window.confirm(
+        "Changing the embeddings provider will delete all existing embeddings and regenerate them from scratch. Are you sure you want to do this?"
+      );
+      if (!confirmChange) return;
+    }
+
     try {
       setLoading(true);
       await setProviderMapping(task, providerInstanceId);
+      if (task === "embeddings") {
+        await regenerateEmbeddings(providerInstanceId);
+      }
       await loadMappings();
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
@@ -219,7 +268,7 @@ export default function ConfigPage() {
                       >
                         <div className="text-sm font-medium text-[#111]">{inst.name}</div>
                         <div className="mt-1 flex items-center justify-between text-xs text-gray-500">
-                          <span>{inst.providerName}</span>
+                          <span>{inst.providerName} ({inst.type || "generative"})</span>
                           {inst.isActive && (
                             <span className="rounded-full bg-green-100 px-1.5 py-[1px] text-[0.65rem] font-semibold text-green-700">
                               Active
@@ -255,6 +304,21 @@ export default function ConfigPage() {
                         required
                         className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm outline-none transition-[border-color,box-shadow] focus:border-blue-500 focus:ring-3 focus:ring-blue-500/15"
                       />
+                    </div>
+
+                    <div className="flex flex-col gap-1.5">
+                      <label htmlFor="formType" className="text-xs font-medium text-gray-700">
+                        Instance Type
+                      </label>
+                      <select
+                        id="formType"
+                        value={editType}
+                        onChange={(e) => handleTypeChange(e.target.value as "generative" | "embedding")}
+                        className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm outline-none transition-[border-color,box-shadow] focus:border-blue-500 focus:ring-3 focus:ring-blue-500/15"
+                      >
+                        <option value="generative">Generative (Chat / Text Completion)</option>
+                        <option value="embedding">Embedding (Vector generation)</option>
+                      </select>
                     </div>
 
                     <div className="flex flex-col gap-1.5">
@@ -364,10 +428,11 @@ export default function ConfigPage() {
             </p>
             <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
               {[
-                { key: "actor-prose", label: "Actor Prose Generation", desc: "Generates roleplay/narrative prose for Non-Player Characters." },
-                { key: "llm-validator", label: "LLM Validator", desc: "Arbitrates and validates proposed actions against the world state rules." },
-                { key: "intent-decoder", label: "Intent Decoder", desc: "Splits raw prose actions into structured intents (Player and NPC)." },
-                { key: "timedelta", label: "TimeDelta Generator", desc: "Calculates the duration of character actions to advance the game clock." },
+                { key: "actor-prose", label: "Actor Prose Generation", desc: "Generates roleplay/narrative prose for Non-Player Characters.", type: "generative" },
+                { key: "llm-validator", label: "LLM Validator", desc: "Arbitrates and validates proposed actions against the world state rules.", type: "generative" },
+                { key: "intent-decoder", label: "Intent Decoder", desc: "Splits raw prose actions into structured intents (Player and NPC).", type: "generative" },
+                { key: "timedelta", label: "TimeDelta Generator", desc: "Calculates the duration of character actions to advance the game clock.", type: "generative" },
+                { key: "embeddings", label: "Text Embeddings Generator", desc: "Generates vector embeddings for long-term memory retrieval.", type: "embedding" },
               ].map((task) => (
                 <div
                   key={task.key}
@@ -383,11 +448,13 @@ export default function ConfigPage() {
                     className="w-full rounded border border-gray-300 bg-white px-2 py-1.5 text-xs"
                   >
                     <option value="">-- Use Active Key (Default) --</option>
-                    {instances.map((inst) => (
-                      <option key={inst.id} value={inst.id}>
-                        {inst.name} ({inst.providerName}){inst.isActive ? " [Active]" : ""}
-                      </option>
-                    ))}
+                    {instances
+                      .filter((inst) => (inst.type || "generative") === task.type)
+                      .map((inst) => (
+                        <option key={inst.id} value={inst.id}>
+                          {inst.name} ({inst.providerName}){inst.isActive ? " [Active]" : ""}
+                        </option>
+                      ))}
                   </select>
                 </div>
               ))}
