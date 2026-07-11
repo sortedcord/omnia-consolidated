@@ -17,7 +17,7 @@ for (const c of envCandidates) {
   }
 }
 
-import { BufferRepository, LedgerRepository } from "@omnia/memory";
+import { BufferRepository, LedgerRepository, HandoffEngine, checkHandoffTrigger } from "@omnia/memory";
 import { Architect, AliasDeltaGenerator } from "@omnia/architect";
 import {
   ActorAgent,
@@ -102,6 +102,7 @@ interface SimSession {
   validatorProvider: ILLMProvider;
   decoderProvider: ILLMProvider;
   timedeltaProvider: ILLMProvider;
+  handoffProvider: ILLMProvider;
   embeddingProvider: IEmbeddingProvider;
   architect: Architect;
   aliasGenerator: AliasDeltaGenerator;
@@ -268,6 +269,7 @@ class SimulationManager {
     const validatorProvider = resolveProviderForTask("llm-validator");
     const decoderProvider = resolveProviderForTask("intent-decoder");
     const timedeltaProvider = resolveProviderForTask("timedelta");
+    const handoffProvider = resolveProviderForTask("handoff");
     const embeddingProvider = resolveEmbeddingProvider();
 
     const architect = new Architect(
@@ -294,6 +296,7 @@ class SimulationManager {
       validatorProvider,
       decoderProvider,
       timedeltaProvider,
+      handoffProvider,
       embeddingProvider,
       architect,
       aliasGenerator,
@@ -321,6 +324,7 @@ class SimulationManager {
 
       if (!session.aliasDoneForTurn && session.entityIndex === 0) {
         await this.runAliasResolution(session);
+        await this.runHandoffResolution(session);
         session.aliasDoneForTurn = true;
         this.save(session);
         return this.snapshot(session);
@@ -614,6 +618,31 @@ class SimulationManager {
     session.coreRepo.saveWorldState(worldState);
   }
 
+  private async runHandoffResolution(session: SimSession): Promise<void> {
+    const worldState = session.coreRepo.loadWorldState(
+      session.worldInstanceId,
+    );
+    if (!worldState) throw new Error("World state lost");
+
+    const handoffEngine = new HandoffEngine(
+      session.handoffProvider,
+      session.embeddingProvider,
+      session.bufferRepo,
+      session.ledgerRepo,
+    );
+
+    const entities = Array.from(worldState.entities.values());
+    for (const entity of entities) {
+      const bufferEntries = session.bufferRepo.listForOwner(entity.id);
+      const maxContext = session.handoffProvider.maxContext !== undefined ? session.handoffProvider.maxContext : 32768;
+
+      const trigger = checkHandoffTrigger(entity, bufferEntries, worldState.clock.get(), maxContext);
+      if (trigger !== "none") {
+        await handoffEngine.runHandoff(entity, bufferEntries, worldState.clock.get());
+      }
+    }
+  }
+
   private async runAliasResolution(session: SimSession): Promise<void> {
     const worldState = session.coreRepo.loadWorldState(
       session.worldInstanceId,
@@ -743,6 +772,7 @@ class SimulationManager {
       const validatorProvider = resolveProviderForTask("llm-validator");
       const decoderProvider = resolveProviderForTask("intent-decoder");
       const timedeltaProvider = resolveProviderForTask("timedelta");
+      const handoffProvider = resolveProviderForTask("handoff");
       const embeddingProvider = resolveEmbeddingProvider();
 
       const architect = new Architect(
@@ -769,6 +799,7 @@ class SimulationManager {
         validatorProvider,
         decoderProvider,
         timedeltaProvider,
+        handoffProvider,
         embeddingProvider,
         architect,
         aliasGenerator,

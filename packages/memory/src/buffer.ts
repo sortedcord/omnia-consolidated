@@ -14,6 +14,7 @@ export interface BufferEntry {
     isValid: boolean;
     reason: string;
   };
+  pinned?: boolean;
 }
 
 export { resolveAlias } from "@omnia/core";
@@ -62,23 +63,31 @@ export class BufferRepository {
         location_id TEXT,
         intent_json TEXT NOT NULL,
         outcome_json TEXT,
+        pinned INTEGER DEFAULT 0,
         FOREIGN KEY (owner_id) REFERENCES objects(id) ON DELETE CASCADE
       );
     `);
+
+    try {
+      this.db.exec(`ALTER TABLE buffer_entries ADD COLUMN pinned INTEGER DEFAULT 0;`);
+    } catch {
+      // ignore
+    }
   }
 
   save(entry: BufferEntry): void {
     this.db
       .prepare(
         `
-      INSERT INTO buffer_entries (id, owner_id, timestamp, location_id, intent_json, outcome_json)
-      VALUES (?, ?, ?, ?, ?, ?)
+      INSERT INTO buffer_entries (id, owner_id, timestamp, location_id, intent_json, outcome_json, pinned)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
       ON CONFLICT(id) DO UPDATE SET
         owner_id = excluded.owner_id,
         timestamp = excluded.timestamp,
         location_id = excluded.location_id,
         intent_json = excluded.intent_json,
-        outcome_json = excluded.outcome_json
+        outcome_json = excluded.outcome_json,
+        pinned = excluded.pinned
     `,
       )
       .run(
@@ -88,6 +97,7 @@ export class BufferRepository {
         entry.locationId,
         JSON.stringify(entry.intent),
         entry.outcome ? JSON.stringify(entry.outcome) : null,
+        entry.pinned ? 1 : 0,
       );
   }
 
@@ -95,7 +105,7 @@ export class BufferRepository {
     const row = this.db
       .prepare(
         `
-      SELECT id, owner_id, timestamp, location_id, intent_json, outcome_json
+      SELECT id, owner_id, timestamp, location_id, intent_json, outcome_json, pinned
       FROM buffer_entries WHERE id = ?
     `,
       )
@@ -107,6 +117,7 @@ export class BufferRepository {
           location_id: string | null;
           intent_json: string;
           outcome_json: string | null;
+          pinned?: number;
         }
       | undefined;
 
@@ -119,6 +130,7 @@ export class BufferRepository {
       locationId: row.location_id,
       intent: JSON.parse(row.intent_json),
       outcome: row.outcome_json ? JSON.parse(row.outcome_json) : undefined,
+      pinned: row.pinned === 1,
     };
   }
 
@@ -126,7 +138,7 @@ export class BufferRepository {
     const rows = this.db
       .prepare(
         `
-      SELECT id, owner_id, timestamp, location_id, intent_json, outcome_json
+      SELECT id, owner_id, timestamp, location_id, intent_json, outcome_json, pinned
       FROM buffer_entries WHERE owner_id = ?
       ORDER BY timestamp ASC
     `,
@@ -138,6 +150,7 @@ export class BufferRepository {
       location_id: string | null;
       intent_json: string;
       outcome_json: string | null;
+      pinned?: number;
     }[];
 
     return rows.map((row) => ({
@@ -147,6 +160,7 @@ export class BufferRepository {
       locationId: row.location_id,
       intent: JSON.parse(row.intent_json),
       outcome: row.outcome_json ? JSON.parse(row.outcome_json) : undefined,
+      pinned: row.pinned === 1,
     }));
   }
 

@@ -393,6 +393,9 @@ importers:
       '@omnia/intent':
         specifier: workspace:*
         version: link:../intent
+      '@omnia/llm':
+        specifier: workspace:*
+        version: link:../llm
       zod:
         specifier: ^4.4.3
         version: 4.4.3

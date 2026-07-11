@@ -122,7 +122,7 @@ Space is a graph: `world → region → location → point of interest`, connect
 ### Memory Tiers
 
 - **Verbatim Buffer (implemented):** Per-character subjective event log. Every entry is stored from the owner's perspective actors resolved through the owner's alias map, outcomes attached — and recalled with naturalized time phrasing.
-- **Vector Archive (planned):** Summarized, embedded memory entries for semantic retrieval, keeping verbatim quotes only for high-salience lines.
+- **Vector Archive (implemented):** Summarized, embedded memory entries for semantic retrieval, keeping verbatim quotes only for high-salience lines.
 - **Dossier (planned):** Each observer's subjective beliefs about another character.
 
 Memory is per-character on purpose: recall is testimony from a vantage point, which is what makes interrogating two witnesses interesting.

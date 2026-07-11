@@ -459,6 +459,7 @@ export default function ConfigPage() {
                 { key: "llm-validator", label: "LLM Validator", desc: "Arbitrates and validates proposed actions against the world state rules.", type: "generative" },
                 { key: "intent-decoder", label: "Intent Decoder", desc: "Splits raw prose actions into structured intents (Player and NPC).", type: "generative" },
                 { key: "timedelta", label: "TimeDelta Generator", desc: "Calculates the duration of character actions to advance the game clock.", type: "generative" },
+                { key: "handoff", label: "Memory Handoff Engine", desc: "Promotes entities' working memories to the long-term Ledger via LLM summarization and pruning.", type: "generative" },
                 { key: "embeddings", label: "Text Embeddings Generator", desc: "Generates vector embeddings for long-term memory retrieval.", type: "embedding" },
               ].map((task) => (
                 <div

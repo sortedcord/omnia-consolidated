@@ -36,6 +36,7 @@ export interface LLMCallRecord {
 
 export interface ILLMProvider {
   providerName: string;
+  maxContext?: number;
   generateStructuredResponse<T extends z.ZodTypeAny>(
     request: LLMRequest<T>,
   ): Promise<LLMResponse<z.infer<T>>>;
