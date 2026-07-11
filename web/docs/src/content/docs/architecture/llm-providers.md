@@ -73,9 +73,10 @@ If no specific provider instance is mapped to a task, the task automatically rou
 
 To maintain backwards-compatibility and support headless runs, live evaluation suites, and automated unit tests without requiring database pre-configuration, the config manager supports **self-bootstrapping**:
 
-1. When the provider manager queries the active key instance, if `data/settings.db` contains **0 registered keys**, it checks the process environment for `GOOGLE_API_KEY` or `OPENROUTER_API_KEY`.
-2. If `process.env.GOOGLE_API_KEY` is present, it automatically creates, saves, and activates a default provider instance (`Default (Env)`) in `settings.db`.
-3. If database write locks occur (e.g., during high-concurrency Vitest test suites), the system seamlessly returns a temporary in-memory `LLMProviderInstance` to keep execution fluent and error-free.
+1. When any database connection is initialized via the provider manager, if `data/settings.db` contains **0 registered keys**, it checks the process environment for `GOOGLE_API_KEY` and `OPENROUTER_API_KEY`.
+2. If `process.env.GOOGLE_API_KEY` is present, it automatically creates, saves, and activates a default provider instance (`Gemini (Env)`) in `settings.db`.
+3. If `process.env.OPENROUTER_API_KEY` is present, it automatically creates and saves a default provider instance (`OpenRouter (Env)`) in `settings.db`.
+4. If database write locks occur (e.g., during high-concurrency Vitest test suites), the system seamlessly returns a temporary in-memory `LLMProviderInstance` (`Gemini (Env Fallback)` or `OpenRouter (Env Fallback)`) to keep execution fluent and error-free.
 
 ---
 

@@ -1,6 +1,8 @@
 export interface IntentInfo {
   type: string;
   description: string;
+  selfDescription?: string;
+  modifiers: string[];
   targetIds: string[];
   isValid?: boolean;
   reason?: string;
@@ -22,6 +24,8 @@ export interface LogEntry {
     inputTokens: number;
     outputTokens: number;
     totalTokens: number;
+    modelName?: string;
+    providerInstanceName?: string;
   };
   decoderPrompt?: {
     systemPrompt: string;
@@ -31,6 +35,8 @@ export interface LogEntry {
     inputTokens: number;
     outputTokens: number;
     totalTokens: number;
+    modelName?: string;
+    providerInstanceName?: string;
   };
 }
 

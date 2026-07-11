@@ -3,6 +3,8 @@ import path from "path";
 import fs from "fs";
 import type { ModelProviderInstance } from "./llm.js";
 
+let hasBootstrapped = false;
+
 function getWorkspaceRoot() {
   let current = process.cwd();
   while (current !== "/" && current !== path.parse(current).root) {
@@ -50,6 +52,45 @@ function getSettingsDb() {
     db.prepare(`ALTER TABLE provider_instances ADD COLUMN type TEXT NOT NULL DEFAULT 'generative'`).run();
   } catch {
     // ignore
+  }
+
+  // Auto-bootstrap environment variables if DB contains 0 instances
+  try {
+    if (!hasBootstrapped) {
+      const totalCount = db.prepare(`SELECT COUNT(*) as count FROM provider_instances`).get() as { count: number };
+      if (totalCount.count === 0) {
+        const googleKey = process.env.GOOGLE_API_KEY;
+        const openRouterKey = process.env.OPENROUTER_API_KEY;
+        let hasInsertedGenerative = false;
+
+        if (googleKey && googleKey.trim()) {
+          const id = "provider-default-google";
+          db.prepare(`
+            INSERT INTO provider_instances (id, name, providerName, apiKey, isActive, modelName, type)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+          `).run(id, "Gemini (Env)", "google-genai", googleKey.trim(), 1, "gemini-2.5-flash", "generative");
+          hasInsertedGenerative = true;
+
+          const embedId = "provider-default-google-embed";
+          db.prepare(`
+            INSERT INTO provider_instances (id, name, providerName, apiKey, isActive, modelName, type)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+          `).run(embedId, "Gemini Embed (Env)", "google-genai", googleKey.trim(), 1, "gemini-embedding-001", "embedding");
+        }
+
+        if (openRouterKey && openRouterKey.trim()) {
+          const id = "provider-default-openrouter";
+          const isActive = hasInsertedGenerative ? 0 : 1;
+          db.prepare(`
+            INSERT INTO provider_instances (id, name, providerName, apiKey, isActive, modelName, type)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+          `).run(id, "OpenRouter (Env)", "openrouter", openRouterKey.trim(), isActive, "google/gemini-2.5-flash", "generative");
+        }
+      }
+      hasBootstrapped = true;
+    }
+  } catch {
+    // ignore write lock issues or other DB errors during bootstrap
   }
   
   return db;
@@ -184,42 +225,78 @@ export class ProviderManager {
       if (!row) {
         const totalCount = db.prepare(`SELECT COUNT(*) as count FROM provider_instances`).get() as { count: number };
         if (totalCount.count === 0) {
-          const envKey = process.env.GOOGLE_API_KEY;
-          if (envKey && envKey.trim()) {
-            const id = "provider-default-env";
+          const googleKey = process.env.GOOGLE_API_KEY;
+          const openRouterKey = process.env.OPENROUTER_API_KEY;
+          let hasInsertedGenerative = false;
+
+          if (googleKey && googleKey.trim()) {
+            const id = "provider-default-google";
             db.prepare(`
               INSERT INTO provider_instances (id, name, providerName, apiKey, isActive, modelName, type)
               VALUES (?, ?, ?, ?, ?, ?, ?)
-            `).run(id, "Default (Env)", "google-genai", envKey, 1, "gemini-2.5-flash", "generative");
+            `).run(id, "Gemini (Env)", "google-genai", googleKey.trim(), 1, "gemini-2.5-flash", "generative");
+            hasInsertedGenerative = true;
 
-            const embedId = "provider-default-env-embed";
+            const embedId = "provider-default-google-embed";
             db.prepare(`
               INSERT INTO provider_instances (id, name, providerName, apiKey, isActive, modelName, type)
               VALUES (?, ?, ?, ?, ?, ?, ?)
-            `).run(embedId, "Default Embed (Env)", "google-genai", envKey, 1, "gemini-embedding-001", "embedding");
+            `).run(embedId, "Gemini Embed (Env)", "google-genai", googleKey.trim(), 1, "gemini-embedding-001", "embedding");
+          }
 
-            if (type === "embedding") {
-              return {
-                id: embedId,
-                name: "Default Embed (Env)",
-                providerName: "google-genai",
-                apiKey: envKey,
-                isActive: true,
-                modelName: "gemini-embedding-001",
-                type: "embedding",
-              };
-            }
+          if (openRouterKey && openRouterKey.trim()) {
+            const id = "provider-default-openrouter";
+            const isActive = hasInsertedGenerative ? 0 : 1;
+            db.prepare(`
+              INSERT INTO provider_instances (id, name, providerName, apiKey, isActive, modelName, type)
+              VALUES (?, ?, ?, ?, ?, ?, ?)
+            `).run(id, "OpenRouter (Env)", "openrouter", openRouterKey.trim(), isActive, "google/gemini-2.5-flash", "generative");
+          }
 
+          const retryRow = db.prepare(`SELECT * FROM provider_instances WHERE isActive = 1 AND type = ?`).get(type) as {
+            id: string;
+            name: string;
+            providerName: string;
+            apiKey: string;
+            isActive: number;
+            modelName?: string;
+            type: string;
+          } | undefined;
+
+          if (retryRow) {
             return {
-              id,
-              name: "Default (Env)",
-              providerName: "google-genai",
-              apiKey: envKey,
+              id: retryRow.id,
+              name: retryRow.name,
+              providerName: retryRow.providerName,
+              apiKey: retryRow.apiKey,
               isActive: true,
-              modelName: "gemini-2.5-flash",
-              type: "generative",
+              modelName: retryRow.modelName || undefined,
+              type: retryRow.type as "generative" | "embedding",
             };
           }
+        }
+
+        // If there's no active row but some rows exist, return the first one as active, or update it
+        const firstRow = db.prepare(`SELECT * FROM provider_instances WHERE type = ? LIMIT 1`).get(type) as {
+          id: string;
+          name: string;
+          providerName: string;
+          apiKey: string;
+          isActive: number;
+          modelName?: string;
+          type: string;
+        } | undefined;
+        if (firstRow) {
+          db.prepare(`UPDATE provider_instances SET isActive = 1 WHERE id = ?`).run(firstRow.id);
+          return {
+            id: firstRow.id,
+            name: firstRow.name,
+            providerName: firstRow.providerName,
+            apiKey: firstRow.apiKey,
+            isActive: true,
+            modelName: firstRow.modelName || undefined,
+            type: firstRow.type as "generative" | "embedding",
+          };
         }
         return null;
       }
@@ -234,26 +311,43 @@ export class ProviderManager {
         type: (row.type as "generative" | "embedding") || "generative",
       };
     } catch {
-      const envKey = process.env.GOOGLE_API_KEY;
-      if (envKey) {
-        if (type === "embedding") {
+      const googleKey = process.env.GOOGLE_API_KEY;
+      if (type === "embedding") {
+        if (googleKey && googleKey.trim()) {
           return {
             id: "provider-default-env-embed-fallback",
-            name: "Default Embed (Env Fallback)",
+            name: "Gemini Embed (Env Fallback)",
             providerName: "google-genai",
-            apiKey: envKey,
+            apiKey: googleKey.trim(),
             isActive: true,
             modelName: "gemini-embedding-001",
             type: "embedding",
           };
         }
+        return null;
+      }
+
+      // generative fallback
+      if (googleKey && googleKey.trim()) {
         return {
           id: "provider-default-env-fallback",
-          name: "Default (Env Fallback)",
+          name: "Gemini (Env Fallback)",
           providerName: "google-genai",
-          apiKey: envKey,
+          apiKey: googleKey.trim(),
           isActive: true,
           modelName: "gemini-2.5-flash",
+          type: "generative",
+        };
+      }
+      const openRouterKey = process.env.OPENROUTER_API_KEY;
+      if (openRouterKey && openRouterKey.trim()) {
+        return {
+          id: "provider-default-env-fallback",
+          name: "OpenRouter (Env Fallback)",
+          providerName: "openrouter",
+          apiKey: openRouterKey.trim(),
+          isActive: true,
+          modelName: "google/gemini-2.5-flash",
           type: "generative",
         };
       }

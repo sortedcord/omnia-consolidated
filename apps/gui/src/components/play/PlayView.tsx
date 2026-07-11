@@ -17,8 +17,10 @@ import type { LLMProviderInstance } from "@omnia/llm";
 
 function IntentTag({
   intent,
+  isSelf,
 }: {
   intent: SimSnapshot["log"][number]["intents"][number];
+  isSelf?: boolean;
 }) {
   const labels: Record<string, string> = {
     monologue: "thought",
@@ -33,9 +35,19 @@ function IntentTag({
     outcome = intent.isValid ? " ✅" : ` ❌ (${intent.reason})`;
   }
 
+  const textToDisplay = (isSelf && intent.selfDescription)
+    ? intent.selfDescription
+    : intent.description;
+
+  const modifiersStr = intent.modifiers && intent.modifiers.length > 0 ? (
+    <span className="intent-modifiers" style={{ fontStyle: "italic", opacity: 0.8, color: "#4b5563", marginLeft: "0.25rem" }}>
+      ({intent.modifiers.join(", ")})
+    </span>
+  ) : null;
+
   return (
     <span className="intent-tag">
-      [{label}] &ldquo;{intent.description}&rdquo;{outcome}
+      [{label}] &ldquo;{textToDisplay}&rdquo;{modifiersStr}{outcome}
       {intent.minutesToAdvance ? ` [+${intent.minutesToAdvance}min]` : ""}
     </span>
   );
@@ -49,6 +61,77 @@ function PromptModal({
   onClose: () => void;
 }) {
   const [activeTab, setActiveTab] = useState<"actor" | "decoder">("actor");
+
+  const parseActorPrompt = (systemPrompt: string, userContext: string, inputTokens: number) => {
+    const memoryHeader = "=== YOUR RECENT MEMORY ===";
+    const idx = userContext.indexOf(memoryHeader);
+
+    let worldStr = userContext;
+    let memStr = "";
+
+    if (idx !== -1) {
+      worldStr = userContext.substring(0, idx).trim();
+      memStr = userContext.substring(idx).trim();
+    }
+
+    const sysLen = systemPrompt.length;
+    const worldLen = worldStr.length;
+    const memLen = memStr.length;
+    const totalLen = sysLen + worldLen + memLen;
+
+    if (totalLen === 0) return null;
+
+    const sysPct = (sysLen / totalLen) * 100;
+    const worldPct = (worldLen / totalLen) * 100;
+    const memPct = (memLen / totalLen) * 100;
+
+    const sysTokens = Math.round((sysLen / totalLen) * inputTokens);
+    const worldTokens = Math.round((worldLen / totalLen) * inputTokens);
+    const memTokens = Math.max(0, inputTokens - sysTokens - worldTokens);
+
+    return [
+      { label: "System Prompt", pct: sysPct, tokens: sysTokens, type: "system", content: systemPrompt },
+      { label: "World Info", pct: worldPct, tokens: worldTokens, type: "world", content: worldStr },
+      { label: "Recent Memories", pct: memPct, tokens: memTokens, type: "memories", content: memStr || "(No memories yet.)" },
+    ];
+  };
+
+  const parseDecoderPrompt = (systemPrompt: string, userContext: string, inputTokens: number) => {
+    const proseHeader = "=== NARRATIVE PROSE ===";
+    const idx = userContext.indexOf(proseHeader);
+
+    let worldStr = userContext;
+    let proseStr = "";
+
+    if (idx !== -1) {
+      worldStr = userContext.substring(0, idx).trim();
+      proseStr = userContext.substring(idx).trim();
+    }
+
+    const sysLen = systemPrompt.length;
+    const worldLen = worldStr.length;
+    const proseLen = proseStr.length;
+    const totalLen = sysLen + worldLen + proseLen;
+
+    if (totalLen === 0) return null;
+
+    const sysPct = (sysLen / totalLen) * 100;
+    const worldPct = (worldLen / totalLen) * 100;
+    const prosePct = (proseLen / totalLen) * 100;
+
+    const sysTokens = Math.round((sysLen / totalLen) * inputTokens);
+    const worldTokens = Math.round((worldLen / totalLen) * inputTokens);
+    const proseTokens = Math.max(0, inputTokens - sysTokens - worldTokens);
+
+    return [
+      { label: "System Prompt", pct: sysPct, tokens: sysTokens, type: "system", content: systemPrompt },
+      { label: "Decoder Context", pct: worldPct, tokens: worldTokens, type: "world", content: worldStr },
+      { label: "Narrative Prose", pct: prosePct, tokens: proseTokens, type: "memories", content: proseStr },
+    ];
+  };
+
+  const actorBreakdown = (entry.rawPrompt && entry.usage) ? parseActorPrompt(entry.rawPrompt.systemPrompt, entry.rawPrompt.userContext, entry.usage.inputTokens) : null;
+  const decoderBreakdown = (entry.decoderPrompt && entry.decoderUsage) ? parseDecoderPrompt(entry.decoderPrompt.systemPrompt, entry.decoderPrompt.userContext, entry.decoderUsage.inputTokens) : null;
 
   useEffect(() => {
     if (!entry.rawPrompt && entry.decoderPrompt) {
@@ -85,50 +168,124 @@ function PromptModal({
           {activeTab === "actor" && entry.rawPrompt && (
             <div className="tab-pane">
               {entry.usage ? (
-                <div className="usage-stats">
-                  <strong>Token Usage:</strong>
-                  <span>Input: <code>{entry.usage.inputTokens}</code></span> &middot;{" "}
-                  <span>Output: <code>{entry.usage.outputTokens}</code></span> &middot;{" "}
-                  <span>Total: <code>{entry.usage.totalTokens}</code></span>
+                <div className="provider-info">
+                  <strong>LLM Instance:</strong> <span>{entry.usage.providerInstanceName || "Default"}</span>
+                  {entry.usage.modelName && (
+                    <span> ({entry.usage.modelName})</span>
+                  )}
                 </div>
               ) : (
-                <div className="usage-stats italic text-gray">
+                <div className="provider-info italic text-gray">
                   No LLM token usage (Player turn used fixed prose).
                 </div>
               )}
 
-              <div className="prompt-field">
-                <h4>System Prompt</h4>
-                <pre>{entry.rawPrompt.systemPrompt}</pre>
-              </div>
+              {actorBreakdown && (
+                <div className="prompt-breakdown-container">
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.75rem", color: "#6b7280", marginBottom: "0.25rem" }}>
+                    <span style={{ fontWeight: 600 }}>Input Prompt Breakdown</span>
+                    <span>Total Input Tokens: <strong>{entry.usage?.inputTokens}</strong></span>
+                  </div>
+                  <div className="prompt-breakdown-bar">
+                    {actorBreakdown.map((item, idx) => (
+                      <div
+                        key={idx}
+                        className={`bar-section ${item.type}`}
+                        style={{ width: `${item.pct}%` }}
+                        title={`${item.label}: ${item.tokens} tokens (${item.pct.toFixed(1)}%)`}
+                      />
+                    ))}
+                  </div>
+                  <div className="breakdown-accordion">
+                    {actorBreakdown.map((item, idx) => (
+                      <details key={idx} className="breakdown-accordion-item" open={idx === 0}>
+                        <summary className="accordion-header">
+                          <span className={`legend-color ${item.type}`} />
+                          <span className="header-text">
+                            {item.label}: <strong>{item.tokens}</strong> tokens ({item.pct.toFixed(0)}%)
+                          </span>
+                          <span className="accordion-chevron">▼</span>
+                        </summary>
+                        <div className="accordion-content">
+                          <pre>{item.content}</pre>
+                        </div>
+                      </details>
+                    ))}
+                  </div>
+                </div>
+              )}
 
-              <div className="prompt-field">
-                <h4>User Context</h4>
-                <pre>{entry.rawPrompt.userContext}</pre>
-              </div>
+              {entry.usage && (
+                <div className="prompt-output-section" style={{ marginTop: "0.5rem" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.75rem", color: "#6b7280", marginBottom: "0.5rem" }}>
+                    <span style={{ fontWeight: 600 }}>LLM Output</span>
+                    <span>Total Output Tokens: <strong>{entry.usage.outputTokens}</strong></span>
+                  </div>
+                  <div className="accordion-content" style={{ border: "1px solid #e5e7eb", borderRadius: "6px" }}>
+                    <pre>{entry.narrativeProse}</pre>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
           {activeTab === "decoder" && entry.decoderPrompt && (
             <div className="tab-pane">
               {entry.decoderUsage && (
-                <div className="usage-stats">
-                  <strong>Token Usage:</strong>
-                  <span>Input: <code>{entry.decoderUsage.inputTokens}</code></span> &middot;{" "}
-                  <span>Output: <code>{entry.decoderUsage.outputTokens}</code></span> &middot;{" "}
-                  <span>Total: <code>{entry.decoderUsage.totalTokens}</code></span>
+                <div className="provider-info">
+                  <strong>LLM Instance:</strong> <span>{entry.decoderUsage.providerInstanceName || "Default"}</span>
+                  {entry.decoderUsage.modelName && (
+                    <span> ({entry.decoderUsage.modelName})</span>
+                  )}
                 </div>
               )}
 
-              <div className="prompt-field">
-                <h4>System Prompt</h4>
-                <pre>{entry.decoderPrompt.systemPrompt}</pre>
-              </div>
+              {decoderBreakdown && (
+                <div className="prompt-breakdown-container">
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.75rem", color: "#6b7280", marginBottom: "0.25rem" }}>
+                    <span style={{ fontWeight: 600 }}>Input Prompt Breakdown</span>
+                    <span>Total Input Tokens: <strong>{entry.decoderUsage?.inputTokens}</strong></span>
+                  </div>
+                  <div className="prompt-breakdown-bar">
+                    {decoderBreakdown.map((item, idx) => (
+                      <div
+                        key={idx}
+                        className={`bar-section ${item.type}`}
+                        style={{ width: `${item.pct}%` }}
+                        title={`${item.label}: ${item.tokens} tokens (${item.pct.toFixed(1)}%)`}
+                      />
+                    ))}
+                  </div>
+                  <div className="breakdown-accordion">
+                    {decoderBreakdown.map((item, idx) => (
+                      <details key={idx} className="breakdown-accordion-item" open={idx === 0}>
+                        <summary className="accordion-header">
+                          <span className={`legend-color ${item.type}`} />
+                          <span className="header-text">
+                            {item.label}: <strong>{item.tokens}</strong> tokens ({item.pct.toFixed(0)}%)
+                          </span>
+                          <span className="accordion-chevron">▼</span>
+                        </summary>
+                        <div className="accordion-content">
+                          <pre>{item.content}</pre>
+                        </div>
+                      </details>
+                    ))}
+                  </div>
+                </div>
+              )}
 
-              <div className="prompt-field">
-                <h4>User Context</h4>
-                <pre>{entry.decoderPrompt.userContext}</pre>
-              </div>
+              {entry.decoderUsage && (
+                <div className="prompt-output-section" style={{ marginTop: "0.5rem" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.75rem", color: "#6b7280", marginBottom: "0.5rem" }}>
+                    <span style={{ fontWeight: 600 }}>LLM Output</span>
+                    <span>Total Output Tokens: <strong>{entry.decoderUsage.outputTokens}</strong></span>
+                  </div>
+                  <div className="accordion-content" style={{ border: "1px solid #e5e7eb", borderRadius: "6px" }}>
+                    <pre>{JSON.stringify(entry.intents, null, 2)}</pre>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -137,12 +294,30 @@ function PromptModal({
   );
 }
 
+function formatSimTime(isoString: string) {
+  try {
+    const d = new Date(isoString);
+    if (isNaN(d.getTime())) return isoString;
+    const yyyy = d.getUTCFullYear();
+    const mm = String(d.getUTCMonth() + 1).padStart(2, "0");
+    const dd = String(d.getUTCDate()).padStart(2, "0");
+    const hh = String(d.getUTCHours()).padStart(2, "0");
+    const min = String(d.getUTCMinutes()).padStart(2, "0");
+    const ss = String(d.getUTCSeconds()).padStart(2, "0");
+    return `${yyyy}-${mm}-${dd} ${hh}:${min}:${ss} UTC`;
+  } catch {
+    return isoString;
+  }
+}
+
 function LogEntryCard({
   entry,
   onShowPrompt,
+  isPlayerCard,
 }: {
   entry: SimSnapshot["log"][number];
   onShowPrompt: (entry: SimSnapshot["log"][number]) => void;
+  isPlayerCard: boolean;
 }) {
   const showMenu = !!(entry.rawPrompt || entry.decoderPrompt);
 
@@ -153,7 +328,7 @@ function LogEntryCard({
           <strong>{entry.entityName}</strong>
           <span className="log-meta">
             Turn {entry.turn} &middot;{" "}
-            {new Date(entry.timestamp).toLocaleTimeString()}
+            {formatSimTime(entry.timestamp)}
           </span>
         </div>
         {showMenu && (
@@ -169,7 +344,7 @@ function LogEntryCard({
       <div className="log-prose">{entry.narrativeProse}</div>
       <div className="log-intents">
         {entry.intents.map((intent, i) => (
-          <IntentTag key={i} intent={intent} />
+          <IntentTag key={i} intent={intent} isSelf={isPlayerCard} />
         ))}
       </div>
     </div>
@@ -185,6 +360,7 @@ export function PlayView() {
   const [selectedEntryForModal, setSelectedEntryForModal] = useState<SimSnapshot["log"][number] | null>(null);
   const logEndRef = useRef<HTMLDivElement>(null);
   const steppingRef = useRef(false);
+  const pauseRequestedRef = useRef(false);
 
   const scrollToBottom = useCallback(() => {
     setTimeout(
@@ -203,10 +379,14 @@ export function PlayView() {
       steppingRef.current = true;
       setLoading(true);
       setError("");
+      pauseRequestedRef.current = false;
 
       try {
         let current = snapshot;
         while (true) {
+          if (pauseRequestedRef.current) {
+            break;
+          }
           const result = await stepSimulation({ simId: id });
           if (!result.ok) {
             setError(result.error);
@@ -276,6 +456,8 @@ export function PlayView() {
       setSnapshot(res.snapshot);
       if (res.snapshot.status === "running") {
         await runSteps(res.snapshot.id);
+      } else {
+        setLoading(false);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to resume session.");
@@ -307,7 +489,6 @@ export function PlayView() {
   const [selectedEntity, setSelectedEntity] = useState("");
 
   const [providerInstances, setProviderInstances] = useState<LLMProviderInstance[]>([]);
-  const [selectedProviderInstance, setSelectedProviderInstance] = useState("");
 
   // Load scenarios and provider instances on mount
   useEffect(() => {
@@ -324,12 +505,6 @@ export function PlayView() {
       try {
         const providersList = await listProviderInstances();
         setProviderInstances(providersList);
-        const active = providersList.find(p => p.isActive);
-        if (active) {
-          setSelectedProviderInstance(active.id);
-        } else if (providersList.length > 0) {
-          setSelectedProviderInstance(providersList[0].id);
-        }
       } catch {
         // ignore
       }
@@ -372,7 +547,6 @@ export function PlayView() {
       const result = await startSimulation({
         scenario: (form.get("scenario") as string) || undefined,
         playEntity: (form.get("playEntity") as string) || undefined,
-        providerInstanceId: selectedProviderInstance || undefined,
       });
 
       if (!result.ok) {
@@ -385,6 +559,8 @@ export function PlayView() {
 
       if (result.snapshot.status === "running") {
         await runSteps(result.snapshot.id);
+      } else {
+        setLoading(false);
       }
     } catch (err) {
       setError(
@@ -491,26 +667,8 @@ export function PlayView() {
                   ))}
                 </select>
               </div>
-              <div className="field">
-                <label htmlFor="llmInstance">LLM Key / Instance</label>
-                <select
-                  id="llmInstance"
-                  value={selectedProviderInstance}
-                  onChange={(e) => setSelectedProviderInstance(e.target.value)}
-                  disabled={providerInstances.length === 0}
-                >
-                  {providerInstances.length === 0 ? (
-                    <option value="">Default (from Env variable)</option>
-                  ) : (
-                    providerInstances.map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.name} ({p.providerName}) {p.isActive ? " [Active]" : ""}
-                      </option>
-                    ))
-                  )}
-                </select>
-              </div>
-              <button type="submit" disabled={loading}>
+
+              <button type="submit" disabled={loading || providerInstances.length === 0}>
                 {loading ? "Starting..." : "Start Simulation"}
               </button>
             </form>
@@ -534,7 +692,7 @@ export function PlayView() {
                       </span>
                     </div>
                     <div className="card-actions">
-                      <button onClick={() => handleResume(s.id)} disabled={loading}>
+                      <button onClick={() => handleResume(s.id)} disabled={loading || providerInstances.length === 0}>
                         Resume
                       </button>
                       <button
@@ -560,15 +718,36 @@ export function PlayView() {
             <div className="sim-info-header">
               <h2>{snapshot.scenarioName}</h2>
               {snapshot.status !== "done" && snapshot.status !== "error" && (
-                <button
-                  className="stop-btn"
-                  onClick={() => {
-                    setSnapshot(null);
-                    setError("");
-                  }}
-                >
-                  Stop
-                </button>
+                <div style={{ display: "flex", gap: "0.5rem" }}>
+                  {snapshot.status === "running" && (
+                    loading ? (
+                      <button
+                        className="pause-btn"
+                        onClick={() => {
+                          pauseRequestedRef.current = true;
+                        }}
+                      >
+                        Pause
+                      </button>
+                    ) : (
+                      <button
+                        className="resume-btn"
+                        onClick={() => runSteps(snapshot.id)}
+                      >
+                        Resume
+                      </button>
+                    )
+                  )}
+                  <button
+                    className="stop-btn"
+                    onClick={() => {
+                      setSnapshot(null);
+                      setError("");
+                    }}
+                  >
+                    Stop
+                  </button>
+                </div>
               )}
             </div>
             <p>{snapshot.scenarioDescription}</p>
@@ -579,13 +758,17 @@ export function PlayView() {
           </div>
 
           <div className="log-container">
-            {snapshot.log.map((entry, i) => (
-              <LogEntryCard
-                key={i}
-                entry={entry}
-                onShowPrompt={setSelectedEntryForModal}
-              />
-            ))}
+            {(() => {
+              const playerEntity = snapshot.entities.find((e) => e.isPlayer);
+              return snapshot.log.map((entry, i) => (
+                <LogEntryCard
+                  key={i}
+                  entry={entry}
+                  onShowPrompt={setSelectedEntryForModal}
+                  isPlayerCard={entry.entityId === playerEntity?.id}
+                />
+              ));
+            })()}
             {loading && (
               <div className="log-processing">
                 <span className="spinner" />
@@ -717,6 +900,18 @@ export function PlayView() {
 
         .stop-btn {
           background: #dc2626;
+          font-size: 0.75rem;
+          padding: 0.25rem 0.75rem;
+        }
+
+        .pause-btn {
+          background: #d97706;
+          font-size: 0.75rem;
+          padding: 0.25rem 0.75rem;
+        }
+
+        .resume-btn {
+          background: #059669;
           font-size: 0.75rem;
           padding: 0.25rem 0.75rem;
         }
@@ -959,18 +1154,112 @@ export function PlayView() {
           flex-direction: column;
           gap: 1rem;
         }
-        .usage-stats {
-          background: #eff6ff;
-          border: 1px solid #bfdbfe;
-          color: #1e3a8a;
-          padding: 0.625rem 0.875rem;
+        .provider-info {
+          background: #f9fafb;
+          border: 1px solid #e5e7eb;
+          color: #374151;
+          padding: 0.5rem 0.75rem;
           border-radius: 6px;
           font-size: 0.8125rem;
-          display: flex;
-          gap: 0.5rem;
-          flex-wrap: wrap;
-          align-items: center;
         }
+        .prompt-breakdown-bar {
+          display: flex;
+          height: 24px;
+          width: 100%;
+          border-radius: 4px;
+          overflow: hidden;
+          background: #e5e7eb;
+          margin-top: 0.5rem;
+          margin-bottom: 0.5rem;
+          box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
+        }
+        .bar-section {
+          height: 100%;
+          transition: width 0.3s ease;
+        }
+        .bar-section.system {
+          background: #3b82f6;
+        }
+        .bar-section.world {
+          background: #10b981;
+        }
+        .bar-section.memories {
+          background: #f59e0b;
+        }
+        .breakdown-accordion {
+          margin-top: 0.75rem;
+          margin-bottom: 0.75rem;
+        }
+        details.breakdown-accordion-item {
+          border: 1px solid #e5e7eb;
+          border-radius: 6px;
+          margin-bottom: 0.5rem;
+          background: #fff;
+          overflow: hidden;
+        }
+        summary.accordion-header {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          padding: 0.5rem 0.75rem;
+          background: #f9fafb;
+          cursor: pointer;
+          user-select: none;
+          font-size: 0.8125rem;
+          font-weight: 500;
+        }
+        summary.accordion-header::-webkit-details-marker {
+          display: none;
+        }
+        summary.accordion-header {
+          list-style: none;
+        }
+        .header-text {
+          flex-grow: 1;
+        }
+        .accordion-chevron {
+          font-size: 0.75rem;
+          color: #9ca3af;
+          transition: transform 0.2s ease;
+        }
+        details[open] .accordion-chevron {
+          transform: rotate(180deg);
+        }
+        .accordion-content {
+          padding: 0.75rem;
+          border-top: 1px solid #e5e7eb;
+          background: #fafafa;
+        }
+        .accordion-content pre {
+          margin: 0;
+          padding: 0.5rem;
+          background: #f3f4f6;
+          border: 1px solid #e5e7eb;
+          border-radius: 4px;
+          font-family: monospace;
+          font-size: 0.75rem;
+          white-space: pre-wrap;
+          word-break: break-all;
+          max-height: 250px;
+          overflow-y: auto;
+          color: #1f2937;
+        }
+        .legend-color {
+          width: 10px;
+          height: 10px;
+          border-radius: 2px;
+          display: inline-block;
+        }
+        .legend-color.system {
+          background: #3b82f6;
+        }
+        .legend-color.world {
+          background: #10b981;
+        }
+        .legend-color.memories {
+          background: #f59e0b;
+        }
+
         .usage-stats code {
           background: rgba(37, 99, 235, 0.1);
           color: #1d4ed8;

@@ -12,33 +12,43 @@ export class OpenRouterProvider implements ILLMProvider {
 
   providerName = "OpenRouter";
   private model: ChatOpenRouter;
+  private modelNameUsed: string;
+  private providerInstanceName?: string;
   lastCalls: LLMCallRecord[] = [];
 
-  constructor(apiKey?: string, modelName?: string) {
+  constructor(apiKey?: string, modelName?: string, providerInstanceName?: string) {
     let key = apiKey;
     let model = modelName;
+    this.providerInstanceName = providerInstanceName;
 
     if (!key) {
       const active = ProviderManager.getActive("generative");
-      if (active) {
+      if (active && active.providerName === OpenRouterProvider.providerId) {
         key = active.apiKey;
         if (!model) {
           model = active.modelName;
+        }
+        if (!this.providerInstanceName) {
+          this.providerInstanceName = active.name;
         }
       }
     }
 
     if (!key) {
       key = llmConfig.OPENROUTER_API_KEY;
+      if (!this.providerInstanceName && key) {
+        this.providerInstanceName = "Environment Variable";
+      }
     }
 
     if (!key) {
       throw new Error("OPENROUTER_API_KEY is required to initialize OpenRouterProvider");
     }
 
+    this.modelNameUsed = model || "google/gemini-2.5-flash";
     this.model = new ChatOpenRouter({
       apiKey: key,
-      model: model || "google/gemini-2.5-flash",
+      model: this.modelNameUsed,
     });
   }
 
@@ -63,11 +73,13 @@ export class OpenRouterProvider implements ILLMProvider {
     const parsed = result?.parsed;
     const raw = result?.raw;
 
-    const usage = raw?.usage_metadata ? {
-      inputTokens: raw.usage_metadata.input_tokens || 0,
-      outputTokens: raw.usage_metadata.output_tokens || 0,
-      totalTokens: raw.usage_metadata.total_tokens || 0,
-    } : undefined;
+    const usage = {
+      inputTokens: raw?.usage_metadata?.input_tokens || 0,
+      outputTokens: raw?.usage_metadata?.output_tokens || 0,
+      totalTokens: raw?.usage_metadata?.total_tokens || 0,
+      modelName: this.modelNameUsed,
+      providerInstanceName: this.providerInstanceName || "Default",
+    };
 
     this.lastCalls.push({
       systemPrompt: request.systemPrompt,

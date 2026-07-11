@@ -25,27 +25,28 @@ export function serializeSubjectiveBufferEntry(
   entry: BufferEntry,
   viewer: Entity,
 ): string {
-  const actorAlias = resolveAlias(viewer, entry.intent.actorId);
+  const isSelf = viewer.id === entry.intent.actorId;
 
-  const targetAliases = entry.intent.targetIds.map((tid) =>
-    resolveAlias(viewer, tid),
-  );
-
-  let details: string;
-  const content = entry.intent.description.trim() || entry.intent.originalText.trim();
-
-  if (entry.intent.type === "dialogue") {
-    details = `spoke to ${targetAliases.join(", ") || "someone"}: "${content}"`;
-  } else if (entry.intent.type === "monologue") {
-    details = `thought: "${content}"`;
-  } else {
-    details = content;
-    if (entry.outcome) {
+  if (isSelf) {
+    let details = (entry.intent.selfDescription || entry.intent.description || entry.intent.originalText).trim();
+    if (details.length > 0) {
+      details = details.charAt(0).toUpperCase() + details.slice(1);
+    }
+    if (entry.intent.type === "action" && entry.outcome) {
       details += ` (Outcome: ${entry.outcome.isValid ? "Succeeded" : `Failed - ${entry.outcome.reason}`})`;
     }
+    return details;
   }
 
-  return `${actorAlias} ${details}`;
+  const actorAlias = resolveAlias(viewer, entry.intent.actorId);
+  const subjectStr = actorAlias.charAt(0).toUpperCase() + actorAlias.slice(1);
+
+  let details = (entry.intent.description || entry.intent.originalText).trim();
+  if (entry.intent.type === "action" && entry.outcome) {
+    details += ` (Outcome: ${entry.outcome.isValid ? "Succeeded" : `Failed - ${entry.outcome.reason}`})`;
+  }
+
+  return `${subjectStr} ${details}`;
 }
 
 export class BufferRepository {

@@ -131,7 +131,6 @@ class SimulationManager {
         activeInstance = ProviderManager.create("Default (Env)", "google-genai", envKey, undefined, "generative");
       }
     }
-
     if (!activeInstance) {
       return {
         id: "",
@@ -235,11 +234,12 @@ class SimulationManager {
       const key = inst ? inst.apiKey : (process.env.GOOGLE_API_KEY || "");
       const providerName = inst ? inst.providerName : "google-genai";
       const modelName = inst ? inst.modelName : undefined;
+      const instanceName = inst ? inst.name : undefined;
 
       if (providerName === "google-genai") {
-        return new GeminiProvider(key, modelName);
+        return new GeminiProvider(key, modelName, instanceName);
       } else if (providerName === "openrouter") {
-        return new OpenRouterProvider(key, modelName);
+        return new OpenRouterProvider(key, modelName, instanceName);
       } else {
         return new MockLLMProvider([]);
       }
@@ -416,6 +416,8 @@ class SimulationManager {
         entry.intents.push({
           type: intent.type,
           description: intent.description,
+          selfDescription: intent.selfDescription,
+          modifiers: intent.modifiers || [],
           targetIds: intent.targetIds,
           isValid: outcome.isValid,
           reason: outcome.reason,
@@ -560,6 +562,8 @@ class SimulationManager {
       entry.intents.push({
         type: intent.type,
         description: intent.description,
+        selfDescription: intent.selfDescription,
+        modifiers: intent.modifiers || [],
         targetIds: intent.targetIds,
         isValid: outcome.isValid,
         reason: outcome.reason,
@@ -685,6 +689,7 @@ class SimulationManager {
         if (!inst || inst.type !== "generative") {
           inst = active;
         }
+
         if (!inst) {
           const envKey = process.env.GOOGLE_API_KEY;
           if (envKey) {
@@ -697,9 +702,9 @@ class SimulationManager {
         }
 
         if (inst.providerName === "google-genai") {
-          return new GeminiProvider(inst.apiKey, inst.modelName);
+          return new GeminiProvider(inst.apiKey, inst.modelName, inst.name);
         } else if (inst.providerName === "openrouter") {
-          return new OpenRouterProvider(inst.apiKey, inst.modelName);
+          return new OpenRouterProvider(inst.apiKey, inst.modelName, inst.name);
         } else {
           return new MockLLMProvider([]);
         }

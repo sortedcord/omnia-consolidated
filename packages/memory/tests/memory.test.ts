@@ -32,14 +32,16 @@ describe("Subjective Buffer Entry Serializer Tests (Tier 1)", () => {
       intent: {
         type: "dialogue",
         originalText: '"Hello there," Bob said to Charlie.',
-        description: "Bob greets Charlie",
+        description: "says, 'Hello there' to the bartender",
+        selfDescription: "You say, 'Hello there' to the bartender.",
         actorId: "bob",
         targetIds: ["charlie"],
+        modifiers: [],
       },
     };
 
     const result = serializeSubjectiveBufferEntry(entry, viewer);
-    expect(result).toBe('the hooded figure spoke to the bartender: "Bob greets Charlie"');
+    expect(result).toBe("The hooded figure says, 'Hello there' to the bartender");
   });
 
   test("serializes action intent with outcome details", () => {
@@ -54,9 +56,11 @@ describe("Subjective Buffer Entry Serializer Tests (Tier 1)", () => {
       intent: {
         type: "action",
         originalText: "Bob tried to break the latch.",
-        description: "Bob attempts to break the lock latch",
+        description: "attempts to break the lock latch",
+        selfDescription: "You attempt to break the lock latch.",
         actorId: "bob",
         targetIds: [],
+        modifiers: [],
       },
       outcome: {
         isValid: false,
@@ -65,7 +69,7 @@ describe("Subjective Buffer Entry Serializer Tests (Tier 1)", () => {
     };
 
     const result = serializeSubjectiveBufferEntry(entry, viewer);
-    expect(result).toBe('the hooded figure Bob attempts to break the lock latch (Outcome: Failed - The lock is made of reinforced steel.)');
+    expect(result).toBe('The hooded figure attempts to break the lock latch (Outcome: Failed - The lock is made of reinforced steel.)');
   });
 
   test("serializes self-reference and unfamiliar actors", () => {
@@ -80,13 +84,15 @@ describe("Subjective Buffer Entry Serializer Tests (Tier 1)", () => {
         type: "action",
         originalText: "I opened the window.",
         description: "open the window",
+        selfDescription: "You open the window.",
         actorId: "alice",
         targetIds: [],
+        modifiers: [],
       },
     };
 
     const resultSelf = serializeSubjectiveBufferEntry(entrySelf, viewer);
-    expect(resultSelf).toBe("you open the window");
+    expect(resultSelf).toBe("You open the window.");
 
     const entryUnfamiliar: BufferEntry = {
       id: "entry-unfamiliar",
@@ -96,14 +102,16 @@ describe("Subjective Buffer Entry Serializer Tests (Tier 1)", () => {
       intent: {
         type: "action",
         originalText: "Someone knocked.",
-        description: "knock on the door",
+        description: "knocks on the door",
+        selfDescription: "You knock on the door.",
         actorId: "stranger-1",
         targetIds: [],
+        modifiers: [],
       },
     };
 
     const resultUnfamiliar = serializeSubjectiveBufferEntry(entryUnfamiliar, viewer);
-    expect(resultUnfamiliar).toBe("an unfamiliar figure knock on the door");
+    expect(resultUnfamiliar).toBe("An unfamiliar figure knocks on the door");
   });
 });
 
@@ -123,8 +131,10 @@ describe("BufferRepository Persistence Tests (Tier 1)", () => {
       type: "action",
       originalText: "Alice picked up a stick.",
       description: "Alice gathers a stick",
+      selfDescription: "You gather a stick.",
       actorId: "alice",
       targetIds: [],
+      modifiers: [],
     };
 
     const entry: BufferEntry = {
