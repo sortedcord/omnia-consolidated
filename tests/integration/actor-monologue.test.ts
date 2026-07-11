@@ -65,6 +65,7 @@ describe("Actor Agent + Monologue Intent Integration (Tier 2)", () => {
           selfDescription: "You internally reflect that Bob has not noticed you.",
           actorId: "alice",
           targetIds: [],
+          modifiers: [],
         },
         {
           type: "dialogue",
@@ -73,6 +74,7 @@ describe("Actor Agent + Monologue Intent Integration (Tier 2)", () => {
           selfDescription: "You softly call out to Bob.",
           actorId: "alice",
           targetIds: ["bob"],
+          modifiers: [],
         },
         {
           type: "action",
@@ -81,6 +83,7 @@ describe("Actor Agent + Monologue Intent Integration (Tier 2)", () => {
           selfDescription: "You reach for the ledger on the table.",
           actorId: "alice",
           targetIds: [],
+          modifiers: [],
         },
       ],
     };

@@ -25,6 +25,7 @@ describe("Architect & LLMValidator Unit Tests (Tier 1)", () => {
       selfDescription: "You open the chest and read the scroll.",
       actorId: "alice",
       targetIds: [],
+      modifiers: [],
     };
 
     const result = await architect.validateIntent(world, intent);
@@ -55,6 +56,7 @@ describe("Architect & LLMValidator Unit Tests (Tier 1)", () => {
       selfDescription: "You unlock the gate and escape.",
       actorId: "bob",
       targetIds: [],
+      modifiers: [],
     };
 
     const result = await architect.validateIntent(world, intent);
@@ -77,6 +79,7 @@ describe("Architect & LLMValidator Unit Tests (Tier 1)", () => {
       selfDescription: "You haunt the mansion.",
       actorId: "ghost",
       targetIds: [],
+      modifiers: [],
     };
 
     const result = await architect.validateIntent(world, intent);
@@ -116,6 +119,7 @@ describe("TimeDeltaGenerator & Architect.processIntent Unit Tests (Tier 1)", () 
       selfDescription: "You pick the lock of the wooden chest.",
       actorId: "alice",
       targetIds: [],
+      modifiers: [],
     };
 
     const result = await architect.processIntent(world, intent);
@@ -159,6 +163,7 @@ describe("TimeDeltaGenerator & Architect.processIntent Unit Tests (Tier 1)", () 
       selfDescription: "You run away.",
       actorId: "bob",
       targetIds: [],
+      modifiers: [],
     };
 
     const result = await architect.processIntent(world, intent);

@@ -2,6 +2,7 @@ export interface IntentInfo {
   type: string;
   description: string;
   selfDescription?: string;
+  modifiers: string[];
   targetIds: string[];
   isValid?: boolean;
   reason?: string;

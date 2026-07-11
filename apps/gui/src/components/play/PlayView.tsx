@@ -39,9 +39,15 @@ function IntentTag({
     ? intent.selfDescription
     : intent.description;
 
+  const modifiersStr = intent.modifiers && intent.modifiers.length > 0 ? (
+    <span className="intent-modifiers" style={{ fontStyle: "italic", opacity: 0.8, color: "#4b5563", marginLeft: "0.25rem" }}>
+      ({intent.modifiers.join(", ")})
+    </span>
+  ) : null;
+
   return (
     <span className="intent-tag">
-      [{label}] &ldquo;{textToDisplay}&rdquo;{outcome}
+      [{label}] &ldquo;{textToDisplay}&rdquo;{modifiersStr}{outcome}
       {intent.minutesToAdvance ? ` [+${intent.minutesToAdvance}min]` : ""}
     </span>
   );

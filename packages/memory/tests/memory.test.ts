@@ -36,6 +36,7 @@ describe("Subjective Buffer Entry Serializer Tests (Tier 1)", () => {
         selfDescription: "You say, 'Hello there' to the bartender.",
         actorId: "bob",
         targetIds: ["charlie"],
+        modifiers: [],
       },
     };
 
@@ -59,6 +60,7 @@ describe("Subjective Buffer Entry Serializer Tests (Tier 1)", () => {
         selfDescription: "You attempt to break the lock latch.",
         actorId: "bob",
         targetIds: [],
+        modifiers: [],
       },
       outcome: {
         isValid: false,
@@ -85,6 +87,7 @@ describe("Subjective Buffer Entry Serializer Tests (Tier 1)", () => {
         selfDescription: "You open the window.",
         actorId: "alice",
         targetIds: [],
+        modifiers: [],
       },
     };
 
@@ -103,6 +106,7 @@ describe("Subjective Buffer Entry Serializer Tests (Tier 1)", () => {
         selfDescription: "You knock on the door.",
         actorId: "stranger-1",
         targetIds: [],
+        modifiers: [],
       },
     };
 
@@ -130,6 +134,7 @@ describe("BufferRepository Persistence Tests (Tier 1)", () => {
       selfDescription: "You gather a stick.",
       actorId: "alice",
       targetIds: [],
+      modifiers: [],
     };
 
     const entry: BufferEntry = {

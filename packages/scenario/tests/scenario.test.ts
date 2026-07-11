@@ -60,6 +60,7 @@ describe("Scenario Validation & Schema Tests (Tier 1)", () => {
               selfDescription: "You entered the house.",
               actorId: "investigator",
               targetIds: [],
+              modifiers: [],
             },
           },
         ],

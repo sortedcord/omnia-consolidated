@@ -1,6 +1,6 @@
 import { WorldState } from "@omnia/core";
 import { ILLMProvider } from "@omnia/llm";
-import { IntentSequence, IntentSequenceSchema } from "./intent.js";
+import { IntentSequence, LLMIntentSequenceSchema } from "./intent.js";
 
 export class IntentDecoder {
   constructor(private llmProvider: ILLMProvider) {}
@@ -23,9 +23,15 @@ export class IntentDecoder {
     const actor = worldState.getEntity(actorId);
 
     const aliasEntries = actor ? Array.from(actor.aliases.entries()) : [];
-    const aliasContext = aliasEntries.length > 0
-      ? aliasEntries.map(([targetId, alias]) => `- "${alias}" refers to entity ID: "${targetId}"`).join("\n")
-      : "(No known aliases)";
+    const aliasContext =
+      aliasEntries.length > 0
+        ? aliasEntries
+            .map(
+              ([targetId, alias]) =>
+                `- "${alias}" refers to entity ID: "${targetId}"`,
+            )
+            .join("\n")
+        : "(No known aliases)";
 
     const systemPrompt = `
 You are the Intent Decoder for a narrative simulation engine.
@@ -33,22 +39,16 @@ Your job is to take a block of narrative prose written by an actor agent and dec
 
 For each intent you must:
 1. Classify its type:
-   - "dialogue": Any speech, conversation, or verbal communication directed at another entity.
-   - "action": Any physical or logical action performed in the world (e.g., moving, picking up, opening, looking).
-   - "monologue": An inner thought, reflection, or internal monologue. This is purely internal — not spoken aloud, not perceivable by any other entity, and not a physical action. Use this for any prose depicting the character thinking, reflecting, feeling, or narrating to themselves internally.
+   - "dialogue": if actor speaking, talking, whispering, murmuring, etc
+   - "action": Any physical or logical action performed in the world (e.g., moving, opening, looking).
+   - "monologue": An inner thought, reflection, or internal monologue/self narration.
 2. Extract the original text fragment from the prose that corresponds to this intent.
 3. Populate "description" and "selfDescription":
-   - "description": No subject or name — a bare third-person verb phrase only (e.g. "clears their throat", "shakes their head slowly"), so it can be composed with any observer's alias for the actor.
+   - "description": No subject or name — a bare third-person verb phrase only (e.g. "clears their throat", "shakes their head slowly")
    - "selfDescription": The same event from the actor's own perspective, second person, complete sentence starting with "You" (e.g. "You clear your throat.", "You shake your head slowly."). This is shown directly in the actor's own memory — it must never say "the actor" or refer to them in the third person.
-4. Identify the actorId (the entity performing the intent — this will always be "${actorId}").
-5. Identify targetIds — the entity IDs of the receiving parties. Use the "KNOWN ENTITY IDS" and "ACTOR ALIASES" mapping to resolve any subjective names, descriptions, or nicknames used in the prose to their correct system entity IDs. If no specific target, use an empty array. For "monologue" intents, targetIds must always be an empty array.
-
-Rules:
-- Preserve the chronological order of intents as they appear in the prose.
-- Do NOT merge unrelated actions into a single intent.
-- Dialogue and actions should be separate intents even if they happen in the same sentence.
-- If the prose contains only dialogue, return a single dialogue intent.
-- If the prose contains only a single action, return a single action intent.
+   - In case of a dialogue, the description and self Description only stores the exact words said by the entity. (e.g. "I will do that later", "Are you serious right now?")
+4. Identify targetIds — the entity IDs of the receiving parties. Use the "KNOWN ENTITY IDS" mapping to resolve any subjective names,or aliases used in the prose to their correct system entity IDs. If no specific target, use an empty array.
+5. Identify modifiers — a list of strings representing additional qualities or modifiers extracted from the narrative prose. This includes emotions, tone of voice, speed, manner of action, or statement type (e.g., "question", "anxious", "whispering", "slowly", "quietly", "forcefully"). If no modifiers are present, use an empty array.
 `.trim();
 
     const userContext = `
@@ -72,7 +72,7 @@ ${narrativeProse}
     const response = await this.llmProvider.generateStructuredResponse({
       systemPrompt,
       userContext,
-      schema: IntentSequenceSchema,
+      schema: LLMIntentSequenceSchema,
     });
 
     if (!response.success || !response.data) {
@@ -81,7 +81,14 @@ ${narrativeProse}
       );
     }
 
-    return response.data;
+    const fullIntents = response.data.intents.map((intent) => ({
+      ...intent,
+      actorId,
+    }));
+
+    return {
+      intents: fullIntents,
+    };
   }
 }
 
@@ -102,7 +109,9 @@ function serializeSimplifiedWorldState(worldState: WorldState): string {
   lines.push("Entities:");
   if (worldState.entities.size > 0) {
     for (const entity of worldState.entities.values()) {
-      const locStr = entity.locationId ? ` (Location: ${entity.locationId})` : "";
+      const locStr = entity.locationId
+        ? ` (Location: ${entity.locationId})`
+        : "";
       lines.push(`  - Entity [ID: ${entity.id}]${locStr}`);
     }
   } else {

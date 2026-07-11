@@ -16,8 +16,8 @@ describe("IntentDecoder Unit Tests (Tier 1)", () => {
           originalText: "Alice opened the chest.",
           description: "Open the wooden chest.",
           selfDescription: "You open the wooden chest.",
-          actorId: "alice",
           targetIds: [],
+          modifiers: [],
         },
       ],
     };
@@ -47,8 +47,8 @@ describe("IntentDecoder Unit Tests (Tier 1)", () => {
           originalText: '"Do you have the key?" Alice asked Bob.',
           description: "Alice asks Bob if he has the key.",
           selfDescription: "You ask Bob if he has the key.",
-          actorId: "alice",
           targetIds: ["bob"],
+          modifiers: [],
         },
       ],
     };
@@ -81,16 +81,16 @@ describe("IntentDecoder Unit Tests (Tier 1)", () => {
           originalText: '"Cover me," Alice whispered to Bob.',
           description: "Alice whispers to Bob requesting cover.",
           selfDescription: "You whisper to Bob requesting cover.",
-          actorId: "alice",
           targetIds: ["bob"],
+          modifiers: [],
         },
         {
           type: "action",
           originalText: "She crept towards the door and pulled the handle.",
           description: "Creep towards the door and pull the handle.",
           selfDescription: "You creep towards the door and pull the handle.",
-          actorId: "alice",
           targetIds: [],
+          modifiers: [],
         },
       ],
     };

@@ -12,12 +12,6 @@
         "allowedEntities": []
       },
       {
-        "name": "observation_status",
-        "value": "Active monitoring. Audio and visual feeds online.",
-        "visibility": "PRIVATE",
-        "allowedEntities": []
-      },
-      {
         "name": "ambient_sound",
         "value": "A low, barely audible electrical hum.",
         "visibility": "PUBLIC"
@@ -53,6 +47,11 @@
           "value": "Bob",
           "visibility": "PRIVATE",
           "allowedEntities": ["7c9b83b3-8cfb-4e89-8d77-626a5757d591"]
+        },
+        {
+          "name": "gender",
+          "value": "male",
+          "visibility": "PUBLIC"
         },
         {
           "name": "appearance",
@@ -95,6 +94,11 @@
           "value": "Bill",
           "visibility": "PRIVATE",
           "allowedEntities": ["bf3f29d2-cf11-4b11-9a99-b13c126d400e"]
+        },
+        {
+          "name": "gender",
+          "value": "male",
+          "visibility": "PUBLIC"
         },
         {
           "name": "appearance",

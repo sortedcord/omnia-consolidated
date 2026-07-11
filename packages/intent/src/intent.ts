@@ -14,7 +14,7 @@ export type IntentType = z.infer<typeof IntentTypeSchema>;
 /**
  * A single decoded intent extracted from narrative prose.
  */
-export const IntentSchema = z.object({
+export const LLMIntentSchema = z.object({
   /** The type of intent. */
   type: IntentTypeSchema,
 
@@ -27,18 +27,30 @@ export const IntentSchema = z.object({
   /** The same event from the actor's own perspective (second person, "You"). */
   selfDescription: z.string(),
 
-  /** The entity ID of the actor performing the intent. */
-  actorId: z.string(),
-
   /**
    * Entity IDs of the receiving parties (e.g., who is being spoken to,
    * what object is being interacted with). Always an empty array for
    * "monologue" intents, since they are not perceivable by anyone.
    */
   targetIds: z.array(z.string()),
+
+  /**
+   * Additional qualities or modifiers extracted from the prose (e.g., emotions,
+   * questions, speed, manner of action like 'quietly', 'whispering', 'anxiously').
+   */
+  modifiers: z.array(z.string()),
+});
+
+export const IntentSchema = LLMIntentSchema.extend({
+  /** The entity ID of the actor performing the intent. */
+  actorId: z.string(),
 });
 
 export type Intent = z.infer<typeof IntentSchema>;
+
+export const LLMIntentSequenceSchema = z.object({
+  intents: z.array(LLMIntentSchema),
+});
 
 /**
  * The full output of the Intent Decoder: an ordered sequence of intents

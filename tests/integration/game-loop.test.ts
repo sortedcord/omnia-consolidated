@@ -36,6 +36,7 @@ describe("Omnia Integration Tests (Tier 2)", () => {
           selfDescription: "You whisper to Bob to cover you.",
           actorId: "alice",
           targetIds: ["bob"],
+          modifiers: [],
         },
         {
           type: "action",
@@ -44,6 +45,7 @@ describe("Omnia Integration Tests (Tier 2)", () => {
           selfDescription: "You creep to the door and pull the handle.",
           actorId: "alice",
           targetIds: [],
+          modifiers: [],
         },
       ],
     };
@@ -113,6 +115,7 @@ describe("Omnia Integration Tests (Tier 2)", () => {
       selfDescription: "You attempt to pick the lock with a hairpin.",
       actorId: "alice",
       targetIds: [],
+      modifiers: [],
     };
 
     const intent2 = {
@@ -122,6 +125,7 @@ describe("Omnia Integration Tests (Tier 2)", () => {
       selfDescription: "You mutter to yourself.",
       actorId: "alice",
       targetIds: [],
+      modifiers: [],
     };
 
     // LLM validation / time delta mock responses:
