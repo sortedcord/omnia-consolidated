@@ -3,6 +3,7 @@ import { ILLMProvider } from "@omnia/llm";
 import {
   BufferEntry,
   BufferRepository,
+  LedgerRepository,
 } from "@omnia/memory";
 import {
   Intent,
@@ -73,6 +74,7 @@ export class ActorAgent {
   constructor(
     llmProvider: ILLMProvider | { actor: ILLMProvider; decoder: ILLMProvider },
     bufferRepo?: BufferRepository,
+    ledgerRepo?: LedgerRepository,
     memoryLimit?: number,
     generator?: IActorProseGenerator,
   ) {
@@ -87,7 +89,7 @@ export class ActorAgent {
       decoderProv = llmProvider;
     }
 
-    this.promptBuilder = new ActorPromptBuilder(bufferRepo, memoryLimit);
+    this.promptBuilder = new ActorPromptBuilder(bufferRepo, ledgerRepo, memoryLimit);
     this.decoder = new IntentDecoder(decoderProv);
     this.generator = generator ?? new LLMActorProseGenerator(actorProv);
     this.llmProvider = actorProv;

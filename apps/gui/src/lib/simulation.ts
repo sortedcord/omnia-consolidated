@@ -17,7 +17,7 @@ for (const c of envCandidates) {
   }
 }
 
-import { BufferRepository } from "@omnia/memory";
+import { BufferRepository, LedgerRepository } from "@omnia/memory";
 import { Architect, AliasDeltaGenerator } from "@omnia/architect";
 import {
   ActorAgent,
@@ -89,6 +89,7 @@ interface SimSession {
   dbPath: string;
   coreRepo: SQLiteRepository;
   bufferRepo: BufferRepository;
+  ledgerRepo: LedgerRepository;
   worldInstanceId: string;
   scenarioName: string;
   scenarioDescription: string;
@@ -154,6 +155,7 @@ class SimulationManager {
     const db = new Database(dbPath);
     const coreRepo = new SQLiteRepository(db);
     const bufferRepo = new BufferRepository(db);
+    const ledgerRepo = new LedgerRepository(db);
     const loader = new ScenarioLoader(coreRepo, bufferRepo);
 
     const worldInstanceId = id;
@@ -258,6 +260,7 @@ class SimulationManager {
       dbPath,
       coreRepo,
       bufferRepo,
+      ledgerRepo,
       worldInstanceId,
       scenarioName: scenarioJson.name,
       scenarioDescription: scenarioJson.description,
@@ -353,6 +356,7 @@ class SimulationManager {
       const playerActor = new ActorAgent(
         { actor: session.actorProvider, decoder: session.decoderProvider },
         session.bufferRepo,
+        session.ledgerRepo,
         20,
         new FixedProseGenerator(prose),
       );
@@ -463,7 +467,7 @@ class SimulationManager {
     const entity = worldState.getEntity(info.id);
     if (!entity) throw new Error(`Entity "${info.id}" not found`);
 
-    const promptBuilder = new ActorPromptBuilder(session.bufferRepo, 20);
+    const promptBuilder = new ActorPromptBuilder(session.bufferRepo, session.ledgerRepo, 20);
     const { systemPrompt, userContext } = promptBuilder.build(
       worldState,
       entity,
@@ -493,6 +497,7 @@ class SimulationManager {
     const actor = new ActorAgent(
       { actor: session.actorProvider, decoder: session.decoderProvider },
       session.bufferRepo,
+      session.ledgerRepo,
       20,
     );
     const result = await actor.act(worldState, entity);
@@ -681,6 +686,7 @@ class SimulationManager {
 
       const coreRepo = new SQLiteRepository(db);
       const bufferRepo = new BufferRepository(db);
+      const ledgerRepo = new LedgerRepository(db);
 
       const actorProvider = resolveProviderForTask("actor-prose");
       const validatorProvider = resolveProviderForTask("llm-validator");
@@ -698,6 +704,7 @@ class SimulationManager {
         dbPath,
         coreRepo,
         bufferRepo,
+        ledgerRepo,
         worldInstanceId: id,
         scenarioName: state.scenarioName,
         scenarioDescription: state.scenarioDescription,

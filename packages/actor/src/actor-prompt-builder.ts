@@ -9,6 +9,8 @@ import {
   BufferEntry,
   BufferRepository,
   serializeSubjectiveBufferEntry,
+  LedgerEntry,
+  LedgerRepository,
 } from "@omnia/memory";
 
 /**
@@ -37,12 +39,17 @@ export class ActorPromptBuilder {
   /**
    * @param bufferRepo  Used to fetch the actor's recent memory. Optional —
    *                    if absent, the memory section is omitted.
+   * @param ledgerRepo  Used to fetch long-term memories. Optional.
    * @param memoryLimit Maximum number of recent buffer entries to inject.
    *                    Defaults to 20.
+   * @param ledgerLimit Maximum number of long-term memories to retrieve.
+   *                    Defaults to 5.
    */
   constructor(
     private bufferRepo?: BufferRepository,
+    private ledgerRepo?: LedgerRepository,
     private memoryLimit = 20,
+    private ledgerLimit = 5,
   ) {}
 
   /**
@@ -74,15 +81,14 @@ Guidelines:
 - Keep your prose vivid but concise. A single response may contain more than one intent (e.g., you may think, then speak, then act) — write them in natural narrative order.
 - Not every response requires an outward action. It is perfectly valid to only think (a monologue) and do nothing perceivable.
 - Never speak or act on another entity's behalf — you only control your own character.
-".
 `.trim();
   }
 
   private buildUserContext(worldState: WorldState, entity: Entity): string {
     const sections: string[] = [];
+    const now = worldState.clock.get();
 
     // --- Subjective present time ---
-    const now = worldState.clock.get();
     sections.push(
       `=== CURRENT MOMENT ===\nIt is ${now.toISOString()} right now.`,
     );
@@ -92,30 +98,43 @@ Guidelines:
       `=== THE WORLD AS YOU PERCEIVE IT ===\n${serializeSubjectiveWorldState(worldState, entity.id)}`,
     );
 
+    // Fetch recent buffer entries once
+    let recentEntries: BufferEntry[] = [];
+    if (this.bufferRepo) {
+      try {
+        recentEntries = this.bufferRepo.listForOwner(entity.id);
+      } catch {}
+    }
+
     // --- Recent memory ---
-    const memorySection = this.buildMemorySection(
-      entity,
-      worldState.clock.get(),
-    );
+    const memorySection = this.buildMemorySection(entity, recentEntries, now);
     if (memorySection) {
       sections.push(memorySection);
+    }
+
+    // --- Recalled Long-Term memory ---
+    const ledgerSection = this.buildLedgerSection(
+      worldState,
+      entity,
+      recentEntries,
+      now,
+    );
+    if (ledgerSection) {
+      sections.push(ledgerSection);
     }
 
     return sections.join("\n\n");
   }
 
-  private buildMemorySection(entity: Entity, now: Date): string | null {
+  private buildMemorySection(
+    entity: Entity,
+    entries: BufferEntry[],
+    now: Date,
+  ): string | null {
     if (!this.bufferRepo) return null;
 
-    let entries: BufferEntry[];
-    try {
-      entries = this.bufferRepo.listForOwner(entity.id);
-    } catch {
-      return null;
-    }
-
     if (entries.length === 0) {
-      return `=== YOUR RECENT MEMORY ===\n(You have no memories yet.)`;
+      return `=== RECENT EVENTS ===\n(No recent events recorded.)`;
     }
 
     const recent = entries.slice(-this.memoryLimit);
@@ -135,6 +154,110 @@ Guidelines:
       groupedLines.push(`  - ${serialized}`);
     }
 
-    return `=== YOUR RECENT MEMORY ===\n${groupedLines.join("\n")}`;
+    return `=== RECENT EVENTS ===\n${groupedLines.join("\n")}`;
+  }
+
+  private buildLedgerSection(
+    worldState: WorldState,
+    entity: Entity,
+    recentBuffer: BufferEntry[],
+    now: Date,
+  ): string | null {
+    if (!this.ledgerRepo) return null;
+
+    // 1. Get co-located entities (in the same location as entity)
+    const coLocatedEntityIds: string[] = [];
+    if (entity.locationId) {
+      for (const e of worldState.entities.values()) {
+        if (e.id !== entity.id && e.locationId === entity.locationId) {
+          coLocatedEntityIds.push(e.id);
+        }
+      }
+    }
+
+    // 2. Compute Active Focus entities based on recent interactions (last 10 entries)
+    const activeFocus = new Set<string>();
+    const maxFocus = 3;
+
+    // We scan the recent buffer entries to see who we recently talked to or who talked to us
+    for (let i = recentBuffer.length - 1; i >= 0; i--) {
+      const entry = recentBuffer[i];
+      const intent = entry.intent;
+
+      if (
+        intent.actorId !== entity.id &&
+        coLocatedEntityIds.includes(intent.actorId)
+      ) {
+        activeFocus.add(intent.actorId);
+      }
+      for (const targetId of intent.targetIds) {
+        if (targetId !== entity.id && coLocatedEntityIds.includes(targetId)) {
+          activeFocus.add(targetId);
+        }
+      }
+      if (activeFocus.size >= maxFocus) break;
+    }
+
+    // If co-located entities is small, auto-focus all of them
+    if (activeFocus.size < maxFocus && coLocatedEntityIds.length <= maxFocus) {
+      for (const id of coLocatedEntityIds) {
+        if (id !== entity.id) {
+          activeFocus.add(id);
+        }
+      }
+    }
+
+    const activeFocusIds = Array.from(activeFocus);
+
+    // 3. Retrieve memories using Active Focus
+    let recalled: LedgerEntry[];
+    try {
+      recalled = this.ledgerRepo.retrieve(
+        entity.id,
+        entity.locationId,
+        activeFocusIds,
+        undefined, // no query embedding for now (Recency + Importance ranking)
+        now,
+        this.ledgerLimit,
+        { includeAssociativeNeighbors: true },
+      );
+    } catch {
+      return null;
+    }
+
+    if (recalled.length === 0) return null;
+
+    // 4. Format them identical to the recent memory format
+    const groupedLines: string[] = [];
+    let currentGroup: string | null = null;
+
+    for (const entry of recalled) {
+      const when = naturalizeTime(now, new Date(entry.timestamp));
+
+      let content = entry.content;
+      // Resolve system IDs to subjective aliases in the content
+      for (const targetId of entry.involvedEntityIds) {
+        const alias = entity.aliases.get(targetId) ?? targetId;
+        content = content.replace(new RegExp(targetId, "g"), alias);
+      }
+      if (entry.locationId) {
+        content += ` (at ${entry.locationId})`;
+      }
+
+      if (when !== currentGroup) {
+        currentGroup = when;
+        const header = when.charAt(0).toUpperCase() + when.slice(1);
+        groupedLines.push(header);
+      }
+
+      groupedLines.push(`  - ${content}`);
+      if (entry.quotes && entry.quotes.length > 0) {
+        for (const quote of entry.quotes) {
+          groupedLines.push(`    Quote: "${quote}"`);
+        }
+      }
+    }
+
+    return `=== YOUR MEMORIES ===\n${groupedLines.join("\n")}`;
   }
 }

@@ -92,6 +92,31 @@ export class LedgerRepository {
     })();
   }
 
+  private mapRowToEntry(row: any, involvedEntityIds: string[]): LedgerEntry {
+    let embedding: number[] = [];
+    if (row.embedding) {
+      const buffer = row.embedding as Buffer;
+      const floatArray = new Float32Array(
+        buffer.buffer,
+        buffer.byteOffset,
+        buffer.byteLength / Float32Array.BYTES_PER_ELEMENT
+      );
+      embedding = Array.from(floatArray);
+    }
+
+    return {
+      id: row.id,
+      ownerId: row.owner_id,
+      timestamp: row.timestamp,
+      locationId: row.location_id,
+      involvedEntityIds,
+      content: row.content,
+      quotes: JSON.parse(row.quotes_json || "[]"),
+      importance: row.importance,
+      embedding: embedding,
+    };
+  }
+
   load(id: string): LedgerEntry | null {
     const row = this.db
       .prepare(
@@ -113,28 +138,7 @@ export class LedgerRepository {
       )
       .all(id) as { entity_id: string }[];
 
-    let embedding: number[] = [];
-    if (row.embedding) {
-      const buffer = row.embedding as Buffer;
-      const floatArray = new Float32Array(
-        buffer.buffer,
-        buffer.byteOffset,
-        buffer.byteLength / Float32Array.BYTES_PER_ELEMENT
-      );
-      embedding = Array.from(floatArray);
-    }
-
-    return {
-      id: row.id,
-      ownerId: row.owner_id,
-      timestamp: row.timestamp,
-      locationId: row.location_id,
-      involvedEntityIds: entitiesRows.map((er) => er.entity_id),
-      content: row.content,
-      quotes: JSON.parse(row.quotes_json),
-      importance: row.importance,
-      embedding: embedding,
-    };
+    return this.mapRowToEntry(row, entitiesRows.map((er) => er.entity_id));
   }
 
   /**
@@ -202,32 +206,174 @@ export class LedgerRepository {
       entitiesMap.get(er.entry_id)!.push(er.entity_id);
     }
 
-    return rows.map((row) => {
-      let embedding: number[] = [];
-      if (row.embedding) {
-        const buffer = row.embedding as Buffer;
-        const floatArray = new Float32Array(
-          buffer.buffer,
-          buffer.byteOffset,
-          buffer.byteLength / Float32Array.BYTES_PER_ELEMENT
-        );
-        embedding = Array.from(floatArray);
+    return rows.map((row) => this.mapRowToEntry(row, entitiesMap.get(row.id) || []));
+  }
+
+  private fetchRawNeighbors(ownerId: string, timestamp: string): LedgerEntry[] {
+    const neighbors: LedgerEntry[] = [];
+
+    // Preceding entry
+    const preceding = this.db
+      .prepare(
+        `
+      SELECT id, owner_id, timestamp, location_id, content, quotes_json, importance, embedding
+      FROM ledger_entries
+      WHERE owner_id = ? AND timestamp < ?
+      ORDER BY timestamp DESC
+      LIMIT 1
+    `
+      )
+      .get(ownerId, timestamp) as any;
+
+    if (preceding) {
+      neighbors.push(this.mapRowToEntry(preceding, []));
+    }
+
+    // Succeeding entry
+    const succeeding = this.db
+      .prepare(
+        `
+      SELECT id, owner_id, timestamp, location_id, content, quotes_json, importance, embedding
+      FROM ledger_entries
+      WHERE owner_id = ? AND timestamp > ?
+      ORDER BY timestamp ASC
+      LIMIT 1
+    `
+      )
+      .get(ownerId, timestamp) as any;
+
+    if (succeeding) {
+      neighbors.push(this.mapRowToEntry(succeeding, []));
+    }
+
+    return neighbors;
+  }
+
+  /**
+   * Phase 1 + Phase 2 Retrieval Pipeline
+   * 1. Fetches candidates via Phase 1 heuristic filtering.
+   * 2. Ranks them using: Score = Recency + Importance + Semantic Match.
+   * 3. Selects the top `limit` memories.
+   * 4. Optionally pulls in the immediate chronological neighbors (associative chain).
+   * 5. Returns all gathered entries sorted chronologically (timestamp ASC).
+   */
+  retrieve(
+    ownerId: string,
+    currentLocationId: string | null,
+    currentInvolvedEntityIds: string[],
+    queryEmbedding?: number[],
+    now: Date = new Date(),
+    limit: number = 5,
+    options?: {
+      includeAssociativeNeighbors?: boolean;
+      recencyWeight?: number;
+      importanceWeight?: number;
+      relevanceWeight?: number;
+      decayRate?: number;
+    }
+  ): LedgerEntry[] {
+    const includeAssociativeNeighbors = options?.includeAssociativeNeighbors ?? false;
+    const recencyWeight = options?.recencyWeight ?? 1.0;
+    const importanceWeight = options?.importanceWeight ?? 1.0;
+    const relevanceWeight = options?.relevanceWeight ?? 1.0;
+    const decayRate = options?.decayRate ?? 0.99;
+
+    // Fetch candidate pool (limit 100 to provide enough options for Phase 2 ranking)
+    const candidates = this.getRelevant(ownerId, currentLocationId, currentInvolvedEntityIds, 100);
+    if (candidates.length === 0) return [];
+
+    // Score candidates
+    const scored = candidates.map((entry) => {
+      // Recency calculation with exponential decay
+      const deltaMs = now.getTime() - new Date(entry.timestamp).getTime();
+      const hoursElapsed = Math.max(0, deltaMs / (3600 * 1000));
+      const recency = Math.pow(decayRate, hoursElapsed);
+
+      // Importance score normalized (0.0 to 1.0)
+      const importanceNorm = entry.importance / 10.0;
+
+      // Semantic relevance
+      let relevance = 0;
+      if (queryEmbedding && entry.embedding && entry.embedding.length > 0) {
+        relevance = cosineSimilarity(queryEmbedding, entry.embedding);
       }
-      return {
-        id: row.id,
-        ownerId: row.owner_id,
-        timestamp: row.timestamp,
-        locationId: row.location_id,
-        involvedEntityIds: entitiesMap.get(row.id) || [],
-        content: row.content,
-        quotes: JSON.parse(row.quotes_json),
-        importance: row.importance,
-        embedding: embedding,
-      };
+
+      const score =
+        recencyWeight * recency +
+        importanceWeight * importanceNorm +
+        relevanceWeight * relevance;
+
+      return { entry, score };
     });
+
+    // Rank and take top memories
+    scored.sort((a, b) => b.score - a.score);
+    const selected = scored.slice(0, limit).map((s) => s.entry);
+
+    let finalEntries = [...selected];
+
+    // Optionally retrieve associative neighbors
+    if (includeAssociativeNeighbors && selected.length > 0) {
+      const neighborMap = new Map<string, LedgerEntry>();
+
+      for (const entry of selected) {
+        const rawNeighbors = this.fetchRawNeighbors(ownerId, entry.timestamp);
+        for (const rn of rawNeighbors) {
+          if (!finalEntries.some((fe) => fe.id === rn.id) && !neighborMap.has(rn.id)) {
+            neighborMap.set(rn.id, rn);
+          }
+        }
+      }
+
+      const neighborsToPopulate = Array.from(neighborMap.values());
+      if (neighborsToPopulate.length > 0) {
+        const neighborIds = neighborsToPopulate.map((n) => n.id);
+        const placeholders = neighborIds.map(() => "?").join(",");
+        const entitiesRows = this.db
+          .prepare(
+            `
+          SELECT entry_id, entity_id FROM ledger_involved_entities
+          WHERE entry_id IN (${placeholders})
+        `
+          )
+          .all(...neighborIds) as { entry_id: string; entity_id: string }[];
+
+        const entitiesMap = new Map<string, string[]>();
+        for (const er of entitiesRows) {
+          if (!entitiesMap.has(er.entry_id)) {
+            entitiesMap.set(er.entry_id, []);
+          }
+          entitiesMap.get(er.entry_id)!.push(er.entity_id);
+        }
+
+        for (const n of neighborsToPopulate) {
+          n.involvedEntityIds = entitiesMap.get(n.id) || [];
+          finalEntries.push(n);
+        }
+      }
+    }
+
+    // Sort chronologically ASC for the final prompt output
+    finalEntries.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+
+    return finalEntries;
   }
 
   delete(id: string): void {
     this.db.prepare(`DELETE FROM ledger_entries WHERE id = ?`).run(id);
   }
+}
+
+function cosineSimilarity(a: number[], b: number[]): number {
+  if (a.length !== b.length || a.length === 0) return 0;
+  let dot = 0;
+  let normA = 0;
+  let normB = 0;
+  for (let i = 0; i < a.length; i++) {
+    dot += a[i] * b[i];
+    normA += a[i] * a[i];
+    normB += b[i] * b[i];
+  }
+  if (normA === 0 || normB === 0) return 0;
+  return dot / (Math.sqrt(normA) * Math.sqrt(normB));
 }

@@ -121,4 +121,108 @@ describe("LedgerRepository", () => {
     expect(ids).toContain("mem_social"); // due to involvedEntityIds
     expect(ids).not.toContain("mem_irrelevant");
   });
+
+  it("should retrieve ranked memories with recency, importance, and semantic match", () => {
+    const now = new Date("2024-01-10T12:00:00.000Z");
+
+    repo.save({
+      id: "mem1",
+      ownerId: "alice",
+      timestamp: "2024-01-01T12:00:00.000Z",
+      locationId: "loc1",
+      involvedEntityIds: [],
+      content: "Alice fought a dragon.",
+      quotes: [],
+      importance: 10,
+      embedding: [0, 1, 0],
+    });
+
+    repo.save({
+      id: "mem2",
+      ownerId: "alice",
+      timestamp: "2024-01-10T11:00:00.000Z",
+      locationId: "loc1",
+      involvedEntityIds: [],
+      content: "Alice ate a sandwich.",
+      quotes: [],
+      importance: 2,
+      embedding: [1, 0, 0],
+    });
+
+    repo.save({
+      id: "mem3",
+      ownerId: "alice",
+      timestamp: "2024-01-10T11:50:00.000Z",
+      locationId: "loc1",
+      involvedEntityIds: [],
+      content: "Alice read a book.",
+      quotes: [],
+      importance: 5,
+      embedding: [0.707, 0.707, 0],
+    });
+
+    // Query: [1, 0, 0]
+    // mem3 score: recency (~0.998) + importance (0.5) + relevance (0.707) = ~2.205
+    // mem2 score: recency (~0.99) + importance (0.2) + relevance (1.0) = ~2.19
+    // mem1 score: recency (~0.114) + importance (1.0) + relevance (0.0) = ~1.114
+    // If limit = 2, should return mem2 and mem3, sorted chronologically (mem2 first, then mem3)
+    const results = repo.retrieve("alice", "loc1", [], [1, 0, 0], now, 2);
+    expect(results).toHaveLength(2);
+    expect(results[0].id).toBe("mem2");
+    expect(results[1].id).toBe("mem3");
+  });
+
+  it("should pull in associative neighbors when specified", () => {
+    repo.save({
+      id: "mem_preceding",
+      ownerId: "alice",
+      timestamp: "2024-01-10T10:00:00.000Z",
+      locationId: "loc_other",
+      involvedEntityIds: [],
+      content: "Alice woke up.",
+      quotes: [],
+      importance: 2,
+      embedding: [],
+    });
+
+    repo.save({
+      id: "mem_target",
+      ownerId: "alice",
+      timestamp: "2024-01-10T11:00:00.000Z",
+      locationId: "loc1",
+      involvedEntityIds: [],
+      content: "Alice arrived at tavern.",
+      quotes: [],
+      importance: 2,
+      embedding: [],
+    });
+
+    repo.save({
+      id: "mem_succeeding",
+      ownerId: "alice",
+      timestamp: "2024-01-10T12:00:00.000Z",
+      locationId: "loc_other",
+      involvedEntityIds: [],
+      content: "Alice ordered ale.",
+      quotes: [],
+      importance: 2,
+      embedding: [],
+    });
+
+    // Without neighbors: only returns mem_target
+    const withoutNeighbors = repo.retrieve("alice", "loc1", [], undefined, new Date("2024-01-10T14:00:00.000Z"), 1, {
+      includeAssociativeNeighbors: false,
+    });
+    expect(withoutNeighbors).toHaveLength(1);
+    expect(withoutNeighbors[0].id).toBe("mem_target");
+
+    // With neighbors: returns preceding, target, and succeeding sorted chronologically
+    const withNeighbors = repo.retrieve("alice", "loc1", [], undefined, new Date("2024-01-10T14:00:00.000Z"), 1, {
+      includeAssociativeNeighbors: true,
+    });
+    expect(withNeighbors).toHaveLength(3);
+    expect(withNeighbors[0].id).toBe("mem_preceding");
+    expect(withNeighbors[1].id).toBe("mem_target");
+    expect(withNeighbors[2].id).toBe("mem_succeeding");
+  });
 });
