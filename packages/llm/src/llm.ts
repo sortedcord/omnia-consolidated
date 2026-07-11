@@ -15,6 +15,8 @@ export interface LLMResponse<T> {
     inputTokens: number;
     outputTokens: number;
     totalTokens: number;
+    modelName?: string;
+    providerInstanceName?: string;
   };
 }
 
@@ -25,6 +27,8 @@ export interface LLMCallRecord {
     inputTokens: number;
     outputTokens: number;
     totalTokens: number;
+    modelName?: string;
+    providerInstanceName?: string;
   };
 }
 

@@ -22,6 +22,8 @@ export interface LogEntry {
     inputTokens: number;
     outputTokens: number;
     totalTokens: number;
+    modelName?: string;
+    providerInstanceName?: string;
   };
   decoderPrompt?: {
     systemPrompt: string;
@@ -31,6 +33,8 @@ export interface LogEntry {
     inputTokens: number;
     outputTokens: number;
     totalTokens: number;
+    modelName?: string;
+    providerInstanceName?: string;
   };
 }
 
