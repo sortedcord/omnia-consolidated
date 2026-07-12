@@ -12,6 +12,14 @@ import {
 import type { ModelProviderInstance, ModelProviderMeta } from "@omnia/llm";
 import { ProviderInstancesConfig } from "@/components/config/ProviderInstancesConfig";
 import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Table,
   TableBody,
   TableCell,
@@ -89,12 +97,12 @@ export default function ConfigPage() {
   };
 
   return (
-    <div className="mx-auto max-w-[800px] px-4 py-8">
-      <h1 className="mb-6 text-2xl">Configuration</h1>
+    <div className="mx-auto max-w-[800px] px-10 py-12">
+      <h1 className="mb-6 text-headline-lg text-primary animate-fade-in">Configuration</h1>
 
-      {config === null && loading && <p>Loading configuration...</p>}
+      {config === null && loading && <p className="text-body-md text-muted-foreground">Loading configuration...</p>}
       {error && (
-        <div className="mb-4 rounded border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-700">
+        <div className="mb-4 border border-destructive bg-destructive/10 px-3 py-2 text-sm text-destructive">
           {error}
         </div>
       )}
@@ -111,14 +119,14 @@ export default function ConfigPage() {
             }}
           />
 
-          <section className="mb-8 pb-6">
-            <h2 className="mb-3 text-lg">Task Provider Routing</h2>
-            <p className="my-4 rounded border border-blue-200 bg-blue-50 px-3 py-2 text-xs text-blue-800">
+          <section className="border-b border-dotted border-border/20 mb-8 pb-8">
+            <h2 className="mb-3 text-headline-md text-foreground">Task Provider Routing</h2>
+            <p className="my-4 border border-border/20 bg-secondary px-3 py-2 text-label-sm text-foreground/80">
               Configure which LLM Provider Key Instance should handle each
               specific simulation task. Mappings default to the currently{" "}
               <strong>Active</strong> instance if not specified.
             </p>
-            <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div className="mt-4 grid grid-cols-1 gap-6 md:grid-cols-2">
               {[
                 { key: "actor-prose", label: "Actor Prose Generation", desc: "Generates roleplay/narrative prose for Non-Player Characters.", type: "generative" },
                 { key: "llm-validator", label: "LLM Validator", desc: "Arbitrates and validates proposed actions against the world state rules.", type: "generative" },
@@ -129,39 +137,45 @@ export default function ConfigPage() {
               ].map((task) => (
                 <div
                   key={task.key}
-                  className="flex flex-col justify-between gap-3 rounded-lg border-2 bg-card p-4"
+                  className="flex flex-col justify-between gap-3 border border-border/30 bg-card p-4 shadow-[2px_2px_0_0_var(--border)]"
                 >
-                  <div className="flex flex-col gap-1 text-xs">
-                    <strong className="text-sm text-foreground">
+                  <div className="flex flex-col gap-1">
+                    <strong className="text-body-md text-foreground">
                       {task.label}
                     </strong>
-                    <span className="mt-0.5 text-muted-foreground">{task.desc}</span>
+                    <span className="mt-0.5 text-xs text-muted-foreground">{task.desc}</span>
                   </div>
-                  <select
+                  <Select
                     value={mappings[task.key] || ""}
-                    onChange={(e) =>
-                      handleUpdateMapping(task.key, e.target.value)
+                    onValueChange={(value) =>
+                      handleUpdateMapping(task.key, value || "")
                     }
-                    className="w-full rounded border-2 bg-input px-2 py-1.5 text-xs shadow-sm outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
                   >
-                    <option value="">-- Use Active Key (Default) --</option>
-                    {instances
-                      .filter((inst) => (inst.type || "generative") === task.type)
-                      .map((inst) => (
-                        <option key={inst.id} value={inst.id}>
-                          {inst.name} ({inst.providerName}){inst.isActive ? " [Active]" : ""}
-                        </option>
-                      ))}
-                  </select>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="-- Use Active Key (Default) --" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectGroup>
+                        <SelectItem value="">-- Use Active Key (Default) --</SelectItem>
+                        {instances
+                          .filter((inst) => (inst.type || "generative") === task.type)
+                          .map((inst) => (
+                            <SelectItem key={inst.id} value={inst.id}>
+                              {inst.name} ({inst.providerName}){inst.isActive ? " [Active]" : ""}
+                            </SelectItem>
+                          ))}
+                      </SelectGroup>
+                    </SelectContent>
+                  </Select>
                 </div>
               ))}
             </div>
           </section>
 
-          <section className="mb-8 pb-6">
-            <h2 className="mb-3 text-lg">Available Scenarios</h2>
+          <section className="mb-8">
+            <h2 className="mb-3 text-headline-md text-foreground">Available Scenarios</h2>
             {config.availableScenarios.length === 0 ? (
-              <p className="mt-3 rounded border border-amber-200 bg-amber-100 px-3 py-2 text-xs text-amber-800">
+              <p className="mt-3 border border-accent bg-accent/25 px-3 py-2 text-label-sm text-foreground/80">
                 No scenarios found in{" "}
                 <code className="font-mono text-xs">
                   content/demo/scenarios/
@@ -179,9 +193,9 @@ export default function ConfigPage() {
                 <TableBody>
                   {config.availableScenarios.map((s) => (
                     <TableRow key={s.path}>
-                      <TableCell>{s.name}</TableCell>
+                      <TableCell className="text-body-md">{s.name}</TableCell>
                       <TableCell>
-                        <code className="font-mono text-xs text-blue-600">
+                        <code className="font-mono text-xs text-primary">
                           {s.path}
                         </code>
                       </TableCell>

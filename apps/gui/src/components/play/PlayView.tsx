@@ -18,6 +18,15 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Spinner } from "@/components/ui/spinner";
 import { PromptModal } from "./PromptModal";
+import { cn } from "@/lib/utils";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 function IntentTag({
   intent,
@@ -86,11 +95,16 @@ function LogEntryCard({
   const showMenu = !!(entry.rawPrompt || entry.decoderPrompt);
 
   return (
-    <div className="rounded border-2 bg-card p-3">
-      <div className="flex justify-between items-center mb-1.5 text-sm">
+    <div className={cn(
+      "border p-4 shadow-[2px_2px_0_0_var(--border)]",
+      isPlayerCard 
+        ? "border-primary bg-surface-container-low" 
+        : "border-border/30 bg-card"
+    )}>
+      <div className="flex justify-between items-center mb-2 border-b border-dotted border-border/20 pb-2">
         <div className="flex items-center gap-2">
-          <strong>{entry.entityName}</strong>
-          <span className="text-muted-foreground">
+          <strong className="text-body-md font-bold text-foreground">{entry.entityName}</strong>
+          <span className="text-xs text-muted-foreground font-mono">
             Turn {entry.turn} &middot;{" "}
             {formatSimTime(entry.timestamp)}
           </span>
@@ -106,8 +120,8 @@ function LogEntryCard({
           </Button>
         )}
       </div>
-      <div className="text-[0.9375rem] leading-relaxed mb-1.5">{entry.narrativeProse}</div>
-      <div className="flex flex-col gap-1">
+      <div className="text-body-md leading-relaxed mb-3 text-foreground/90 whitespace-pre-wrap">{entry.narrativeProse}</div>
+      <div className="flex flex-col gap-1.5 mt-2 border-t border-dotted border-border/10 pt-2">
         {entry.intents.map((intent, i) => (
           <IntentTag key={i} intent={intent} isSelf={isPlayerCard} />
         ))}
@@ -389,13 +403,13 @@ export function PlayView() {
   };
 
   return (
-    <div className="mx-auto max-w-[800px] p-8 pt-4">
-      <h1 className="text-2xl mb-4">Omnia Play</h1>
+    <div className="mx-auto max-w-[800px] px-10 py-12">
+      <h1 className="text-headline-lg text-primary mb-6 animate-fade-in">Omnia Play</h1>
 
       {!snapshot && (
         <div className="grid grid-cols-1 md:grid-cols-[1.2fr_1fr] gap-8 mt-4">
-          <div className="rounded-xl border-2 bg-card p-6 shadow-sm">
-            <h2 className="text-lg font-head font-medium mb-5 pb-2 border-b">Start New Simulation</h2>
+          <div className="border border-border/30 bg-card p-6 shadow-[2px_2px_0_0_var(--border)]">
+            <h2 className="text-headline-md text-foreground mb-5 pb-2 border-b border-dotted border-border/20">Start New Simulation</h2>
             <form onSubmit={handleStart} className="flex flex-col gap-4">
               {error && (
                 <div className="rounded border-2 border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
@@ -404,39 +418,47 @@ export function PlayView() {
               )}
               <div className="flex flex-col gap-1">
                 <label htmlFor="scenario" className="text-sm font-medium">Scenario</label>
-                <select
-                  id="scenario"
-                  name="scenario"
+                <Select
                   value={selectedScenario}
-                  onChange={(e) => setSelectedScenario(e.target.value)}
-                  className="w-full rounded border-2 bg-input px-3 py-2 text-sm shadow-sm outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                  onValueChange={(val) => setSelectedScenario(val || "")}
                 >
-                  {scenarios.map((s) => (
-                    <option key={s.path} value={s.path}>
-                      {s.name}
-                    </option>
-                  ))}
-                </select>
+                  <SelectTrigger className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectGroup>
+                      {scenarios.map((s) => (
+                        <SelectItem key={s.path} value={s.path}>
+                          {s.name}
+                        </SelectItem>
+                      ))}
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
               </div>
               <div className="flex flex-col gap-1">
                 <label htmlFor="playEntity" className="text-sm font-medium">
                   Play as (Entity)
                 </label>
-                <select
-                  id="playEntity"
-                  name="playEntity"
+                <Select
                   value={selectedEntity}
-                  onChange={(e) => setSelectedEntity(e.target.value)}
+                  onValueChange={(val) => setSelectedEntity(val || "")}
                   disabled={availableEntities.length === 0}
-                  className="w-full rounded border-2 bg-input px-3 py-2 text-sm shadow-sm outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-50"
                 >
-                  <option value="">-- Spectator (Observer) --</option>
-                  {availableEntities.map((ent) => (
-                    <option key={ent.id} value={ent.id}>
-                      {ent.name}
-                    </option>
-                  ))}
-                </select>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="-- Spectator (Observer) --" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectGroup>
+                      <SelectItem value="">-- Spectator (Observer) --</SelectItem>
+                      {availableEntities.map((ent) => (
+                        <SelectItem key={ent.id} value={ent.id}>
+                          {ent.name}
+                        </SelectItem>
+                      ))}
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
               </div>
 
               <Button type="submit" disabled={loading || providerInstances.length === 0}>
@@ -445,21 +467,21 @@ export function PlayView() {
             </form>
           </div>
 
-          <div className="rounded-xl border-2 bg-card p-6 shadow-sm">
-            <h2 className="text-lg font-head font-medium mb-5 pb-2 border-b">Resume Simulation</h2>
+          <div className="border border-border/30 bg-card p-6 shadow-[2px_2px_0_0_var(--border)]">
+            <h2 className="text-headline-md text-foreground mb-5 pb-2 border-b border-dotted border-border/20">Resume Simulation</h2>
             {savedSessions.length === 0 ? (
               <p className="text-sm italic text-muted-foreground">No saved sessions found. Start a new one!</p>
             ) : (
               <div className="flex flex-col gap-3 max-h-[400px] overflow-y-auto pr-1">
                 {savedSessions.map((s) => (
-                  <div key={s.id} className="rounded border-2 bg-muted/50 p-3 flex justify-between items-center gap-4 transition-all hover:border-muted-foreground/30">
+                  <div key={s.id} className="border border-border/30 bg-secondary/40 p-3 flex justify-between items-center gap-4 shadow-[1px_1px_0_0_var(--border)]">
                     <div className="flex flex-col gap-0.5 text-sm">
                       <strong className="text-sm text-foreground">{s.scenarioName}</strong>
-                      <span className="text-muted-foreground">
+                      <span className="text-xs text-muted-foreground">
                         Turn {s.turn} &middot; {s.entities.length} entities &middot; {s.status}
                       </span>
                       <span className="text-xs text-muted-foreground/60">
-                        Session ID: <code>{s.id}</code>
+                        Session ID: <code className="font-mono text-xs">{s.id}</code>
                       </span>
                     </div>
                     <div className="flex gap-2 items-center">
@@ -488,7 +510,7 @@ export function PlayView() {
         <>
           <div className="mb-4">
             <div className="flex justify-between items-center mb-1">
-              <h2 className="text-xl">{snapshot.scenarioName}</h2>
+              <h2 className="text-headline-md text-primary">{snapshot.scenarioName}</h2>
               {snapshot.status !== "done" && snapshot.status !== "error" && (
                 <div className="flex gap-2">
                   {snapshot.status === "running" && (
@@ -532,7 +554,7 @@ export function PlayView() {
             </p>
           </div>
 
-          <div className="flex flex-col gap-3 mb-4 max-h-[55vh] overflow-y-auto rounded border-2 bg-muted/30 p-3">
+          <div className="flex flex-col gap-4 mb-6 max-h-[55vh] overflow-y-auto border border-border/20 bg-secondary/30 p-4 shadow-[inset_1px_1px_4px_rgba(0,0,0,0.05)]">
             {(() => {
               const playerEntity = snapshot.entities.find((e) => e.isPlayer);
               return snapshot.log.map((entry, i) => (
@@ -545,7 +567,7 @@ export function PlayView() {
               ));
             })()}
             {loading && (
-              <div className="flex items-center gap-2 text-sm italic text-muted-foreground p-2">
+              <div className="flex items-center gap-2 text-sm italic text-muted-foreground p-2 font-mono">
                 <Spinner />
                 {statusText || "Processing..."}
               </div>
@@ -554,14 +576,14 @@ export function PlayView() {
           </div>
 
           {snapshot.status === "waiting_player" && snapshot.waitingEntity && (
-            <div className="rounded border-2 bg-muted/50 p-4">
+            <div className="border border-border/30 bg-card p-4 shadow-[2px_2px_0_0_var(--border)]">
               <details className="mb-3">
-                <summary className="cursor-pointer text-sm font-medium">
+                <summary className="cursor-pointer text-sm font-medium font-head text-primary">
                   <strong>
                     Your context as {snapshot.waitingEntity.name}
                   </strong>
                 </summary>
-                <pre className="text-xs whitespace-pre-wrap bg-muted p-2 rounded max-h-[200px] overflow-y-auto mt-2">
+                <pre className="text-xs whitespace-pre-wrap bg-input border border-border/20 p-2 max-h-[200px] overflow-y-auto mt-2 font-mono">
                   {snapshot.waitingEntity.userContext}
                 </pre>
               </details>
@@ -597,7 +619,7 @@ export function PlayView() {
           )}
 
           {error && !loading && (
-            <div className="rounded border-2 border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive mt-4">
+            <div className="border border-destructive bg-destructive/10 px-3 py-2 text-sm text-destructive mt-4">
               {error}
             </div>
           )}

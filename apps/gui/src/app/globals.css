@@ -12,7 +12,16 @@
 @theme inline {
   --font-head: var(--font-head);
   --font-sans: var(--font-sans);
-  --radius: var(--radius);
+  --font-mono: var(--font-mono);
+
+  --radius: 0px;
+  --radius-xs: 0px;
+  --radius-sm: 0px;
+  --radius-md: 0px;
+  --radius-lg: 0px;
+  --radius-xl: 0px;
+  --radius-2xl: 0px;
+  --radius-3xl: 0px;
 
   --shadow-xs: 1px 1px 0 0 var(--border);
   --shadow-sm: 2px 2px 0 0 var(--border);
@@ -42,51 +51,122 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+
+  --color-surface: var(--surface);
+  --color-surface-dim: var(--surface-dim);
+  --color-surface-bright: var(--surface-bright);
+  --color-surface-container-lowest: var(--surface-container-lowest);
+  --color-surface-container-low: var(--surface-container-low);
+  --color-surface-container: var(--surface-container);
+  --color-surface-container-high: var(--surface-container-high);
+  --color-surface-container-highest: var(--surface-container-highest);
 }
 
 :root {
   --radius: 0;
-  --background: #fff7e8;
-  --foreground: #000;
-  --card: #fff;
-  --card-foreground: #000;
-  --popover: #fff;
-  --popover-foreground: #000;
-  --primary: #ffdc58;
-  --primary-hover: #ffd12e;
-  --primary-foreground: #000;
-  --secondary: #000;
-  --secondary-foreground: #fff;
-  --muted: #efe7d6;
-  --muted-foreground: #6b6355;
-  --accent: #ffe7a3;
-  --accent-foreground: #000;
-  --destructive: #e63946;
-  --destructive-foreground: #fff;
-  --border: #000;
-  --input: #fff;
-  --ring: #000;
+  --background: #fff8f5;
+  --foreground: #201a16;
+  --card: #fcf3e8;
+  --card-foreground: #201a16;
+  --popover: #fff8f5;
+  --popover-foreground: #201a16;
+  --primary: #e58e58;
+  --primary-hover: #d47e48;
+  --primary-foreground: #201a16;
+  --secondary: #f5e6d3;
+  --secondary-foreground: #201a16;
+  --muted: #efe0cd;
+  --muted-foreground: #6d6354;
+  --accent: #ffd966;
+  --accent-foreground: #201a16;
+  --destructive: #ba1a1a;
+  --destructive-foreground: #ffffff;
+  --border: #5c544e;
+  --input: #fff8f5;
+  --ring: #e58e58;
+
+  --surface: #fff8f5;
+  --surface-dim: #e4d8d0;
+  --surface-bright: #fff8f5;
+  --surface-container-lowest: #ffffff;
+  --surface-container-low: #fef1e9;
+  --surface-container: #f8ece3;
+  --surface-container-high: #f2e6de;
+  --surface-container-highest: #ece0d8;
 }
 
 .dark {
-  --background: #1a1815;
-  --foreground: #f5f0e6;
-  --card: #262320;
-  --card-foreground: #f5f0e6;
-  --popover: #262320;
-  --popover-foreground: #f5f0e6;
-  --primary: #ffdc58;
-  --primary-hover: #ffd12e;
-  --primary-foreground: #000;
-  --secondary: #3a352f;
-  --secondary-foreground: #f5f0e6;
-  --muted: #2e2a24;
-  --muted-foreground: #b3ac9e;
-  --accent: #38342b;
-  --accent-foreground: #f5f0e6;
-  --destructive: #ff6b6b;
-  --destructive-foreground: #1a1815;
-  --border: #000;
-  --input: #262320;
-  --ring: #ffdc58;
+  --background: #201a16;
+  --foreground: #fff8f5;
+  --card: #362f2a;
+  --card-foreground: #fff8f5;
+  --popover: #201a16;
+  --popover-foreground: #fff8f5;
+  --primary: #e58e58;
+  --primary-hover: #ffb68c;
+  --primary-foreground: #201a16;
+  --secondary: #54433a;
+  --secondary-foreground: #fbeee6;
+  --muted: #362f2a;
+  --muted-foreground: #d9c2b6;
+  --accent: #c1a032;
+  --accent-foreground: #201a16;
+  --destructive: #ffdad6;
+  --destructive-foreground: #93000a;
+  --border: #877369;
+  --input: #362f2a;
+  --ring: #e58e58;
+
+  --surface: #201a16;
+  --surface-dim: #362f2a;
+  --surface-bright: #201a16;
+  --surface-container-lowest: #201a16;
+  --surface-container-low: #362f2a;
+  --surface-container: #362f2a;
+  --surface-container-high: #54433a;
+  --surface-container-highest: #54433a;
+}
+
+@utility text-headline-lg {
+  font-family: var(--font-head);
+  font-size: 48px;
+  font-weight: 400;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+
+@utility text-headline-md {
+  font-family: var(--font-head);
+  font-size: 32px;
+  font-weight: 400;
+  line-height: 1.2;
+}
+
+@utility text-headline-sm {
+  font-family: var(--font-head);
+  font-size: 24px;
+  font-weight: 400;
+  line-height: 1.2;
+}
+
+@utility text-body-lg {
+  font-family: var(--font-sans);
+  font-size: 18px;
+  font-weight: 400;
+  line-height: 1.6;
+}
+
+@utility text-body-md {
+  font-family: var(--font-sans);
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 1.6;
+}
+
+@utility text-label-sm {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.4;
+  text-transform: uppercase;
 }
