@@ -130,6 +130,11 @@ export function PlayView() {
   const logEndRef = useRef<HTMLDivElement>(null);
   const steppingRef = useRef(false);
   const pauseRequestedRef = useRef(false);
+  const snapshotRef = useRef<SimSnapshot | null>(null);
+
+  useEffect(() => {
+    snapshotRef.current = snapshot;
+  }, [snapshot]);
 
   const scrollToBottom = useCallback(() => {
     setTimeout(
@@ -151,7 +156,7 @@ export function PlayView() {
       pauseRequestedRef.current = false;
 
       try {
-        let current = snapshot;
+        let current = snapshotRef.current;
         while (true) {
           if (pauseRequestedRef.current) {
             break;
@@ -190,7 +195,7 @@ export function PlayView() {
         setStatusText("");
       }
     },
-    [snapshot],
+    [],
   );
 
   const handleResume = useCallback(async (id: string) => {

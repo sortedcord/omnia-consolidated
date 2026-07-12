@@ -26,7 +26,6 @@ import {
   Card,
   CardHeader,
   CardContent,
-  CardFooter,
   CardTitle,
   CardAction,
 } from "@/components/ui/card";
@@ -237,7 +236,6 @@ export function ProviderInstancesConfig({
 
   return (
     <section className="mb-8">
-      <h2 className="mb-3 text-lg">LLM Provider Instances</h2>
       {error && (
         <div className="mb-4 rounded border-2 border-red-500 bg-red-50 px-3 py-2 text-sm text-red-700">
           {error}
@@ -281,11 +279,12 @@ export function ProviderInstancesConfig({
                   >
                     <ItemContent>
                       <ItemTitle>{inst.name}</ItemTitle>
-                      <ItemDescription>
-                        {inst.providerName} ({inst.type || "generative"})
-                      </ItemDescription>
+                      <ItemDescription>{inst.providerName}</ItemDescription>
+                      <div className="flex flex-row gap-1.5">
+                        {inst.isActive && <Badge>Active</Badge>}
+                        <Badge variant="outline">{inst.type === "generative" ? "gen" : "embed"}</Badge>
+                      </div>
                     </ItemContent>
-                    {inst.isActive && <Badge>Active</Badge>}
                   </Item>
                 ))}
               </ItemGroup>
@@ -335,7 +334,7 @@ export function ProviderInstancesConfig({
                       }
                       items={[
                         {
-                          label: "Generative (Chat / Text Completion)",
+                          label: "Generative (Text Completion)",
                           value: "generative",
                         },
                         {
@@ -373,7 +372,10 @@ export function ProviderInstancesConfig({
                       <SelectTrigger className="w-full">
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent align="end" className="min-w-[var(--anchor-width)]">
+                      <SelectContent
+                        align="end"
+                        className="min-w-[var(--anchor-width)]"
+                      >
                         <SelectGroup>
                           {availableProviders.map((p) => (
                             <SelectItem key={p.id} value={p.id}>
@@ -438,7 +440,7 @@ export function ProviderInstancesConfig({
                   </div>
                 )}
 
-                <div className="mb-4 flex flex-row items-center gap-2">
+                <div className="flex flex-row items-center gap-2">
                   <Checkbox
                     id="formActive"
                     checked={editIsActive}
@@ -448,25 +450,25 @@ export function ProviderInstancesConfig({
                     Set as Active Instance
                   </Label>
                 </div>
-              </CardContent>
 
-              <CardFooter className="justify-between">
-                <div>
-                  {selectedInstanceId !== "new" && (
-                    <Button
-                      type="button"
-                      variant="destructive"
-                      onClick={handleDelete}
-                      disabled={loading}
-                    >
-                      Delete
-                    </Button>
-                  )}
+                <div className="flex flex-row items-center justify-between gap-2">
+                  <div>
+                    {selectedInstanceId !== "new" && (
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        onClick={handleDelete}
+                        disabled={loading}
+                      >
+                        Delete
+                      </Button>
+                    )}
+                  </div>
+                  <Button type="submit" disabled={loading}>
+                    {loading ? "Saving..." : "Save"}
+                  </Button>
                 </div>
-                <Button type="submit" disabled={loading}>
-                  {loading ? "Saving..." : "Save"}
-                </Button>
-              </CardFooter>
+              </CardContent>
             </form>
           )}
         </Card>
