@@ -239,7 +239,7 @@ ${candidatesList}
     }
 
     const result = response.data;
-    const db = (this.bufferRepo as any).db;
+    const db = (this.bufferRepo as unknown as { db: Record<string, unknown> }).db;
 
     const ledgerEntries: LedgerEntry[] = [];
     for (const chunk of result.chunks) {

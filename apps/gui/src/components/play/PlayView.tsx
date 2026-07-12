@@ -242,7 +242,8 @@ export function PlayView() {
           return;
         }
         setSnapshot(res.snapshot);
-        if (res.snapshot.status === "running") {
+        const hasPlayer = res.snapshot.entities.some((e) => e.isPlayer);
+        if (res.snapshot.status === "running" && hasPlayer) {
           await runSteps(res.snapshot.id);
         } else {
           setLoading(false);
@@ -306,12 +307,26 @@ export function PlayView() {
     switch (snapshot.status) {
       case "waiting_player":
         return `Waiting for your input as "${snapshot.waitingEntity?.name}"...`;
-      case "done":
-        return "Simulation complete.";
       case "error":
         return `Error: ${snapshot.error}`;
       default:
-        return "Simulation running...";
+        return null;
+    }
+  };
+
+  const getUnifiedStatus = () => {
+    if (!snapshot) return "";
+    switch (snapshot.status) {
+      case "running":
+        return loading ? "RUNNING" : "PAUSED";
+      case "waiting_player":
+        return "WAITING FOR INPUT";
+      case "done":
+        return "COMPLETE";
+      case "error":
+        return "ERROR";
+      default:
+        return (snapshot.status as string).toUpperCase();
     }
   };
 
@@ -449,7 +464,7 @@ export function PlayView() {
             <span className="text-muted-foreground">
               Status:{" "}
               <span className="text-primary font-bold">
-                {snapshot.status.toUpperCase()}
+                {getUnifiedStatus()}
               </span>
             </span>
             <span className="text-muted-foreground">
@@ -457,10 +472,12 @@ export function PlayView() {
               <span className="text-foreground font-bold">{snapshot.turn}</span>
             </span>
           </div>
-          <p className="text-xs font-medium text-primary mt-1 font-mono">
-            {loading && "⏳ "}
-            {statusMessage()}
-          </p>
+          {statusMessage() && (
+            <p className="text-xs font-medium text-primary mt-1 font-mono">
+              {loading && "⏳ "}
+              {statusMessage()}
+            </p>
+          )}
         </header>
 
         {/* Scrollable Center Viewport */}

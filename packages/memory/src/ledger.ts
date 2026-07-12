@@ -182,7 +182,7 @@ export class LedgerRepository {
     `;
     params.push(limit);
 
-    const rows = this.db.prepare(query).all(...params) as Record<string, any>[];
+    const rows = this.db.prepare(query).all(...params) as Record<string, unknown>[];
 
     if (rows.length === 0) return [];
 
