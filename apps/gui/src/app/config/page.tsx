@@ -4,28 +4,13 @@ import { useEffect, useState, useCallback } from "react";
 import {
   getConfigStatus,
   listProviderInstances,
-  createProviderInstance,
-  deleteProviderInstance,
-  setActiveProviderInstance,
   getProviderMappings,
   setProviderMapping,
-  updateProviderInstance,
   getAvailableProviders,
   regenerateEmbeddings,
 } from "@/app/play/actions";
 import type { ModelProviderInstance, ModelProviderMeta } from "@omnia/llm";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Badge } from "@/components/ui/badge";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { ProviderInstancesConfig } from "@/components/config/ProviderInstancesConfig";
 import {
   Table,
   TableBody,
@@ -49,61 +34,6 @@ export default function ConfigPage() {
   const [availableProviders, setAvailableProviders] = useState<ModelProviderMeta[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-
-  const [selectedInstanceId, setSelectedInstanceId] = useState<string | null>(null);
-  const [editName, setEditName] = useState("");
-  const [editProvider, setEditProvider] = useState("google-genai");
-  const [editKey, setEditKey] = useState("");
-  const [editModel, setEditModel] = useState("gemini-2.5-flash");
-  const [editIsActive, setEditIsActive] = useState(false);
-  const [editType, setEditType] = useState<"generative" | "embedding">("generative");
-  const [editMaxContext, setEditMaxContext] = useState<number>(32768);
-
-  useEffect(() => {
-    if (selectedInstanceId === null) {
-      setEditName("");
-      setEditProvider("google-genai");
-      setEditKey("");
-      setEditModel("gemini-2.5-flash");
-      setEditIsActive(false);
-      setEditType("generative");
-      setEditMaxContext(32768);
-    } else if (selectedInstanceId === "new") {
-      setEditName("");
-      const defaultProvider = "google-genai";
-      setEditProvider(defaultProvider);
-      setEditKey("");
-      setEditType("generative");
-      const pMeta = availableProviders.find((p) => p.id === defaultProvider);
-      setEditModel(pMeta?.defaultModel || "gemini-2.5-flash");
-      setEditIsActive(false);
-      setEditMaxContext(32768);
-    } else {
-      const inst = instances.find((i) => i.id === selectedInstanceId);
-      if (inst) {
-        setEditName(inst.name);
-        setEditProvider(inst.providerName);
-        setEditKey("");
-        setEditType(inst.type || "generative");
-        const pMeta = availableProviders.find((p) => p.id === inst.providerName);
-        setEditModel(inst.modelName || (inst.type === "embedding" ? pMeta?.defaultEmbeddingModel : pMeta?.defaultModel) || "gemini-2.5-flash");
-        setEditIsActive(inst.isActive);
-        setEditMaxContext(inst.maxContext !== undefined && inst.maxContext !== null ? inst.maxContext : 32768);
-      }
-    }
-  }, [selectedInstanceId, instances, availableProviders]);
-
-  const handleProviderChange = (providerId: string) => {
-    setEditProvider(providerId);
-    const pMeta = availableProviders.find((p) => p.id === providerId);
-    setEditModel(editType === "embedding" ? pMeta?.defaultEmbeddingModel || "" : pMeta?.defaultModel || "");
-  };
-
-  const handleTypeChange = (type: "generative" | "embedding") => {
-    setEditType(type);
-    const pMeta = availableProviders.find((p) => p.id === editProvider);
-    setEditModel(type === "embedding" ? pMeta?.defaultEmbeddingModel || "" : pMeta?.defaultModel || "");
-  };
 
   const loadInstances = useCallback(async () => {
     const list = await listProviderInstances();
@@ -135,90 +65,6 @@ export default function ConfigPage() {
   useEffect(() => {
     loadAll();
   }, [loadAll]);
-
-  const handleSave = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editName.trim()) {
-      setError("Name is required.");
-      return;
-    }
-
-    try {
-      setLoading(true);
-      setError("");
-
-      let shouldRegenerate = false;
-      let targetInstanceId = selectedInstanceId;
-
-      if (selectedInstanceId === "new") {
-        if (!editKey.trim()) {
-          setError("API Key is required for new instances.");
-          setLoading(false);
-          return;
-        }
-        const created = await createProviderInstance(editName, editProvider, editKey, editModel || undefined, editType, editType === "generative" ? editMaxContext : 0);
-        if (editIsActive) {
-          await setActiveProviderInstance(created.id);
-        }
-        targetInstanceId = created.id;
-        setSelectedInstanceId(created.id);
-      } else {
-        if (!selectedInstanceId) return;
-        const inst = instances.find((i) => i.id === selectedInstanceId);
-        if (inst && inst.type === "embedding") {
-          const isMapped = mappings["embeddings"] === selectedInstanceId;
-          const isActive = inst.isActive && !mappings["embeddings"];
-          if (isMapped || isActive) {
-            const hasChanged = inst.providerName !== editProvider || inst.modelName !== editModel;
-            if (hasChanged) {
-              const confirmChange = window.confirm(
-                "You have changed the configuration of the active embedding provider. This will delete all existing embeddings and regenerate them from scratch. Are you sure you want to do this?"
-              );
-              if (!confirmChange) {
-                setLoading(false);
-                return;
-              }
-              shouldRegenerate = true;
-            }
-          }
-        }
-
-        await updateProviderInstance(selectedInstanceId, editName, editProvider, editKey || undefined, editModel || undefined, editType, editType === "generative" ? editMaxContext : 0);
-        if (editIsActive) {
-          await setActiveProviderInstance(selectedInstanceId);
-        }
-      }
-
-      await loadInstances();
-      await loadMappings();
-
-      if (shouldRegenerate && targetInstanceId && targetInstanceId !== "new") {
-        await regenerateEmbeddings(targetInstanceId);
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleDelete = async () => {
-    if (selectedInstanceId === "new" || selectedInstanceId === null) return;
-    if (!confirm("Are you sure you want to delete this provider instance?")) return;
-
-    try {
-      setLoading(true);
-      setError("");
-      await deleteProviderInstance(selectedInstanceId);
-      setSelectedInstanceId(null);
-      await loadInstances();
-      await loadMappings();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleUpdateMapping = async (task: string, providerInstanceId: string) => {
     if (task === "embeddings" && mappings[task] !== providerInstanceId) {
@@ -255,195 +101,15 @@ export default function ConfigPage() {
 
       {config && (
         <div className={loading ? "opacity-60 pointer-events-none transition-opacity duration-200" : "transition-opacity duration-200"}>
-          <section className="mb-8 pb-6">
-            <h2 className="mb-3 text-lg">LLM Provider Instances</h2>
-            <div className="mt-4 grid min-h-[400px] grid-cols-1 overflow-hidden rounded-xl border border-gray-200 bg-white md:grid-cols-[30%_70%]">
-              {/* 30% area */}
-              <div className="flex flex-col border-r border-gray-200 bg-gray-50">
-                <div className="flex items-center justify-between border-b border-gray-200 bg-gray-100 px-4 py-4">
-                  <h3 className="m-0 text-[0.95rem] font-semibold text-[#111]">
-                    Instances
-                  </h3>
-                  <Button
-                    onClick={() => setSelectedInstanceId("new")}
-                    size="sm"
-                    className="bg-emerald-500 text-white hover:bg-emerald-600"
-                  >
-                    + Add
-                  </Button>
-                </div>
-                <div className="flex flex-1 flex-col overflow-y-auto">
-                  {instances.length === 0 ? (
-                    <div className="px-4 py-8 text-center text-xs text-gray-400">
-                      No instances configured
-                    </div>
-                  ) : (
-                    instances.map((inst) => (
-                      <div
-                        key={inst.id}
-                        onClick={() => setSelectedInstanceId(inst.id)}
-                        className={`cursor-pointer border-b border-gray-200 border-l-[3px] px-4 py-4 transition-all hover:bg-gray-100 ${
-                          selectedInstanceId === inst.id
-                            ? "border-l-blue-500 bg-blue-50"
-                            : "border-l-transparent"
-                        }`}
-                      >
-                        <div className="text-sm font-medium text-[#111]">
-                          {inst.name}
-                        </div>
-                        <div className="mt-1 flex items-center justify-between text-xs text-gray-500">
-                          <span>{inst.providerName} ({inst.type || "generative"})</span>
-                            {inst.isActive && (
-                            <Badge className="bg-green-100 text-green-700 hover:bg-green-100 border-green-200">
-                              Active
-                            </Badge>
-                          )}
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </div>
-
-              {/* 70% area */}
-              <div className="flex flex-col bg-white">
-                {selectedInstanceId === null ? (
-                  <div className="flex flex-1 flex-col items-center justify-center p-6 text-center text-sm text-gray-400">
-                    Press + to add or select an existing Instance to edit
-                  </div>
-                ) : (
-                  <form onSubmit={handleSave} className="flex h-full flex-col justify-between">
-                    <div className="flex flex-1 flex-col gap-5 p-6">
-                      <h3 className="m-0 mb-2 text-lg font-semibold text-[#111]">
-                        {selectedInstanceId === "new"
-                          ? "Create New Provider Instance"
-                          : `Configure: ${editName}`}
-                      </h3>
-
-                      <div className="flex flex-col gap-1.5">
-                        <Label htmlFor="formName">Friendly Name</Label>
-                        <Input
-                          id="formName"
-                          value={editName}
-                          onChange={(e) => setEditName(e.target.value)}
-                          placeholder="e.g. Gemini - Production"
-                          required
-                        />
-                      </div>
-
-                      <div className="flex flex-col gap-1.5">
-                        <Label>Instance Type</Label>
-                        <Select value={editType} onValueChange={(v) => handleTypeChange(v as "generative" | "embedding")}>
-                          <SelectTrigger className="w-full">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="generative">Generative (Chat / Text Completion)</SelectItem>
-                            <SelectItem value="embedding">Embedding (Vector generation)</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      <div className="flex flex-col gap-1.5">
-                        <Label>Provider Type</Label>
-                        <Select value={editProvider} onValueChange={handleProviderChange}>
-                          <SelectTrigger className="w-full">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {availableProviders.map((p) => (
-                              <SelectItem key={p.id} value={p.id}>
-                                {p.displayName}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        {editProvider && availableProviders.length > 0 && (
-                          <span className="mt-1 block rounded border border-2 bg-muted px-3 py-2 text-xs text-muted-foreground">
-                            {availableProviders.find((p) => p.id === editProvider)?.description}
-                          </span>
-                        )}
-                      </div>
-
-                      <div className="flex flex-col gap-1.5">
-                        <Label htmlFor="formKey">API Key</Label>
-                        <Input
-                          id="formKey"
-                          type="password"
-                          value={editKey}
-                          onChange={(e) => setEditKey(e.target.value)}
-                          placeholder={
-                            selectedInstanceId === "new"
-                              ? "AIzaSy..."
-                              : "•••••••• (unchanged)"
-                          }
-                          required={selectedInstanceId === "new"}
-                        />
-                      </div>
-
-                      <div className="flex flex-col gap-1.5">
-                        <Label htmlFor="formModel">Model Name</Label>
-                        <Input
-                          id="formModel"
-                          value={editModel}
-                          onChange={(e) => setEditModel(e.target.value)}
-                          placeholder="e.g. gemini-2.5-flash, gemini-2.5-pro"
-                        />
-                      </div>
-
-                      {editType === "generative" && (
-                        <div className="flex flex-col gap-1.5">
-                          <Label htmlFor="formMaxContext">Max Context Length (Tokens, 0 for infinite)</Label>
-                          <Input
-                            id="formMaxContext"
-                            type="number"
-                            value={editMaxContext}
-                            onChange={(e) => setEditMaxContext(parseInt(e.target.value) || 0)}
-                            min={0}
-                            placeholder="e.g. 32768"
-                          />
-                        </div>
-                      )}
-
-                      <div className="mt-1 flex flex-row items-center gap-2">
-                        <Checkbox
-                          id="formActive"
-                          checked={editIsActive}
-                          onCheckedChange={(v) => setEditIsActive(v === true)}
-                        />
-                        <Label htmlFor="formActive" className="cursor-pointer">
-                          Set as Active Instance
-                        </Label>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-between border-t-2 bg-muted/50 px-6 py-4">
-                      <div>
-                        {selectedInstanceId !== "new" && (
-                          <Button
-                            type="button"
-                            variant="destructive"
-                            onClick={handleDelete}
-                            disabled={loading}
-                          >
-                            Delete
-                          </Button>
-                        )}
-                      </div>
-                      <div>
-                        <Button
-                          type="submit"
-                          disabled={loading}
-                        >
-                          {loading ? "Saving..." : "Save"}
-                        </Button>
-                      </div>
-                    </div>
-                  </form>
-                )}
-              </div>
-            </div>
-          </section>
+          <ProviderInstancesConfig
+            instances={instances}
+            availableProviders={availableProviders}
+            mappings={mappings}
+            onChanged={async () => {
+              await loadInstances();
+              await loadMappings();
+            }}
+          />
 
           <section className="mb-8 pb-6">
             <h2 className="mb-3 text-lg">Task Provider Routing</h2>
