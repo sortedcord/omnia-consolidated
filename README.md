@@ -148,7 +148,7 @@ The bundled demo scenario is exactly this: [`talking-room`](./content/demo/scena
 
 ## Project Status: What `v0` Means
 
-The finish line for the first milestone is small on purpose.
+The finish line for the first milestone is small on purpose. `v0` is almost on the horizon. All assigned systems for `v0` have been implemented and tested throughout.
 
 **Currently Implemented:**
 
@@ -163,12 +163,10 @@ The finish line for the first milestone is small on purpose.
 **[The `v0` Milestone:](https://github.com/sortedcord/omnia-consolidated/milestone/1)**
 
 - [x] Two hand-authored NPCs live in one location, playable via CLI.
-- [ ] Each has buffer and vector-archive memory and recalls something said a few turns earlier. _(buffer: done; vector archive: not started)_
+- [x] Each has buffer and vector-archive memory and recalls something said a few turns earlier.
 - [x] One NPC knows a fact the other does not and, provably by testing, will not leak it.
 - [x] The Architect processes at least one non-trivial action per exchange with a visible state change.
 - [x] The whole thing persists to a SQLite file and reloads identically.
-
-**Explicitly out of scope for `v0`:** Constraint validators (beyond basic sense-checking), multi-location perception, affect-vector decay math, the Dossier, whims/simulation tiering, the delta ledger.
 
 ### A Note on Tech Debt
 
