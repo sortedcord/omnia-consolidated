@@ -8,7 +8,7 @@ Had a run of the `Talking Room` scenario right after implementing the `TimeDelta
 
 Because of this, I think there was some mismatch with Bob's handoff call and this got fed into his long term memory:
 
-![](../../assets/img/1_2026-07-13%2007-06-17.png)
+![](../../assets/img/1_2026-07-13_07-06-17.png)
 
 <details>
 ```
@@ -26,7 +26,7 @@ A bunch of things right of the bat:
 
 But because this did get added to the Actor Prompt, we got this action by Bob:
 
-![](../../assets/img/2_2026-07-13%2007-06-34.png)
+![](../../assets/img/2_2026-07-13_07-06-34.png)
 
 <details>
 ```
@@ -49,7 +49,7 @@ I feel a fresh wave of confusion wash over me, mingling with the persistent holl
 
 Which doesn't mention Jail at all. So we aptly then get a response from Bill:
 
-![](../../assets/img/3_2026-07-13%2007-06-54.png)
+![](../../assets/img/3_2026-07-13_07-06-54.png)
 
 <details>
 
