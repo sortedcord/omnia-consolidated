@@ -18,6 +18,21 @@ export class TimeDeltaGenerator implements IDeltaGenerator<TimeDelta> {
   constructor(private llmProvider: ILLMProvider) {}
 
   async generate(worldState: WorldState, intent: Intent): Promise<TimeDelta> {
+    // We can do this right now because we haven't yet started the implementation of the Event Scheduler or a Tick Engine
+    // Once we do, please review this code.
+    if (intent.type === "dialogue") {
+      return {
+        minutesToAdvance: 1,
+        explanation: "Dialogue action; 1 minute granted for quick exchange.",
+      };
+    }
+    if (intent.type === "monologue") {
+      return {
+        minutesToAdvance: 0,
+        explanation: "Monologue action; no time advanced for internal thought.",
+      };
+    }
+
     const systemPrompt = `
 You are the Time Delta Generator for the World Architect.
 Your task is to judge how much time (in minutes) a proposed action would logically take to execute in the physical world.
