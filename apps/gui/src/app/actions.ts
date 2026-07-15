@@ -5,6 +5,7 @@ import fs from "fs";
 import { simulationManager } from "@/lib/simulation";
 import type { SimSnapshot } from "@/lib/simulation";
 import { ProviderManager, ModelProviderInstance, AVAILABLE_PROVIDERS, ModelProviderMeta } from "@omnia/llm";
+import { ScenarioSchema } from "@omnia/scenario";
 
 function resolveScenarioPath(relative: string): string {
   const cwd = process.cwd();
@@ -286,4 +287,36 @@ export async function getAvailableProviders(): Promise<ModelProviderMeta[]> {
 
 export async function regenerateEmbeddings(newProviderInstanceId?: string): Promise<void> {
   await simulationManager.regenerateAllEmbeddings(newProviderInstanceId);
+}
+
+export async function saveScenario(scenario: unknown): Promise<{ ok: true } | { ok: false; error: string }> {
+  try {
+    const parsed = ScenarioSchema.parse(scenario);
+    const cwd = process.cwd();
+    const dir = path.resolve(cwd, "content/demo/scenarios");
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+    const filePath = path.join(dir, `${parsed.id}.json`);
+    fs.writeFileSync(filePath, JSON.stringify(parsed, null, 2), "utf-8");
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : String(err) };
+  }
+}
+
+export async function loadScenarioJson(scenarioPath: string): Promise<
+  | { ok: true; scenario: unknown }
+  | { ok: false; error: string }
+> {
+  try {
+    const resolved = resolveScenarioPath(scenarioPath);
+    if (!fs.existsSync(resolved)) {
+      return { ok: false, error: `Scenario file not found: ${scenarioPath}` };
+    }
+    const content = JSON.parse(fs.readFileSync(resolved, "utf-8"));
+    return { ok: true, scenario: content };
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : String(err) };
+  }
 }

@@ -34,6 +34,7 @@ const spaceMono = Space_Mono({
 
 const links = [
   { href: "/", label: "Home" },
+  { href: "/builder", label: "Builder" },
   { href: "/config", label: "Config" },
 ];
 
