@@ -46,4 +46,5 @@ export interface EntityData {
   attributes: AttributeData[];
   aliases: Record<string, string>;
   initialMemories: MemoryData[];
+  isAgent?: boolean;
 }

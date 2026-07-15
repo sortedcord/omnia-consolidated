@@ -59,6 +59,7 @@ export function EntitiesTab({
                   attributes: [],
                   aliases: {},
                   initialMemories: [],
+                  isAgent: true,
                 },
               ]);
               setSelectedEntIndex(entities.length);
@@ -138,6 +139,27 @@ export function EntitiesTab({
                   </option>
                 ))}
               </select>
+            </div>
+
+            <div className="space-y-1.5 pt-1 pb-2">
+              <div className="flex items-center gap-2">
+                <Label className="text-muted-foreground cursor-pointer flex items-center gap-1.5 text-sm font-semibold">
+                  <Checkbox
+                    checked={selectedEnt.isAgent !== false}
+                    onCheckedChange={(checked) => {
+                      const copy = [...entities];
+                      copy[selectedEntIndex].isAgent = !!checked;
+                      setEntities(copy);
+                    }}
+                  />
+                  Is Agent?
+                </Label>
+              </div>
+              <p className="text-[11px] text-muted-foreground/75 pl-5 select-none leading-normal">
+                When enabled, this entity will run an autonomous LLM loop to
+                perceive its environment, update its memories, and generate
+                prose narrative actions.
+              </p>
             </div>
 
             {/* Attributes */}
