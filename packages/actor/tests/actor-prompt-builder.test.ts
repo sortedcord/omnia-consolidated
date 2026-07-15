@@ -11,7 +11,7 @@ describe("ActorPromptBuilder with Long-Term Memory Integration", () => {
 
   beforeEach(() => {
     db = new Database(":memory:");
-    
+
     // Core database schemas for testing
     db.exec(`
       CREATE TABLE objects (
@@ -32,8 +32,11 @@ describe("ActorPromptBuilder with Long-Term Memory Integration", () => {
   });
 
   it("should inject both recent memory and recalled long-term memory with subjective aliases resolved", () => {
-    const world = new WorldState("world-123", new Date("2024-01-10T12:00:00.000Z"));
-    
+    const world = new WorldState(
+      "world-123",
+      new Date("2024-01-10T12:00:00.000Z"),
+    );
+
     const alice = new Entity("alice", "tavern");
     // Add subjective alias for bob
     alice.aliases.set("bob", "Strider");
@@ -85,7 +88,10 @@ describe("ActorPromptBuilder with Long-Term Memory Integration", () => {
   });
 
   it("should not explode if ledger contains no memories or is empty", () => {
-    const world = new WorldState("world-123", new Date("2024-01-10T12:00:00.000Z"));
+    const world = new WorldState(
+      "world-123",
+      new Date("2024-01-10T12:00:00.000Z"),
+    );
     const alice = new Entity("alice", "tavern");
     world.addEntity(alice);
 

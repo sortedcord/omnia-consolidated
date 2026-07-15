@@ -12,17 +12,13 @@ describe("Scenario Validation & Schema Tests (Tier 1)", () => {
     description: "A spooky old manor.",
     startTime: "2026-07-09T08:00:00.000Z",
     world: {
-      attributes: [
-        { name: "weather", value: "stormy", visibility: "PUBLIC" },
-      ],
+      attributes: [{ name: "weather", value: "stormy", visibility: "PUBLIC" }],
     },
     locations: [
       {
         id: "lobby",
         parentId: null,
-        attributes: [
-          { name: "light", value: "dim", visibility: "PUBLIC" },
-        ],
+        attributes: [{ name: "light", value: "dim", visibility: "PUBLIC" }],
         connections: [
           {
             targetId: "kitchen",
@@ -43,7 +39,12 @@ describe("Scenario Validation & Schema Tests (Tier 1)", () => {
         id: "investigator",
         locationId: "lobby",
         attributes: [
-          { name: "sanity", value: "100", visibility: "PRIVATE", allowedEntities: ["investigator"] },
+          {
+            name: "sanity",
+            value: "100",
+            visibility: "PRIVATE",
+            allowedEntities: ["investigator"],
+          },
         ],
         aliases: {
           ghost: "shadowy specter",
@@ -98,11 +99,16 @@ describe("Scenario Validation & Schema Tests (Tier 1)", () => {
     expect(world).not.toBeNull();
     expect(world!.id).toBe(targetWorldId);
     expect(world!.clock.get().toISOString()).toBe("2026-07-09T08:00:00.000Z");
-    expect(world!.attributes.get("name")?.getValue()).toBe("Haunted House Mystery");
+    expect(world!.attributes.get("name")?.getValue()).toBe(
+      "Haunted House Mystery",
+    );
     expect(world!.attributes.get("weather")?.getValue()).toBe("stormy");
 
     // 2. Verify Locations loaded with connections & hierarchy
-    const locations = coreRepo.listLocations(targetWorldId, (id, parentId) => new Location(id, parentId));
+    const locations = coreRepo.listLocations(
+      targetWorldId,
+      (id, parentId) => new Location(id, parentId),
+    );
     expect(locations).toHaveLength(2);
 
     const lobby = locations.find((l) => l.id === "lobby");
@@ -122,7 +128,9 @@ describe("Scenario Validation & Schema Tests (Tier 1)", () => {
     const loadedInvestigator = world!.getEntity("investigator");
     expect(loadedInvestigator).toBeDefined();
     expect(loadedInvestigator!.locationId).toBe("lobby");
-    expect(loadedInvestigator!.attributes.get("sanity")?.getValue()).toBe("100");
+    expect(loadedInvestigator!.attributes.get("sanity")?.getValue()).toBe(
+      "100",
+    );
     expect(loadedInvestigator!.aliases.get("ghost")).toBe("shadowy specter");
 
     // 4. Verify pre-seeded memories loaded in BufferRepository

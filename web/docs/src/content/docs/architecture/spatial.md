@@ -14,6 +14,7 @@ world → region → location → point of interest
 These nodes are connected by **portals** with sound and vision propagation values. When something happens, perception information bubbles outward through portals.
 
 Today, actors perceive:
+
 - Co-located entities
 - Their location's visible attributes
 

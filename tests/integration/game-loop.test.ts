@@ -1,6 +1,11 @@
 import { describe, test, expect } from "vitest";
 import Database from "better-sqlite3";
-import { WorldState, Entity, SQLiteRepository, AttributeVisibility } from "@omnia/core";
+import {
+  WorldState,
+  Entity,
+  SQLiteRepository,
+  AttributeVisibility,
+} from "@omnia/core";
 import { MockLLMProvider } from "@omnia/llm";
 import { IntentDecoder, IntentSequence } from "@omnia/intent";
 import { Architect } from "@omnia/architect";
@@ -51,34 +56,54 @@ describe("Omnia Integration Tests (Tier 2)", () => {
     };
 
     // 2. Architect validation & delta generation responses
-    const mockDialogueValidation = { isValid: true, reason: "Alice is able to speak to Bob." };
+    const mockDialogueValidation = {
+      isValid: true,
+      reason: "Alice is able to speak to Bob.",
+    };
 
-    const mockActionValidation = { isValid: true, reason: "The door is unlocked and reachable." };
-    const mockActionTimeDelta = { minutesToAdvance: 3, explanation: "Creeping silently and opening a door takes 3 minutes." };
+    const mockActionValidation = {
+      isValid: true,
+      reason: "The door is unlocked and reachable.",
+    };
+    const mockActionTimeDelta = {
+      minutesToAdvance: 3,
+      explanation: "Creeping silently and opening a door takes 3 minutes.",
+    };
 
     const llmProvider = new MockLLMProvider([
-      mockIntentSequence,       // Used by IntentDecoder
-      mockDialogueValidation,   // Used by Architect.validateIntent (Dialogue)
-      mockActionValidation,     // Used by Architect.validateIntent (Action)
-      mockActionTimeDelta       // Used by TimeDeltaGenerator (Action)
+      mockIntentSequence, // Used by IntentDecoder
+      mockDialogueValidation, // Used by Architect.validateIntent (Dialogue)
+      mockActionValidation, // Used by Architect.validateIntent (Action)
+      mockActionTimeDelta, // Used by TimeDeltaGenerator (Action)
     ]);
 
     const decoder = new IntentDecoder(llmProvider);
     const architect = new Architect(llmProvider, repo);
 
     // 1. Decode the raw prose into structured intents
-    const narrativeProse = '"Cover me," Alice whispered to Bob. She crept towards the door and pulled the handle.';
-    const decodedSequence = await decoder.decode(world, "alice", narrativeProse);
+    const narrativeProse =
+      '"Cover me," Alice whispered to Bob. She crept towards the door and pulled the handle.';
+    const decodedSequence = await decoder.decode(
+      world,
+      "alice",
+      narrativeProse,
+    );
 
     expect(decodedSequence.intents).toHaveLength(2);
 
     // 2. Process first intent (dialogue)
-    const result1 = await architect.processIntent(world, decodedSequence.intents[0]);
+    const result1 = await architect.processIntent(
+      world,
+      decodedSequence.intents[0],
+    );
     expect(result1.isValid).toBe(true);
     expect(result1.timeDelta!.minutesToAdvance).toBe(1);
 
     // 3. Process second intent (action)
-    const result2 = await architect.processIntent(world, decodedSequence.intents[1]);
+    const result2 = await architect.processIntent(
+      world,
+      decodedSequence.intents[1],
+    );
     expect(result2.isValid).toBe(true);
     expect(result2.timeDelta!.minutesToAdvance).toBe(3);
 
@@ -88,7 +113,9 @@ describe("Omnia Integration Tests (Tier 2)", () => {
 
     // 5. Verify database state clock was advanced and persisted
     const reloadedWorld = repo.loadWorldState("world-abc")!;
-    expect(reloadedWorld.clock.get().toISOString()).toBe(expectedTime.toISOString());
+    expect(reloadedWorld.clock.get().toISOString()).toBe(
+      expectedTime.toISOString(),
+    );
 
     db.close();
   });
@@ -128,13 +155,19 @@ describe("Omnia Integration Tests (Tier 2)", () => {
 
     // LLM validation / time delta mock responses:
     // For intent1 (action):
-    const mockActionValidation = { isValid: false, reason: "Hairpins cannot pick high-security locks." };
+    const mockActionValidation = {
+      isValid: false,
+      reason: "Hairpins cannot pick high-security locks.",
+    };
     // For intent2 (dialogue):
-    const mockDialogueValidation = { isValid: true, reason: "Alice is free to talk." };
+    const mockDialogueValidation = {
+      isValid: true,
+      reason: "Alice is free to talk.",
+    };
 
     const llmProvider = new MockLLMProvider([
-      mockActionValidation,     // Used by Architect.validateIntent (Action)
-      mockDialogueValidation,   // Used by Architect.validateIntent (Dialogue)
+      mockActionValidation, // Used by Architect.validateIntent (Action)
+      mockDialogueValidation, // Used by Architect.validateIntent (Dialogue)
     ]);
 
     const architect = new Architect(llmProvider, repo);

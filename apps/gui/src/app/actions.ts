@@ -4,7 +4,12 @@ import path from "path";
 import fs from "fs";
 import { simulationManager } from "@/lib/simulation";
 import type { SimSnapshot } from "@/lib/simulation";
-import { ProviderManager, ModelProviderInstance, AVAILABLE_PROVIDERS, ModelProviderMeta } from "@omnia/llm";
+import {
+  ProviderManager,
+  ModelProviderInstance,
+  AVAILABLE_PROVIDERS,
+  ModelProviderMeta,
+} from "@omnia/llm";
 
 function resolveScenarioPath(relative: string): string {
   const cwd = process.cwd();
@@ -25,8 +30,7 @@ function resolveScenarioPath(relative: string): string {
 }
 
 type ActionResult =
-  | { ok: true; snapshot: SimSnapshot }
-  | { ok: false; error: string };
+  { ok: true; snapshot: SimSnapshot } | { ok: false; error: string };
 
 export async function startSimulation(input: {
   scenario?: string;
@@ -168,8 +172,7 @@ export async function getConfigStatus(): Promise<{
 }
 
 export async function listSavedSimulations(): Promise<
-  | { ok: true; sessions: SimSnapshot[] }
-  | { ok: false; error: string }
+  { ok: true; sessions: SimSnapshot[] } | { ok: false; error: string }
 > {
   try {
     const sessions = simulationManager.listSavedSessions();
@@ -197,7 +200,9 @@ export async function resumeSimulation(simId: string): Promise<ActionResult> {
   }
 }
 
-export async function getScenarioEntities(scenarioPath: string): Promise<
+export async function getScenarioEntities(
+  scenarioPath: string,
+): Promise<
   | { ok: true; entities: { id: string; name: string }[] }
   | { ok: false; error: string }
 > {
@@ -207,10 +212,12 @@ export async function getScenarioEntities(scenarioPath: string): Promise<
       return { ok: false, error: `Scenario file not found: ${scenarioPath}` };
     }
     const content = JSON.parse(fs.readFileSync(resolved, "utf-8"));
-    const entities = (content.entities || []).map((e: { id: string; name?: string }) => ({
-      id: e.id,
-      name: e.name || e.id,
-    }));
+    const entities = (content.entities || []).map(
+      (e: { id: string; name?: string }) => ({
+        id: e.id,
+        name: e.name || e.id,
+      }),
+    );
     return { ok: true, entities };
   } catch (err) {
     return {
@@ -220,9 +227,9 @@ export async function getScenarioEntities(scenarioPath: string): Promise<
   }
 }
 
-export async function deleteSimulation(simId: string): Promise<
-  { ok: true } | { ok: false; error: string }
-> {
+export async function deleteSimulation(
+  simId: string,
+): Promise<{ ok: true } | { ok: false; error: string }> {
   try {
     simulationManager.deleteSession(simId);
     return { ok: true };
@@ -234,7 +241,9 @@ export async function deleteSimulation(simId: string): Promise<
   }
 }
 
-export async function listProviderInstances(): Promise<ModelProviderInstance[]> {
+export async function listProviderInstances(): Promise<
+  ModelProviderInstance[]
+> {
   return ProviderManager.list();
 }
 
@@ -246,7 +255,14 @@ export async function createProviderInstance(
   type: "generative" | "embedding" = "generative",
   maxContext?: number,
 ): Promise<ModelProviderInstance> {
-  return ProviderManager.create(name, providerName, apiKey, modelName, type, maxContext);
+  return ProviderManager.create(
+    name,
+    providerName,
+    apiKey,
+    modelName,
+    type,
+    maxContext,
+  );
 }
 
 export async function deleteProviderInstance(id: string): Promise<void> {
@@ -266,7 +282,15 @@ export async function updateProviderInstance(
   type: "generative" | "embedding" = "generative",
   maxContext?: number,
 ): Promise<void> {
-  ProviderManager.update(id, name, providerName, apiKey, modelName, type, maxContext);
+  ProviderManager.update(
+    id,
+    name,
+    providerName,
+    apiKey,
+    modelName,
+    type,
+    maxContext,
+  );
 }
 
 export async function getProviderMappings(): Promise<Record<string, string>> {
@@ -284,6 +308,8 @@ export async function getAvailableProviders(): Promise<ModelProviderMeta[]> {
   return AVAILABLE_PROVIDERS;
 }
 
-export async function regenerateEmbeddings(newProviderInstanceId?: string): Promise<void> {
+export async function regenerateEmbeddings(
+  newProviderInstanceId?: string,
+): Promise<void> {
   await simulationManager.regenerateAllEmbeddings(newProviderInstanceId);
 }

@@ -3,12 +3,12 @@
   "name": "omnia-docs",
   "compatibility_date": "2026-07-09",
   "assets": {
-    "directory": "./dist"
+    "directory": "./dist",
   },
   "routes": [
     {
       "pattern": "omnia.adityagupta.dev/docs*",
-      "zone_name": "adityagupta.dev"
-    }
-  ]
+      "zone_name": "adityagupta.dev",
+    },
+  ],
 }

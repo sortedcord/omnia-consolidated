@@ -72,7 +72,7 @@ describe("MockEmbeddingProvider Unit Tests (Tier 1)", () => {
     expect(vec1.length).toBe(768);
     expect(vec2.length).toBe(768);
     expect(vec1).toEqual(vec2); // Deterministic
-    
+
     // Ensure values are numbers between -1.0 and 1.0 (since they are generated with Math.sin)
     expect(typeof vec1[0]).toBe("number");
     expect(vec1[0]).toBeGreaterThanOrEqual(-1.0);

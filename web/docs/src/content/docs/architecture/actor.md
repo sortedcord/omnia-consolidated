@@ -34,11 +34,11 @@ Establishes the role, rules, and output contract:
 
 Epistemically bounded, with these sections:
 
-| Section | Content | Source |
-|---|---|---|
-| Current moment | The subjective present time | `worldState.clock.get().toISOString()` |
-| The world as you perceive it | Self-visible attributes, co-located entities + their visible attributes, other presences elsewhere | `serializeSubjectiveWorldState()` |
-| Your recent memory | Recent `BufferEntry`s, alias-substituted, with relative time phrasing | `serializeSubjectiveBufferEntry()` |
+| Section                      | Content                                                                                            | Source                                 |
+| ---------------------------- | -------------------------------------------------------------------------------------------------- | -------------------------------------- |
+| Current moment               | The subjective present time                                                                        | `worldState.clock.get().toISOString()` |
+| The world as you perceive it | Self-visible attributes, co-located entities + their visible attributes, other presences elsewhere | `serializeSubjectiveWorldState()`      |
+| Your recent memory           | Recent `BufferEntry`s, alias-substituted, with relative time phrasing                              | `serializeSubjectiveBufferEntry()`     |
 
 No system UUIDs, no private attributes the entity lacks ACL access to, and no objective-world-state dump are present.
 
@@ -81,13 +81,13 @@ Monologue (`"monologue"`) is the third intent type. Its properties:
 
 ## Key Files
 
-| File | Role |
-|---|---|
-| `packages/actor/src/actor-prompt-builder.ts` | Assembles the epistemically-bounded actor prompt |
-| `packages/actor/src/actor.ts` | `ActorAgent` class: orchestrates prompt → LLM → decoder flow |
-| `packages/actor/src/index.ts` | Package exports |
-| `packages/core/src/world.ts:72` | `serializeSubjectiveWorldState()` |
-| `packages/intent/src/intent.ts:8` | `IntentTypeSchema` — includes `"monologue"` |
-| `packages/intent/src/intent-decoder.ts:30` | Decoder system prompt |
-| `packages/architect/src/architect.ts:35` | Monologue short-circuit |
-| `packages/architect/src/llm-validator.ts:19` | Defensive monologue guard |
+| File                                         | Role                                                         |
+| -------------------------------------------- | ------------------------------------------------------------ |
+| `packages/actor/src/actor-prompt-builder.ts` | Assembles the epistemically-bounded actor prompt             |
+| `packages/actor/src/actor.ts`                | `ActorAgent` class: orchestrates prompt → LLM → decoder flow |
+| `packages/actor/src/index.ts`                | Package exports                                              |
+| `packages/core/src/world.ts:72`              | `serializeSubjectiveWorldState()`                            |
+| `packages/intent/src/intent.ts:8`            | `IntentTypeSchema` — includes `"monologue"`                  |
+| `packages/intent/src/intent-decoder.ts:30`   | Decoder system prompt                                        |
+| `packages/architect/src/architect.ts:35`     | Monologue short-circuit                                      |
+| `packages/architect/src/llm-validator.ts:19` | Defensive monologue guard                                    |

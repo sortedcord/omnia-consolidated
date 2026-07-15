@@ -13,7 +13,8 @@ export class Architect {
   private timeDeltaGenerator: TimeDeltaGenerator;
 
   constructor(
-    llmProvider: ILLMProvider | { validator: ILLMProvider; timedelta: ILLMProvider },
+    llmProvider:
+      ILLMProvider | { validator: ILLMProvider; timedelta: ILLMProvider },
     private repo?: SQLiteRepository,
   ) {
     let valProv: ILLMProvider;
@@ -60,8 +61,12 @@ export class Architect {
     if (intent.type === "monologue") {
       return {
         isValid: true,
-        reason: "Monologue intent bypasses validation (internal thought, not perceivable).",
-        timeDelta: { minutesToAdvance: 0, explanation: "Internal thought — no time elapsed." },
+        reason:
+          "Monologue intent bypasses validation (internal thought, not perceivable).",
+        timeDelta: {
+          minutesToAdvance: 0,
+          explanation: "Internal thought — no time elapsed.",
+        },
       };
     }
 

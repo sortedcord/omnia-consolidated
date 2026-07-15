@@ -1,10 +1,17 @@
 import { z } from "zod";
-import { ILLMProvider, LLMRequest, LLMResponse, LLMCallRecord, IEmbeddingProvider } from "../llm.js";
+import {
+  ILLMProvider,
+  LLMRequest,
+  LLMResponse,
+  LLMCallRecord,
+  IEmbeddingProvider,
+} from "../llm.js";
 
 export class MockLLMProvider implements ILLMProvider {
   static readonly providerId = "mock";
   static readonly displayName = "Mock LLM Provider";
-  static readonly description = "Stateless mock provider for testing and offline development";
+  static readonly description =
+    "Stateless mock provider for testing and offline development";
   static readonly defaultModel = "mock";
 
   providerName = "mock";
@@ -30,7 +37,10 @@ export class MockLLMProvider implements ILLMProvider {
       const parsed = request.schema.parse(next);
       return { success: true, data: parsed, usage };
     } catch (e) {
-      return { success: false, error: e instanceof Error ? e.message : String(e) };
+      return {
+        success: false,
+        error: e instanceof Error ? e.message : String(e),
+      };
     }
   }
 }

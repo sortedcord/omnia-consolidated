@@ -10,4 +10,3 @@ export * from "./world.js";
 export * from "./clock.js";
 export * from "./repository.js";
 export * from "./alias.js";
-

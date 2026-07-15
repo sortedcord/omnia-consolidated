@@ -12,6 +12,7 @@ The central testing challenge: most of Omnia is deterministic and highly testabl
 Unit tests reside within each package's `tests/` directory. They do not use LLMs and do not perform I/O. This tier covers the majority of the codebase.
 
 Examples:
+
 - `hasAccess()` / ACL grant-revoke logic
 - `addAttribute` rejecting duplicate names
 - `WorldClock.advance()` / `getTimeOfDay()` boundaries

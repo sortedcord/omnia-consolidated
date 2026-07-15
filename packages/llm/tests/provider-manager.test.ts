@@ -1,7 +1,11 @@
 import { describe, test, expect, beforeEach, afterEach } from "vitest";
 import fs from "fs";
 import path from "path";
-import { ProviderManager, setDbPathOverride, resetHasBootstrapped } from "../src/index.js";
+import {
+  ProviderManager,
+  setDbPathOverride,
+  resetHasBootstrapped,
+} from "../src/index.js";
 
 describe("ProviderManager Bootstrapping & CRUD Unit Tests", () => {
   let tempDbPath: string;
@@ -17,7 +21,10 @@ describe("ProviderManager Bootstrapping & CRUD Unit Tests", () => {
     resetHasBootstrapped();
 
     // Generate a unique temp database path for this test run
-    tempDbPath = path.resolve(process.cwd(), `test-settings-${Date.now()}-${Math.random().toString(36).substring(2)}.db`);
+    tempDbPath = path.resolve(
+      process.cwd(),
+      `test-settings-${Date.now()}-${Math.random().toString(36).substring(2)}.db`,
+    );
     setDbPathOverride(tempDbPath);
   });
 
@@ -76,8 +83,14 @@ describe("ProviderManager Bootstrapping & CRUD Unit Tests", () => {
     expect(bootstrapped.isActive).toBe(true);
 
     // Edit name and key
-    ProviderManager.update(bootstrapped.id, "My Gemini Key", "google-genai", "new-secret-key", "gemini-2.5-pro");
-    
+    ProviderManager.update(
+      bootstrapped.id,
+      "My Gemini Key",
+      "google-genai",
+      "new-secret-key",
+      "gemini-2.5-pro",
+    );
+
     const listAfterUpdate = ProviderManager.list();
     expect(listAfterUpdate.length).toBe(2);
     const updated = listAfterUpdate.find((p) => p.id === bootstrapped.id);

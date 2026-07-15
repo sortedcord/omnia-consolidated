@@ -45,7 +45,7 @@ describe("OpenRouterProvider Unit Tests (Tier 1)", () => {
     // Save current config
     const originalKey = llmConfig.OPENROUTER_API_KEY;
     llmConfig.OPENROUTER_API_KEY = "env-dummy-key";
-    
+
     try {
       const provider = new OpenRouterProvider();
       expect(provider.providerName).toBe("OpenRouter");
@@ -61,7 +61,7 @@ describe("OpenRouterProvider Unit Tests (Tier 1)", () => {
 
     try {
       expect(() => new OpenRouterProvider()).toThrow(
-        "OPENROUTER_API_KEY is required to initialize OpenRouterProvider"
+        "OPENROUTER_API_KEY is required to initialize OpenRouterProvider",
       );
     } finally {
       llmConfig.OPENROUTER_API_KEY = originalKey;

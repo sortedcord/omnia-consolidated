@@ -10,5 +10,5 @@ allowBuilds:
   unrs-resolver: true
   workerd: true
 minimumReleaseAgeExclude:
-  - '@astrojs/telemetry@3.3.3'
+  - "@astrojs/telemetry@3.3.3"
   - astro@7.0.7

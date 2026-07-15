@@ -1,13 +1,23 @@
 import { z } from "zod";
-import { ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings } from "@langchain/google-genai";
-import { ILLMProvider, LLMRequest, LLMResponse, LLMCallRecord, IEmbeddingProvider } from "../llm.js";
+import {
+  ChatGoogleGenerativeAI,
+  GoogleGenerativeAIEmbeddings,
+} from "@langchain/google-genai";
+import {
+  ILLMProvider,
+  LLMRequest,
+  LLMResponse,
+  LLMCallRecord,
+  IEmbeddingProvider,
+} from "../llm.js";
 import { llmConfig } from "../config.js";
 import { ProviderManager } from "../provider-manager.js";
 
 export class GeminiProvider implements ILLMProvider {
   static readonly providerId = "google-genai";
   static readonly displayName = "Google Gemini";
-  static readonly description = "Official Gemini integration using Google Gen AI SDK";
+  static readonly description =
+    "Official Gemini integration using Google Gen AI SDK";
   static readonly defaultModel = "gemini-2.5-flash";
 
   providerName = "Gemini";
@@ -17,7 +27,12 @@ export class GeminiProvider implements ILLMProvider {
   private maxContextUsed?: number;
   lastCalls: LLMCallRecord[] = [];
 
-  constructor(apiKey?: string, modelName?: string, providerInstanceName?: string, maxContext?: number) {
+  constructor(
+    apiKey?: string,
+    modelName?: string,
+    providerInstanceName?: string,
+    maxContext?: number,
+  ) {
     let key = apiKey;
     let model = modelName;
     this.providerInstanceName = providerInstanceName;
@@ -47,7 +62,9 @@ export class GeminiProvider implements ILLMProvider {
     }
 
     if (!key) {
-      throw new Error("GOOGLE_API_KEY is required to initialize GeminiProvider");
+      throw new Error(
+        "GOOGLE_API_KEY is required to initialize GeminiProvider",
+      );
     }
 
     this.modelNameUsed = model || "gemini-2.5-flash";
@@ -60,7 +77,9 @@ export class GeminiProvider implements ILLMProvider {
   async generateStructuredResponse<T extends z.ZodTypeAny>(
     request: LLMRequest<T>,
   ): Promise<LLMResponse<z.infer<T>>> {
-    const structuredModel = this.model.withStructuredOutput(request.schema, { includeRaw: true });
+    const structuredModel = this.model.withStructuredOutput(request.schema, {
+      includeRaw: true,
+    });
     const result = (await structuredModel.invoke([
       { role: "system", content: request.systemPrompt },
       { role: "user", content: request.userContext },
@@ -84,7 +103,8 @@ export class GeminiProvider implements ILLMProvider {
       totalTokens: raw?.usage_metadata?.total_tokens || 0,
       modelName: this.modelNameUsed,
       providerInstanceName: this.providerInstanceName || "Default",
-      maxContext: this.maxContextUsed !== undefined ? this.maxContextUsed : 32768,
+      maxContext:
+        this.maxContextUsed !== undefined ? this.maxContextUsed : 32768,
     };
 
     this.lastCalls.push({
@@ -123,7 +143,9 @@ export class GeminiEmbeddingProvider implements IEmbeddingProvider {
     }
 
     if (!key) {
-      throw new Error("GOOGLE_API_KEY is required to initialize GeminiEmbeddingProvider");
+      throw new Error(
+        "GOOGLE_API_KEY is required to initialize GeminiEmbeddingProvider",
+      );
     }
 
     this.model = new GoogleGenerativeAIEmbeddings({

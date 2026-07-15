@@ -1,13 +1,19 @@
 import { z } from "zod";
 import { ChatOpenRouter } from "@langchain/openrouter";
-import { ILLMProvider, LLMRequest, LLMResponse, LLMCallRecord } from "../llm.js";
+import {
+  ILLMProvider,
+  LLMRequest,
+  LLMResponse,
+  LLMCallRecord,
+} from "../llm.js";
 import { llmConfig } from "../config.js";
 import { ProviderManager } from "../provider-manager.js";
 
 export class OpenRouterProvider implements ILLMProvider {
   static readonly providerId = "openrouter";
   static readonly displayName = "OpenRouter";
-  static readonly description = "Multi-model router supporting Anthropic, OpenAI, DeepSeek, and local models";
+  static readonly description =
+    "Multi-model router supporting Anthropic, OpenAI, DeepSeek, and local models";
   static readonly defaultModel = "google/gemini-2.5-flash";
 
   providerName = "OpenRouter";
@@ -17,7 +23,12 @@ export class OpenRouterProvider implements ILLMProvider {
   private maxContextUsed?: number;
   lastCalls: LLMCallRecord[] = [];
 
-  constructor(apiKey?: string, modelName?: string, providerInstanceName?: string, maxContext?: number) {
+  constructor(
+    apiKey?: string,
+    modelName?: string,
+    providerInstanceName?: string,
+    maxContext?: number,
+  ) {
     let key = apiKey;
     let model = modelName;
     this.providerInstanceName = providerInstanceName;
@@ -47,7 +58,9 @@ export class OpenRouterProvider implements ILLMProvider {
     }
 
     if (!key) {
-      throw new Error("OPENROUTER_API_KEY is required to initialize OpenRouterProvider");
+      throw new Error(
+        "OPENROUTER_API_KEY is required to initialize OpenRouterProvider",
+      );
     }
 
     this.modelNameUsed = model || "google/gemini-2.5-flash";
@@ -60,7 +73,9 @@ export class OpenRouterProvider implements ILLMProvider {
   async generateStructuredResponse<T extends z.ZodTypeAny>(
     request: LLMRequest<T>,
   ): Promise<LLMResponse<z.infer<T>>> {
-    const structuredModel = this.model.withStructuredOutput(request.schema, { includeRaw: true });
+    const structuredModel = this.model.withStructuredOutput(request.schema, {
+      includeRaw: true,
+    });
     const result = (await structuredModel.invoke([
       { role: "system", content: request.systemPrompt },
       { role: "user", content: request.userContext },
@@ -84,7 +99,8 @@ export class OpenRouterProvider implements ILLMProvider {
       totalTokens: raw?.usage_metadata?.total_tokens || 0,
       modelName: this.modelNameUsed,
       providerInstanceName: this.providerInstanceName || "Default",
-      maxContext: this.maxContextUsed !== undefined ? this.maxContextUsed : 32768,
+      maxContext:
+        this.maxContextUsed !== undefined ? this.maxContextUsed : 32768,
     };
 
     this.lastCalls.push({

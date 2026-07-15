@@ -5,8 +5,5 @@
     "outDir": "dist"
   },
   "include": ["src"],
-  "references": [
-    { "path": "../core" },
-    { "path": "../llm" }
-  ]
+  "references": [{ "path": "../core" }, { "path": "../llm" }]
 }

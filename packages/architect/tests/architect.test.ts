@@ -1,6 +1,11 @@
 import { describe, test, expect } from "vitest";
 import Database from "better-sqlite3";
-import { WorldState, Entity, SQLiteRepository, AttributeVisibility } from "@omnia/core";
+import {
+  WorldState,
+  Entity,
+  SQLiteRepository,
+  AttributeVisibility,
+} from "@omnia/core";
 import { MockLLMProvider } from "@omnia/llm";
 import { Architect, AliasDeltaGenerator } from "@omnia/architect";
 import { Intent } from "@omnia/intent";
@@ -96,7 +101,10 @@ describe("TimeDeltaGenerator & Architect.processIntent Unit Tests (Tier 1)", () 
     const db = new Database(":memory:");
     const repo = new SQLiteRepository(db);
 
-    const world = new WorldState("world-xyz", new Date("2026-07-06T12:00:00.000Z"));
+    const world = new WorldState(
+      "world-xyz",
+      new Date("2026-07-06T12:00:00.000Z"),
+    );
     const alice = new Entity("alice");
     world.addEntity(alice);
 
@@ -106,8 +114,14 @@ describe("TimeDeltaGenerator & Architect.processIntent Unit Tests (Tier 1)", () 
     // Setup mock LLM responses:
     // First call: validateIntent (ValidationResult)
     // Second call: TimeDeltaGenerator (TimeDelta)
-    const mockValidation = { isValid: true, reason: "Alice has the lockpick kit and skill." };
-    const mockTimeDelta = { minutesToAdvance: 20, explanation: "Picking a lock takes time." };
+    const mockValidation = {
+      isValid: true,
+      reason: "Alice has the lockpick kit and skill.",
+    };
+    const mockTimeDelta = {
+      minutesToAdvance: 20,
+      explanation: "Picking a lock takes time.",
+    };
     const llmProvider = new MockLLMProvider([mockValidation, mockTimeDelta]);
 
     const architect = new Architect(llmProvider, repo);
@@ -131,7 +145,9 @@ describe("TimeDeltaGenerator & Architect.processIntent Unit Tests (Tier 1)", () 
     expect(result.timeDelta!.minutesToAdvance).toBe(20);
 
     // Verify clock was advanced locally
-    const expectedTime = new Date(new Date("2026-07-06T12:00:00.000Z").getTime() + 20 * 60_000);
+    const expectedTime = new Date(
+      new Date("2026-07-06T12:00:00.000Z").getTime() + 20 * 60_000,
+    );
     expect(world.clock.get().toISOString()).toBe(expectedTime.toISOString());
 
     // Verify it was persisted to the database
@@ -151,7 +167,10 @@ describe("TimeDeltaGenerator & Architect.processIntent Unit Tests (Tier 1)", () 
     world.addEntity(bob);
     repo.saveWorldState(world);
 
-    const mockValidation = { isValid: false, reason: "Bob is bound by chains." };
+    const mockValidation = {
+      isValid: false,
+      reason: "Bob is bound by chains.",
+    };
     const llmProvider = new MockLLMProvider([mockValidation]); // TimeDeltaGenerator shouldn't be called
 
     const architect = new Architect(llmProvider, repo);
@@ -188,8 +207,16 @@ describe("AliasDeltaGenerator Unit Tests (Tier 1)", () => {
     const world = new WorldState("world-1");
     const viewer = new Entity("viewer-1");
     const target = new Entity("target-1");
-    target.addAttribute("appearance", "A tall elf with silver hair", AttributeVisibility.PUBLIC);
-    target.addAttribute("clothing", "A green tunic", AttributeVisibility.PUBLIC);
+    target.addAttribute(
+      "appearance",
+      "A tall elf with silver hair",
+      AttributeVisibility.PUBLIC,
+    );
+    target.addAttribute(
+      "clothing",
+      "A green tunic",
+      AttributeVisibility.PUBLIC,
+    );
     world.addEntity(viewer);
     world.addEntity(target);
 

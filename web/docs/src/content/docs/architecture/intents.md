@@ -6,6 +6,7 @@ description: How narrative prose becomes structured, validated actions
 The simple way of understanding intents is to think of it as a proposal, not an effect.
 
 Intents are:
+
 - **Declarative** — they describe what the character intends, not the final outcome.
 - **High-level** — they capture the gist of an action or dialogue.
 - **Allowed to be wrong** — validation happens downstream.

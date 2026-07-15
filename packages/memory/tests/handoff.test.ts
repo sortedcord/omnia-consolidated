@@ -20,7 +20,9 @@ describe("Memory Handoff Tests (Tier 1)", () => {
     // Add 12 older entries (older than 30 minutes)
     for (let i = 0; i < 12; i++) {
       const minutesAgo = 60 - i;
-      const timestamp = new Date(now.getTime() - minutesAgo * 60 * 1000).toISOString();
+      const timestamp = new Date(
+        now.getTime() - minutesAgo * 60 * 1000,
+      ).toISOString();
       entries.push({
         id: `entry-old-${i}`,
         ownerId: "alice",
@@ -80,7 +82,13 @@ describe("Memory Handoff Tests (Tier 1)", () => {
       ownerId: "alice",
       timestamp: now.toISOString(),
       locationId: "room-1",
-      intent: { type: "dialogue", originalText: "hello", description: "says hello", actorId: "alice", targetIds: [] },
+      intent: {
+        type: "dialogue",
+        originalText: "hello",
+        description: "says hello",
+        actorId: "alice",
+        targetIds: [],
+      },
     };
     expect(checkHandoffTrigger(entity, [entryAtRoom1], now)).toBe("voluntary");
 
@@ -90,7 +98,13 @@ describe("Memory Handoff Tests (Tier 1)", () => {
       ownerId: "alice",
       timestamp: now.toISOString(),
       locationId: "room-2",
-      intent: { type: "monologue", originalText: "think", description: "thinks", actorId: "alice", targetIds: [] },
+      intent: {
+        type: "monologue",
+        originalText: "think",
+        description: "thinks",
+        actorId: "alice",
+        targetIds: [],
+      },
     }));
     expect(checkHandoffTrigger(entity, monologues, now)).toBe("voluntary");
   });
@@ -114,7 +128,9 @@ describe("Memory Handoff Tests (Tier 1)", () => {
 
     const entries: BufferEntry[] = [];
     for (let i = 0; i < 10; i++) {
-      const timestamp = new Date(now.getTime() - (50 - i) * 60 * 1000).toISOString();
+      const timestamp = new Date(
+        now.getTime() - (50 - i) * 60 * 1000,
+      ).toISOString();
       const entry: BufferEntry = {
         id: `entry-${i}`,
         ownerId: "alice",
@@ -147,14 +163,23 @@ describe("Memory Handoff Tests (Tier 1)", () => {
 
     const llmProvider = new MockLLMProvider([mockHandoffResult]);
     const embedProvider = new MockEmbeddingProvider();
-    const engine = new HandoffEngine(llmProvider, embedProvider, bufferRepo, ledgerRepo);
+    const engine = new HandoffEngine(
+      llmProvider,
+      embedProvider,
+      bufferRepo,
+      ledgerRepo,
+    );
 
     const success = await engine.runHandoff(entity, entries, now);
     expect(success).toBe(true);
 
-    const ledgerRows = db.prepare("SELECT * FROM ledger_entries WHERE owner_id = ?").all("alice") as Record<string, unknown>[];
+    const ledgerRows = db
+      .prepare("SELECT * FROM ledger_entries WHERE owner_id = ?")
+      .all("alice") as Record<string, unknown>[];
     expect(ledgerRows.length).toBe(1);
-    expect(ledgerRows[0].content).toBe("Alice initiated dialogue and performed various tasks.");
+    expect(ledgerRows[0].content).toBe(
+      "Alice initiated dialogue and performed various tasks.",
+    );
     expect(JSON.parse(ledgerRows[0].quotes_json)).toEqual(["Event 0"]);
     expect(ledgerRows[0].importance).toBe(5);
 

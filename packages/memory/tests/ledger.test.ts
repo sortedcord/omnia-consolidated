@@ -8,7 +8,7 @@ describe("LedgerRepository", () => {
 
   beforeEach(() => {
     db = new Database(":memory:");
-    
+
     // We need to create a dummy objects table to satisfy foreign keys
     db.exec(`
       CREATE TABLE objects (
@@ -51,7 +51,7 @@ describe("LedgerRepository", () => {
     expect(loaded?.content).toBe(entry.content);
     expect(loaded?.quotes).toEqual(entry.quotes);
     expect(loaded?.importance).toBe(5);
-    
+
     // Check float precision
     expect(loaded?.embedding[0]).toBeCloseTo(0.1);
     expect(loaded?.embedding[1]).toBeCloseTo(0.2);
@@ -113,7 +113,7 @@ describe("LedgerRepository", () => {
     });
 
     const relevant = repo.getRelevant("alice", "loc1", ["bob"]);
-    
+
     expect(relevant).toHaveLength(3);
     const ids = relevant.map((r) => r.id);
     expect(ids).toContain("mem_high_salience"); // due to importance >= 8
@@ -210,16 +210,32 @@ describe("LedgerRepository", () => {
     });
 
     // Without neighbors: only returns mem_target
-    const withoutNeighbors = repo.retrieve("alice", "loc1", [], undefined, new Date("2024-01-10T14:00:00.000Z"), 1, {
-      includeAssociativeNeighbors: false,
-    });
+    const withoutNeighbors = repo.retrieve(
+      "alice",
+      "loc1",
+      [],
+      undefined,
+      new Date("2024-01-10T14:00:00.000Z"),
+      1,
+      {
+        includeAssociativeNeighbors: false,
+      },
+    );
     expect(withoutNeighbors).toHaveLength(1);
     expect(withoutNeighbors[0].id).toBe("mem_target");
 
     // With neighbors: returns preceding, target, and succeeding sorted chronologically
-    const withNeighbors = repo.retrieve("alice", "loc1", [], undefined, new Date("2024-01-10T14:00:00.000Z"), 1, {
-      includeAssociativeNeighbors: true,
-    });
+    const withNeighbors = repo.retrieve(
+      "alice",
+      "loc1",
+      [],
+      undefined,
+      new Date("2024-01-10T14:00:00.000Z"),
+      1,
+      {
+        includeAssociativeNeighbors: true,
+      },
+    );
     expect(withNeighbors).toHaveLength(3);
     expect(withNeighbors[0].id).toBe("mem_preceding");
     expect(withNeighbors[1].id).toBe("mem_target");

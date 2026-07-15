@@ -9,10 +9,7 @@ import {
 import { MockLLMProvider } from "@omnia/llm";
 import { IntentSequence } from "@omnia/intent";
 import { Architect } from "@omnia/architect";
-import {
-  BufferRepository,
-  BufferEntry,
-} from "@omnia/memory";
+import { BufferRepository, BufferEntry } from "@omnia/memory";
 import {
   ActorAgent,
   ActorResponseSchema,
@@ -53,16 +50,22 @@ describe("Actor Agent + Monologue Intent Integration (Tier 2)", () => {
 
     // --- Mock LLM response queue ---
     // 1. Actor produces prose containing a thought, a spoken line, and an action.
-    const mockActorProse = { narrativeProse: "I can't believe Bob hasn't noticed me yet, Alice thought. \"Hey Bob,\" she called out softly. She reached for the ledger on the table." };
+    const mockActorProse = {
+      narrativeProse:
+        "I can't believe Bob hasn't noticed me yet, Alice thought. \"Hey Bob,\" she called out softly. She reached for the ledger on the table.",
+    };
 
     // 2. IntentDecoder splits that prose into 3 intents.
     const mockDecodedSequence: IntentSequence = {
       intents: [
         {
           type: "monologue",
-          originalText: "I can't believe Bob hasn't noticed me yet, Alice thought.",
-          description: "Alice internally reflects that Bob has not noticed her.",
-          selfDescription: "You internally reflect that Bob has not noticed you.",
+          originalText:
+            "I can't believe Bob hasn't noticed me yet, Alice thought.",
+          description:
+            "Alice internally reflects that Bob has not noticed her.",
+          selfDescription:
+            "You internally reflect that Bob has not noticed you.",
           actorId: "alice",
           targetIds: [],
           modifiers: [],
@@ -90,16 +93,25 @@ describe("Actor Agent + Monologue Intent Integration (Tier 2)", () => {
 
     // 3. Architect: dialogue is always valid (1 min), action is valid (2 min).
     //    NOTE: monologue never reaches the validator/delta generator.
-    const mockDialogueValidation = { isValid: true, reason: "Alice can speak." };
-    const mockActionValidation = { isValid: true, reason: "The ledger is within reach." };
-    const mockActionTimeDelta = { minutesToAdvance: 2, explanation: "Reaching for the ledger takes 2 minutes." };
+    const mockDialogueValidation = {
+      isValid: true,
+      reason: "Alice can speak.",
+    };
+    const mockActionValidation = {
+      isValid: true,
+      reason: "The ledger is within reach.",
+    };
+    const mockActionTimeDelta = {
+      minutesToAdvance: 2,
+      explanation: "Reaching for the ledger takes 2 minutes.",
+    };
 
     const llmProvider = new MockLLMProvider([
-      mockActorProse,             // 1. Actor generation
-      mockDecodedSequence,        // 2. IntentDecoder
-      mockDialogueValidation,     // 3. Architect.validateIntent (dialogue)
-      mockActionValidation,       // 4. Architect.validateIntent (action)
-      mockActionTimeDelta,        // 5. TimeDeltaGenerator (action)
+      mockActorProse, // 1. Actor generation
+      mockDecodedSequence, // 2. IntentDecoder
+      mockDialogueValidation, // 3. Architect.validateIntent (dialogue)
+      mockActionValidation, // 4. Architect.validateIntent (action)
+      mockActionTimeDelta, // 5. TimeDeltaGenerator (action)
     ]);
 
     const actor = new ActorAgent(llmProvider, bufferRepo);
@@ -178,9 +190,7 @@ describe("Actor Agent + Monologue Intent Integration (Tier 2)", () => {
     expect(ActorResponseSchema.parse(valid)).toEqual(valid);
 
     expect(() => ActorResponseSchema.parse({})).toThrow();
-    expect(() =>
-      ActorResponseSchema.parse({ narrativeProse: 123 }),
-    ).toThrow();
+    expect(() => ActorResponseSchema.parse({ narrativeProse: 123 })).toThrow();
   });
 
   test("serializeSubjectiveWorldState is epistemically bounded", async () => {

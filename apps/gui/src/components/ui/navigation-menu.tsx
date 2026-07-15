@@ -1,9 +1,9 @@
-import * as React from "react"
-import { cva } from "class-variance-authority"
-import { ChevronDownIcon } from "lucide-react"
-import { NavigationMenu as NavigationMenuPrimitive } from "radix-ui"
+import * as React from "react";
+import { cva } from "class-variance-authority";
+import { ChevronDownIcon } from "lucide-react";
+import { NavigationMenu as NavigationMenuPrimitive } from "radix-ui";
 
-import { cn } from "@/lib/utils"
+import { cn } from "@/lib/utils";
 
 function NavigationMenu({
   className,
@@ -11,7 +11,7 @@ function NavigationMenu({
   viewport = true,
   ...props
 }: React.ComponentProps<typeof NavigationMenuPrimitive.Root> & {
-  viewport?: boolean
+  viewport?: boolean;
 }) {
   return (
     <NavigationMenuPrimitive.Root
@@ -19,14 +19,14 @@ function NavigationMenu({
       data-viewport={viewport}
       className={cn(
         "group/navigation-menu relative flex max-w-max flex-1 items-center justify-center",
-        className
+        className,
       )}
       {...props}
     >
       {children}
       {viewport && <NavigationMenuViewport />}
     </NavigationMenuPrimitive.Root>
-  )
+  );
 }
 
 function NavigationMenuList({
@@ -38,11 +38,11 @@ function NavigationMenuList({
       data-slot="navigation-menu-list"
       className={cn(
         "group flex flex-1 list-none items-center justify-center gap-0",
-        className
+        className,
       )}
       {...props}
     />
-  )
+  );
 }
 
 function NavigationMenuItem({
@@ -55,12 +55,12 @@ function NavigationMenuItem({
       className={cn("relative", className)}
       {...props}
     />
-  )
+  );
 }
 
 const navigationMenuTriggerStyle = cva(
-  "group/navigation-menu-trigger inline-flex h-9 w-max items-center justify-center px-2.5 py-1.5 text-sm font-medium transition-all outline-none hover:bg-secondary hover:text-foreground focus:bg-secondary focus:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:pointer-events-none disabled:opacity-50 data-popup-open:bg-secondary data-popup-open:text-foreground data-open:bg-secondary data-open:text-foreground"
-)
+  "group/navigation-menu-trigger inline-flex h-9 w-max items-center justify-center px-2.5 py-1.5 text-sm font-medium transition-all outline-none hover:bg-secondary hover:text-foreground focus:bg-secondary focus:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:pointer-events-none disabled:opacity-50 data-popup-open:bg-secondary data-popup-open:text-foreground data-open:bg-secondary data-open:text-foreground",
+);
 
 function NavigationMenuTrigger({
   className,
@@ -79,7 +79,7 @@ function NavigationMenuTrigger({
         aria-hidden="true"
       />
     </NavigationMenuPrimitive.Trigger>
-  )
+  );
 }
 
 function NavigationMenuContent({
@@ -91,11 +91,11 @@ function NavigationMenuContent({
       data-slot="navigation-menu-content"
       className={cn(
         "top-0 left-0 w-full p-1 ease-[cubic-bezier(0.22,1,0.36,1)] group-data-[viewport=false]/navigation-menu:top-full group-data-[viewport=false]/navigation-menu:mt-1.5 group-data-[viewport=false]/navigation-menu:overflow-hidden group-data-[viewport=false]/navigation-menu:border group-data-[viewport=false]/navigation-menu:border-border/30 group-data-[viewport=false]/navigation-menu:bg-popover group-data-[viewport=false]/navigation-menu:text-popover-foreground group-data-[viewport=false]/navigation-menu:shadow-md group-data-[viewport=false]/navigation-menu:duration-300 data-[motion=from-end]:slide-in-from-right-52 data-[motion=from-start]:slide-in-from-left-52 data-[motion=to-end]:slide-out-to-right-52 data-[motion=to-start]:slide-out-to-left-52 data-[motion^=from-]:animate-in data-[motion^=from-]:fade-in data-[motion^=to-]:animate-out data-[motion^=to-]:fade-out **:data-[slot=navigation-menu-link]:focus:ring-0 **:data-[slot=navigation-menu-link]:focus:outline-none md:absolute md:w-auto group-data-[viewport=false]/navigation-menu:data-open:animate-in group-data-[viewport=false]/navigation-menu:data-open:fade-in-0 group-data-[viewport=false]/navigation-menu:data-open:zoom-in-95 group-data-[viewport=false]/navigation-menu:data-closed:animate-out group-data-[viewport=false]/navigation-menu:data-closed:fade-out-0 group-data-[viewport=false]/navigation-menu:data-closed:zoom-out-95",
-        className
+        className,
       )}
       {...props}
     />
-  )
+  );
 }
 
 function NavigationMenuViewport({
@@ -105,19 +105,19 @@ function NavigationMenuViewport({
   return (
     <div
       className={cn(
-        "absolute top-full left-0 isolate z-50 flex justify-center"
+        "absolute top-full left-0 isolate z-50 flex justify-center",
       )}
     >
       <NavigationMenuPrimitive.Viewport
         data-slot="navigation-menu-viewport"
         className={cn(
           "origin-top-center relative mt-1.5 h-(--radix-navigation-menu-viewport-height) w-full overflow-hidden border border-border/30 bg-popover text-popover-foreground shadow-md duration-100 md:w-(--radix-navigation-menu-viewport-width) data-open:animate-in data-open:zoom-in-90 data-closed:animate-out data-closed:zoom-out-90",
-          className
+          className,
         )}
         {...props}
       />
     </div>
-  )
+  );
 }
 
 function NavigationMenuLink({
@@ -129,11 +129,11 @@ function NavigationMenuLink({
       data-slot="navigation-menu-link"
       className={cn(
         "flex items-center gap-2 p-2 text-sm transition-all outline-none hover:bg-secondary hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary in-data-[slot=navigation-menu-content]:rounded-sm data-active:bg-primary/15 data-active:text-primary [&_svg:not([class*='size-'])]:size-4",
-        className
+        className,
       )}
       {...props}
     />
-  )
+  );
 }
 
 function NavigationMenuIndicator({
@@ -145,13 +145,13 @@ function NavigationMenuIndicator({
       data-slot="navigation-menu-indicator"
       className={cn(
         "top-full z-1 flex h-1.5 items-end justify-center overflow-hidden data-[state=hidden]:animate-out data-[state=hidden]:fade-out data-[state=visible]:animate-in data-[state=visible]:fade-in",
-        className
+        className,
       )}
       {...props}
     >
       <div className="relative top-[60%] h-2 w-2 rotate-45 rounded-tl-sm bg-border shadow-md" />
     </NavigationMenuPrimitive.Indicator>
-  )
+  );
 }
 
 export {
@@ -164,4 +164,4 @@ export {
   NavigationMenuIndicator,
   NavigationMenuViewport,
   navigationMenuTriggerStyle,
-}
+};

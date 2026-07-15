@@ -15,7 +15,13 @@ export default defineConfig({
         src: "./src/assets/img/logo.png",
         replacesTitle: true,
       },
-      social: [{ icon: "github", label: "GitHub", href: "https://github.com/sortedcord/omnia-consolidated" }],
+      social: [
+        {
+          icon: "github",
+          label: "GitHub",
+          href: "https://github.com/sortedcord/omnia-consolidated",
+        },
+      ],
       sidebar: [
         {
           label: "Introduction",

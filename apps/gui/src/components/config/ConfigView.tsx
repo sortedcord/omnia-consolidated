@@ -224,7 +224,8 @@ export function ConfigView() {
                           </SelectItem>
                           {instances
                             .filter(
-                              (inst) => (inst.type || "generative") === task.type,
+                              (inst) =>
+                                (inst.type || "generative") === task.type,
                             )
                             .map((inst) => (
                               <SelectItem key={inst.id} value={inst.id}>

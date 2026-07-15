@@ -78,7 +78,8 @@ export const AVAILABLE_PROVIDERS: ModelProviderMeta[] = [
   {
     id: "openrouter",
     displayName: "OpenRouter",
-    description: "Multi-model router supporting Anthropic, OpenAI, DeepSeek, and local models",
+    description:
+      "Multi-model router supporting Anthropic, OpenAI, DeepSeek, and local models",
     defaultModel: "google/gemini-2.5-flash",
     defaultEmbeddingModel: "openai/text-embedding-3-small",
   },

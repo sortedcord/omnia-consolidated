@@ -26,7 +26,11 @@ export function serializeSubjectiveBufferEntry(
   const isSelf = viewer.id === entry.intent.actorId;
 
   if (isSelf) {
-    let details = (entry.intent.selfDescription || entry.intent.description || entry.intent.originalText).trim();
+    let details = (
+      entry.intent.selfDescription ||
+      entry.intent.description ||
+      entry.intent.originalText
+    ).trim();
     if (details.length > 0) {
       details = details.charAt(0).toUpperCase() + details.slice(1);
     }
@@ -69,7 +73,9 @@ export class BufferRepository {
     `);
 
     try {
-      this.db.exec(`ALTER TABLE buffer_entries ADD COLUMN pinned INTEGER DEFAULT 0;`);
+      this.db.exec(
+        `ALTER TABLE buffer_entries ADD COLUMN pinned INTEGER DEFAULT 0;`,
+      );
     } catch {
       // ignore
     }

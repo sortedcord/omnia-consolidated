@@ -82,7 +82,7 @@ export class LedgerRepository {
         entry.importance,
         entry.embedding.length > 0
           ? Buffer.from(new Float32Array(entry.embedding).buffer)
-          : null
+          : null,
       );
 
       deleteEntities.run(entry.id);
@@ -92,14 +92,18 @@ export class LedgerRepository {
     })();
   }
 
-  private mapRowToEntry(row: Record<string, unknown>, involvedEntityIds: string[]): LedgerEntry {
+  private mapRowToEntry(
+    row: Record<string, unknown>,
+    involvedEntityIds: string[],
+  ): LedgerEntry {
     const embedding: number[] = row.embedding
       ? Array.from(
           new Float32Array(
             (row.embedding as Buffer).buffer,
             (row.embedding as Buffer).byteOffset,
-            (row.embedding as Buffer).byteLength / Float32Array.BYTES_PER_ELEMENT
-          )
+            (row.embedding as Buffer).byteLength /
+              Float32Array.BYTES_PER_ELEMENT,
+          ),
         )
       : [];
 
@@ -123,7 +127,7 @@ export class LedgerRepository {
       SELECT id, owner_id, timestamp, location_id, content, quotes_json, importance, embedding
       FROM ledger_entries
       WHERE id = ?
-    `
+    `,
       )
       .get(id) as Record<string, unknown> | undefined;
 
@@ -133,11 +137,14 @@ export class LedgerRepository {
       .prepare(
         `
       SELECT entity_id FROM ledger_involved_entities WHERE entry_id = ?
-    `
+    `,
       )
       .all(id) as { entity_id: string }[];
 
-    return this.mapRowToEntry(row, entitiesRows.map((er) => er.entity_id));
+    return this.mapRowToEntry(
+      row,
+      entitiesRows.map((er) => er.entity_id),
+    );
   }
 
   /**
@@ -151,7 +158,7 @@ export class LedgerRepository {
     ownerId: string,
     currentLocationId: string | null,
     currentInvolvedEntityIds: string[],
-    limit: number = 20
+    limit: number = 20,
   ): LedgerEntry[] {
     let query = `
       SELECT DISTINCT le.id, le.owner_id, le.timestamp, le.location_id, le.content, le.quotes_json, le.importance, le.embedding
@@ -182,7 +189,10 @@ export class LedgerRepository {
     `;
     params.push(limit);
 
-    const rows = this.db.prepare(query).all(...params) as Record<string, unknown>[];
+    const rows = this.db.prepare(query).all(...params) as Record<
+      string,
+      unknown
+    >[];
 
     if (rows.length === 0) return [];
 
@@ -193,7 +203,7 @@ export class LedgerRepository {
         `
       SELECT entry_id, entity_id FROM ledger_involved_entities
       WHERE entry_id IN (${placeholders})
-    `
+    `,
       )
       .all(...entryIds) as { entry_id: string; entity_id: string }[];
 
@@ -205,7 +215,9 @@ export class LedgerRepository {
       entitiesMap.get(er.entry_id)!.push(er.entity_id);
     }
 
-    return rows.map((row) => this.mapRowToEntry(row, entitiesMap.get(row.id as string) || []));
+    return rows.map((row) =>
+      this.mapRowToEntry(row, entitiesMap.get(row.id as string) || []),
+    );
   }
 
   private fetchRawNeighbors(ownerId: string, timestamp: string): LedgerEntry[] {
@@ -220,7 +232,7 @@ export class LedgerRepository {
       WHERE owner_id = ? AND timestamp < ?
       ORDER BY timestamp DESC
       LIMIT 1
-    `
+    `,
       )
       .get(ownerId, timestamp) as Record<string, unknown> | undefined;
 
@@ -237,7 +249,7 @@ export class LedgerRepository {
       WHERE owner_id = ? AND timestamp > ?
       ORDER BY timestamp ASC
       LIMIT 1
-    `
+    `,
       )
       .get(ownerId, timestamp) as Record<string, unknown> | undefined;
 
@@ -269,16 +281,22 @@ export class LedgerRepository {
       importanceWeight?: number;
       relevanceWeight?: number;
       decayRate?: number;
-    }
+    },
   ): LedgerEntry[] {
-    const includeAssociativeNeighbors = options?.includeAssociativeNeighbors ?? false;
+    const includeAssociativeNeighbors =
+      options?.includeAssociativeNeighbors ?? false;
     const recencyWeight = options?.recencyWeight ?? 1.0;
     const importanceWeight = options?.importanceWeight ?? 1.0;
     const relevanceWeight = options?.relevanceWeight ?? 1.0;
     const decayRate = options?.decayRate ?? 0.99;
 
     // Fetch candidate pool (limit 100 to provide enough options for Phase 2 ranking)
-    const candidates = this.getRelevant(ownerId, currentLocationId, currentInvolvedEntityIds, 100);
+    const candidates = this.getRelevant(
+      ownerId,
+      currentLocationId,
+      currentInvolvedEntityIds,
+      100,
+    );
     if (candidates.length === 0) return [];
 
     // Score candidates
@@ -318,7 +336,10 @@ export class LedgerRepository {
       for (const entry of selected) {
         const rawNeighbors = this.fetchRawNeighbors(ownerId, entry.timestamp);
         for (const rn of rawNeighbors) {
-          if (!finalEntries.some((fe) => fe.id === rn.id) && !neighborMap.has(rn.id)) {
+          if (
+            !finalEntries.some((fe) => fe.id === rn.id) &&
+            !neighborMap.has(rn.id)
+          ) {
             neighborMap.set(rn.id, rn);
           }
         }
@@ -333,7 +354,7 @@ export class LedgerRepository {
             `
           SELECT entry_id, entity_id FROM ledger_involved_entities
           WHERE entry_id IN (${placeholders})
-        `
+        `,
           )
           .all(...neighborIds) as { entry_id: string; entity_id: string }[];
 
@@ -353,7 +374,10 @@ export class LedgerRepository {
     }
 
     // Sort chronologically ASC for the final prompt output
-    finalEntries.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+    finalEntries.sort(
+      (a, b) =>
+        new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime(),
+    );
 
     return finalEntries;
   }

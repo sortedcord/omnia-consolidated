@@ -10,7 +10,10 @@ import { ScenarioLoader, ScenarioSchema } from "../src/index.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const SCENARIO_PATH = path.resolve(__dirname, "../../../content/demo/scenarios/talking-room.json");
+const SCENARIO_PATH = path.resolve(
+  __dirname,
+  "../../../content/demo/scenarios/talking-room.json",
+);
 
 describe("Talking Room Demo Scenario Test (Tier 1)", () => {
   test("talking-room.json exists, parses, and loads correctly into database", async () => {
@@ -37,17 +40,30 @@ describe("Talking Room Demo Scenario Test (Tier 1)", () => {
     expect(world).not.toBeNull();
     expect(world!.attributes.get("name")?.getValue()).toBe("Talking Room");
     expect(world!.attributes.get("name")?.visibility).toBe("PRIVATE");
-    expect(world!.attributes.get("description")?.getValue()).toBe(scenarioJson.description);
+    expect(world!.attributes.get("description")?.getValue()).toBe(
+      scenarioJson.description,
+    );
     expect(world!.attributes.get("description")?.visibility).toBe("PRIVATE");
-    expect(world!.attributes.get("experiment_codename")?.getValue()).toBe("Project Tabula Rasa (Phase 3)");
-    expect(world!.attributes.get("experiment_codename")?.visibility).toBe("PRIVATE");
-    expect(world!.attributes.get("experiment_codename")?.getAllowedEntities()).toHaveLength(0); // System only!
+    expect(world!.attributes.get("experiment_codename")?.getValue()).toBe(
+      "Project Tabula Rasa (Phase 3)",
+    );
+    expect(world!.attributes.get("experiment_codename")?.visibility).toBe(
+      "PRIVATE",
+    );
+    expect(
+      world!.attributes.get("experiment_codename")?.getAllowedEntities(),
+    ).toHaveLength(0); // System only!
 
     // 5. Assert location
-    const locations = coreRepo.listLocations(worldInstanceId, (id, parentId) => new Location(id, parentId));
+    const locations = coreRepo.listLocations(
+      worldInstanceId,
+      (id, parentId) => new Location(id, parentId),
+    );
     expect(locations).toHaveLength(1);
     expect(locations[0].id).toBe("white-room");
-    expect(locations[0].attributes.get("description")?.getValue()).toContain("A pristine, featureless room");
+    expect(locations[0].attributes.get("description")?.getValue()).toContain(
+      "A pristine, featureless room",
+    );
 
     // 6. Assert entities and their private attributes / allowedEntities
     const alphaId = "7c9b83b3-8cfb-4e89-8d77-626a5757d591";
@@ -56,14 +72,14 @@ describe("Talking Room Demo Scenario Test (Tier 1)", () => {
     const alpha = world!.getEntity(alphaId);
     expect(alpha).toBeDefined();
     expect(alpha!.locationId).toBe("white-room");
-    
+
     // Name visibility check
     const alphaName = alpha!.attributes.get("name")!;
     expect(alphaName.getValue()).toBe("Bob");
     expect(alphaName.visibility).toBe("PRIVATE");
     expect(alphaName.hasAccess(alphaId)).toBe(true);
     expect(alphaName.hasAccess(betaId)).toBe(false);
-    
+
     // Check system-only attribute (neural_erasure_dose)
     const alphaDose = alpha!.attributes.get("neural_erasure_dose")!;
     expect(alphaDose.visibility).toBe("PRIVATE");
@@ -81,7 +97,9 @@ describe("Talking Room Demo Scenario Test (Tier 1)", () => {
     // Verify subjective aliases can be dynamically resolved via AliasDeltaGenerator
     const { AliasDeltaGenerator } = await import("@omnia/architect");
     const { MockLLMProvider } = await import("@omnia/llm");
-    const llmProvider = new MockLLMProvider([{ alias: "the person in the Beta jumpsuit" }]);
+    const llmProvider = new MockLLMProvider([
+      { alias: "the person in the Beta jumpsuit" },
+    ]);
     const aliasGenerator = new AliasDeltaGenerator(llmProvider);
 
     const generatedAlias = await aliasGenerator.generate(alpha!, beta!);
@@ -94,7 +112,9 @@ describe("Talking Room Demo Scenario Test (Tier 1)", () => {
     const subjectiveState = serializeSubjectiveWorldState(world!, alphaId);
     expect(subjectiveState).toContain("You are at location: white-room");
     expect(subjectiveState).toContain("Location attributes:");
-    expect(subjectiveState).toContain("description: A pristine, featureless room");
+    expect(subjectiveState).toContain(
+      "description: A pristine, featureless room",
+    );
     expect(subjectiveState).toContain("lighting: Bright, uniform illumination");
 
     // Verify objective world state serializes locations (physics awareness)
@@ -102,7 +122,9 @@ describe("Talking Room Demo Scenario Test (Tier 1)", () => {
     const objectiveState = serializeObjectiveWorldState(world!);
     expect(objectiveState).toContain("Locations:");
     expect(objectiveState).toContain("- Location [ID: white-room]:");
-    expect(objectiveState).toContain("description: A pristine, featureless room");
+    expect(objectiveState).toContain(
+      "description: A pristine, featureless room",
+    );
 
     // 7. Assert initial pre-seeded memories
     const alphaMemories = bufferRepo.listForOwner(alphaId);

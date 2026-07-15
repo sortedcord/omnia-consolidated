@@ -85,7 +85,7 @@ export function naturalizeTime(now: Date, past: Date): string {
   const nowHour = now.getHours();
   const pastIsWaking = pastHour >= 5 && pastHour < 22;
   const nowIsWaking = nowHour >= 5 && nowHour < 22;
-  
+
   const isSameSubjectiveDay = pastIsWaking && nowIsWaking && deltaHours < 18;
 
   if (isSameSubjectiveDay) {

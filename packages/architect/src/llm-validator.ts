@@ -28,7 +28,8 @@ export class LLMValidator {
     if (intent.type === "monologue") {
       return {
         isValid: true,
-        reason: "Monologue intents are internal thoughts and bypass validation.",
+        reason:
+          "Monologue intents are internal thoughts and bypass validation.",
       };
     }
 

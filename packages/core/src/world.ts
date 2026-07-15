@@ -1,4 +1,8 @@
-import { AttributableObject, Attribute, serializeAttributes } from "./attribute.js";
+import {
+  AttributableObject,
+  Attribute,
+  serializeAttributes,
+} from "./attribute.js";
 import { Entity } from "./entity.js";
 import { WorldClock } from "./clock.js";
 import { resolveAlias } from "./alias.js";
@@ -54,8 +58,15 @@ export function serializeObjectiveWorldState(worldState: WorldState): string {
   // Serialize world attributes
   if (worldState.attributes.size > 0) {
     lines.push("World Attributes:");
-    const worldAttrsStr = serializeAttributes(Array.from(worldState.attributes.values()));
-    lines.push(worldAttrsStr.split("\n").map(l => "  " + l).join("\n"));
+    const worldAttrsStr = serializeAttributes(
+      Array.from(worldState.attributes.values()),
+    );
+    lines.push(
+      worldAttrsStr
+        .split("\n")
+        .map((l) => "  " + l)
+        .join("\n"),
+    );
   }
 
   // Serialize locations and their attributes/portals
@@ -63,33 +74,46 @@ export function serializeObjectiveWorldState(worldState: WorldState): string {
   if (worldState.locations.size > 0) {
     for (const loc of worldState.locations.values()) {
       lines.push(`  - Location [ID: ${loc.id}]:`);
-      
+
       const parentId = (loc as { parentId?: string | null }).parentId;
       if (parentId) {
         lines.push(`      * Parent Location ID: ${parentId}`);
       }
-      
+
       if (loc.attributes.size > 0) {
-        const locAttrsStr = serializeAttributes(Array.from(loc.attributes.values()));
-        lines.push(locAttrsStr.split("\n").map(l => "      " + l).join("\n"));
+        const locAttrsStr = serializeAttributes(
+          Array.from(loc.attributes.values()),
+        );
+        lines.push(
+          locAttrsStr
+            .split("\n")
+            .map((l) => "      " + l)
+            .join("\n"),
+        );
       } else {
         lines.push("      * (No attributes)");
       }
 
-      const connections = (loc as { connections?: unknown[] }).connections as {
-        targetId: string;
-        portalName?: string;
-        portalStateDescriptor?: string;
-        visionProp: number;
-        soundProp: number;
-        bidirectional: boolean;
-      }[] | undefined;
+      const connections = (loc as { connections?: unknown[] }).connections as
+        | {
+            targetId: string;
+            portalName?: string;
+            portalStateDescriptor?: string;
+            visionProp: number;
+            soundProp: number;
+            bidirectional: boolean;
+          }[]
+        | undefined;
 
       if (connections && connections.length > 0) {
         lines.push("      * Connections:");
         for (const conn of connections) {
-          const portalStr = conn.portalName ? ` via ${conn.portalName} (${conn.portalStateDescriptor || "normal"})` : "";
-          lines.push(`          -> To: ${conn.targetId}${portalStr} (Vision: ${conn.visionProp}, Sound: ${conn.soundProp})`);
+          const portalStr = conn.portalName
+            ? ` via ${conn.portalName} (${conn.portalStateDescriptor || "normal"})`
+            : "";
+          lines.push(
+            `          -> To: ${conn.targetId}${portalStr} (Vision: ${conn.visionProp}, Sound: ${conn.soundProp})`,
+          );
         }
       }
     }
@@ -106,8 +130,15 @@ export function serializeObjectiveWorldState(worldState: WorldState): string {
         lines.push(`      * Location ID: ${entity.locationId}`);
       }
       if (entity.attributes.size > 0) {
-        const entityAttrsStr = serializeAttributes(Array.from(entity.attributes.values()));
-        lines.push(entityAttrsStr.split("\n").map(l => "      " + l).join("\n"));
+        const entityAttrsStr = serializeAttributes(
+          Array.from(entity.attributes.values()),
+        );
+        lines.push(
+          entityAttrsStr
+            .split("\n")
+            .map((l) => "      " + l)
+            .join("\n"),
+        );
       } else {
         lines.push("      * (No attributes)");
       }
@@ -118,7 +149,6 @@ export function serializeObjectiveWorldState(worldState: WorldState): string {
 
   return lines.join("\n");
 }
-
 
 /**
  * Serializes a single attribute the way a viewer perceives it — name and
@@ -158,13 +188,23 @@ export function serializeSubjectiveWorldState(
   const worldVisible = worldState.getVisibleAttributesFor(viewerId);
   if (worldVisible.length > 0) {
     lines.push("World (as you know it):");
-    lines.push(serializeVisibleAttributes(worldVisible).split("\n").map((l) => "  " + l).join("\n"));
+    lines.push(
+      serializeVisibleAttributes(worldVisible)
+        .split("\n")
+        .map((l) => "  " + l)
+        .join("\n"),
+    );
   }
 
   // --- Self ---
   lines.push(`Self (${viewerAlias}):`);
   const selfVisible = viewer.getVisibleAttributesFor(viewerId);
-  lines.push(serializeVisibleAttributes(selfVisible).split("\n").map((l) => "  " + l).join("\n"));
+  lines.push(
+    serializeVisibleAttributes(selfVisible)
+      .split("\n")
+      .map((l) => "  " + l)
+      .join("\n"),
+  );
 
   // --- Location / perceived entities ---
   lines.push("What you perceive around you:");
@@ -175,7 +215,12 @@ export function serializeSubjectiveWorldState(
       const locVisible = location.getVisibleAttributesFor(viewerId);
       if (locVisible.length > 0) {
         lines.push("    Location attributes:");
-        lines.push(serializeVisibleAttributes(locVisible).split("\n").map((l) => "      " + l).join("\n"));
+        lines.push(
+          serializeVisibleAttributes(locVisible)
+            .split("\n")
+            .map((l) => "      " + l)
+            .join("\n"),
+        );
       }
     }
   } else {
@@ -199,7 +244,12 @@ export function serializeSubjectiveWorldState(
       const alias = resolveAlias(viewer, e.id);
       lines.push(`    - ${alias}:`);
       const eVisible = e.getVisibleAttributesFor(viewerId);
-      lines.push(serializeVisibleAttributes(eVisible).split("\n").map((l) => "      " + l).join("\n"));
+      lines.push(
+        serializeVisibleAttributes(eVisible)
+          .split("\n")
+          .map((l) => "      " + l)
+          .join("\n"),
+      );
     }
   } else {
     lines.push("  You are alone here.");

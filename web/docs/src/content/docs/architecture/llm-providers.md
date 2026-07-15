@@ -22,6 +22,7 @@ export interface ILLMProvider {
 ```
 
 The codebase provides three primary implementations:
+
 1. **`GeminiProvider`:** The production provider utilizing Google's Gemini Models via the `@langchain/google-genai` SDK.
 2. **`OpenRouterProvider`:** The production provider utilizing OpenRouter via the `@langchain/openrouter` SDK, allowing routing through various third-party and local models.
 3. **`MockLLMProvider`:** A stateless, pre-programmed mock provider used for fast, deterministic unit testing and local integration tests.
@@ -44,11 +45,12 @@ export interface LLMProviderInstance {
 ```
 
 Users can register multiple provider instances in the **Configuration Page** under the GUI. Each instance is given:
-* A friendly, human-readable name (e.g., `"Gemini Production Key"`, `"OpenRouter Claude Key"`).
-* A provider type (e.g., `google-genai`, `openrouter`, `mock`).
-* An API key credential.
-* A custom target model name (e.g., `gemini-2.5-flash`, `anthropic/claude-3-5-sonnet`, or local model paths).
-* An **Active** status flag (one key is marked as globally active).
+
+- A friendly, human-readable name (e.g., `"Gemini Production Key"`, `"OpenRouter Claude Key"`).
+- A provider type (e.g., `google-genai`, `openrouter`, `mock`).
+- An API key credential.
+- A custom target model name (e.g., `gemini-2.5-flash`, `anthropic/claude-3-5-sonnet`, or local model paths).
+- An **Active** status flag (one key is marked as globally active).
 
 Configurations are stored globally in `data/settings.db` (separated from specific simulation run databases like `data/sim-*.db` to keep key storage and audit logs isolated).
 
@@ -58,12 +60,12 @@ Configurations are stored globally in `data/settings.db` (separated from specifi
 
 During a simulation run, the engine executes four distinct LLM operations. To optimize costs, latency, or model accuracy, you can route each of these tasks to different LLM provider instances:
 
-| Task Name | Key ID | Description | Default Model |
-| :--- | :--- | :--- | :--- |
-| **Actor Prose Generation** | `actor-prose` | Generates roleplay and narrative behavioral prose for Non-Player Characters. | `gemini-2.5-flash` / `google/gemini-2.5-flash` |
-| **LLM Validator** | `llm-validator` | Arbitrates and validates proposed actions against the world state rules and constraints. | `gemini-2.5-flash` / `google/gemini-2.5-flash` |
-| **Intent Decoder** | `intent-decoder` | Parses and splits free-text actions/prose into structured intent sequences. | `gemini-2.5-flash` / `google/gemini-2.5-flash` |
-| **TimeDelta Generator** | `timedelta` | Calculates the duration of character actions to advance the game clock. | `gemini-2.5-flash` / `google/gemini-2.5-flash` |
+| Task Name                  | Key ID           | Description                                                                              | Default Model                                  |
+| :------------------------- | :--------------- | :--------------------------------------------------------------------------------------- | :--------------------------------------------- |
+| **Actor Prose Generation** | `actor-prose`    | Generates roleplay and narrative behavioral prose for Non-Player Characters.             | `gemini-2.5-flash` / `google/gemini-2.5-flash` |
+| **LLM Validator**          | `llm-validator`  | Arbitrates and validates proposed actions against the world state rules and constraints. | `gemini-2.5-flash` / `google/gemini-2.5-flash` |
+| **Intent Decoder**         | `intent-decoder` | Parses and splits free-text actions/prose into structured intent sequences.              | `gemini-2.5-flash` / `google/gemini-2.5-flash` |
+| **TimeDelta Generator**    | `timedelta`      | Calculates the duration of character actions to advance the game clock.                  | `gemini-2.5-flash` / `google/gemini-2.5-flash` |
 
 If no specific provider instance is mapped to a task, the task automatically routes to the globally marked **Active** provider instance.
 

@@ -53,8 +53,16 @@ export function PromptModal({ entry, onClose }: PromptModalProps) {
     const sections: { label: string; type: string; content: string }[] = [
       { label: "System Prompt", type: "system", content: systemPrompt },
       { label: "World Info", type: "world", content: worldStr },
-      { label: "Recent Events", type: "events", content: recentStr || "(No recent events.)" },
-      { label: "Long-Term Memories", type: "memories", content: ledgerStr || "(No long-term memories.)" },
+      {
+        label: "Recent Events",
+        type: "events",
+        content: recentStr || "(No recent events.)",
+      },
+      {
+        label: "Long-Term Memories",
+        type: "memories",
+        content: ledgerStr || "(No long-term memories.)",
+      },
     ];
 
     const totalLen = sections.reduce((sum, s) => sum + s.content.length, 0);

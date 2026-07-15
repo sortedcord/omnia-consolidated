@@ -282,7 +282,9 @@ export function ProviderInstancesConfig({
                       <ItemDescription>{inst.providerName}</ItemDescription>
                       <div className="flex flex-row gap-1.5">
                         {inst.isActive && <Badge>Active</Badge>}
-                        <Badge variant="outline">{inst.type === "generative" ? "gen" : "embed"}</Badge>
+                        <Badge variant="outline">
+                          {inst.type === "generative" ? "gen" : "embed"}
+                        </Badge>
                       </div>
                     </ItemContent>
                   </Item>

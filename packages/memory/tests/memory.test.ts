@@ -41,7 +41,9 @@ describe("Subjective Buffer Entry Serializer Tests (Tier 1)", () => {
     };
 
     const result = serializeSubjectiveBufferEntry(entry, viewer);
-    expect(result).toBe("The hooded figure says, 'Hello there' to the bartender");
+    expect(result).toBe(
+      "The hooded figure says, 'Hello there' to the bartender",
+    );
   });
 
   test("serializes action intent with outcome details", () => {
@@ -69,7 +71,9 @@ describe("Subjective Buffer Entry Serializer Tests (Tier 1)", () => {
     };
 
     const result = serializeSubjectiveBufferEntry(entry, viewer);
-    expect(result).toBe('The hooded figure attempts to break the lock latch (Outcome: Failed - The lock is made of reinforced steel.)');
+    expect(result).toBe(
+      "The hooded figure attempts to break the lock latch (Outcome: Failed - The lock is made of reinforced steel.)",
+    );
   });
 
   test("serializes self-reference and unfamiliar actors", () => {
@@ -110,7 +114,10 @@ describe("Subjective Buffer Entry Serializer Tests (Tier 1)", () => {
       },
     };
 
-    const resultUnfamiliar = serializeSubjectiveBufferEntry(entryUnfamiliar, viewer);
+    const resultUnfamiliar = serializeSubjectiveBufferEntry(
+      entryUnfamiliar,
+      viewer,
+    );
     expect(resultUnfamiliar).toBe("An unfamiliar figure knocks on the door");
   });
 });
@@ -118,7 +125,7 @@ describe("Subjective Buffer Entry Serializer Tests (Tier 1)", () => {
 describe("BufferRepository Persistence Tests (Tier 1)", () => {
   test("saves, loads, lists, and deletes buffer entries in SQLite database", () => {
     const db = new Database(":memory:");
-    
+
     // We need SQLiteRepository to initialize the objects table because buffer_entries depends on objects(id) via FK
     const coreRepo = new SQLiteRepository(db);
     const repo = new BufferRepository(db);

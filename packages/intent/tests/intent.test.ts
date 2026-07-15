@@ -25,7 +25,11 @@ describe("IntentDecoder Unit Tests (Tier 1)", () => {
     const llm = new MockLLMProvider([mockResponse]);
     const decoder = new IntentDecoder(llm);
 
-    const result = await decoder.decode(world, "alice", "Alice opened the chest.");
+    const result = await decoder.decode(
+      world,
+      "alice",
+      "Alice opened the chest.",
+    );
 
     expect(result.intents).toHaveLength(1);
     expect(result.intents[0].type).toBe("action");

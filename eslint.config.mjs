@@ -5,7 +5,12 @@ import tseslint from "typescript-eslint";
 
 export default [
   {
-    ignores: ["**/dist/**", "**/node_modules/**", "**/.astro/**", "**/.next/**"],
+    ignores: [
+      "**/dist/**",
+      "**/node_modules/**",
+      "**/.astro/**",
+      "**/.next/**",
+    ],
   },
 
   js.configs.recommended,

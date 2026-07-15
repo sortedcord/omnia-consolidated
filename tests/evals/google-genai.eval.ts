@@ -14,14 +14,15 @@ describe("GeminiProvider Eval", () => {
     });
 
     const response = await provider.generateStructuredResponse({
-      systemPrompt: "You are a helpful assistant. Classify the tone of the user's sentence.",
+      systemPrompt:
+        "You are a helpful assistant. Classify the tone of the user's sentence.",
       userContext: "I absolutely love this new engine, it works perfectly!",
       schema: ToneSchema,
     });
 
     expect(response.success).toBe(true);
     expect(response.data).toBeDefined();
-    
+
     const data = response.data!;
     expect(data.tone).toBe("positive");
     expect(data.confidence).toBeGreaterThan(0.8);

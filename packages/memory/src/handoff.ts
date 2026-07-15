@@ -1,6 +1,10 @@
 import { z } from "zod";
 import { Entity, naturalizeTime } from "@omnia/core";
-import { BufferEntry, serializeSubjectiveBufferEntry, BufferRepository } from "./buffer.js";
+import {
+  BufferEntry,
+  serializeSubjectiveBufferEntry,
+  BufferRepository,
+} from "./buffer.js";
 import { LedgerEntry, LedgerRepository } from "./ledger.js";
 import { ILLMProvider, IEmbeddingProvider } from "@omnia/llm";
 
@@ -56,12 +60,18 @@ function checkSceneExit(entity: Entity, bufferEntries: BufferEntry[]): boolean {
 
   // Find the location of the most recent buffer entries
   const lastEntry = bufferEntries[bufferEntries.length - 1];
-  if (lastEntry.locationId && entity.locationId && lastEntry.locationId !== entity.locationId) {
+  if (
+    lastEntry.locationId &&
+    entity.locationId &&
+    lastEntry.locationId !== entity.locationId
+  ) {
     return true;
   }
 
   // Also check if there are entries from different locations in the buffer
-  const locations = new Set(bufferEntries.map(e => e.locationId).filter(loc => loc !== null));
+  const locations = new Set(
+    bufferEntries.map((e) => e.locationId).filter((loc) => loc !== null),
+  );
   if (locations.size > 1) {
     return true;
   }
@@ -75,17 +85,25 @@ function checkIdleDecay(bufferEntries: BufferEntry[]): boolean {
 
   // Check the last N entries
   const lastN = bufferEntries.slice(-N);
-  return lastN.every(e => e.intent.type === "monologue");
+  return lastN.every((e) => e.intent.type === "monologue");
 }
 
 function checkAttributeTrigger(entity: Entity): boolean {
   const consciousness = entity.attributes.get("consciousness");
-  if (consciousness && consciousness.getValue().toLowerCase() === "unconscious") {
+  if (
+    consciousness &&
+    consciousness.getValue().toLowerCase() === "unconscious"
+  ) {
     return true;
   }
 
   const status = entity.attributes.get("status");
-  if (status && ["unconscious", "asleep", "dead", "inactive"].includes(status.getValue().toLowerCase())) {
+  if (
+    status &&
+    ["unconscious", "asleep", "dead", "inactive"].includes(
+      status.getValue().toLowerCase(),
+    )
+  ) {
     return true;
   }
 
@@ -108,7 +126,7 @@ export function checkHandoffTrigger(
   // Involuntary triggers first (hard)
   if (maxContext > 0) {
     const memoryLength = getMemorySectionLength(entity, bufferEntries, now);
-    const charCeiling = maxContext * 4 * 0.60;
+    const charCeiling = maxContext * 4 * 0.6;
     if (memoryLength > charCeiling) {
       return "involuntary";
     }
@@ -201,10 +219,12 @@ export class HandoffEngine {
       return false;
     }
 
-    const candidatesList = candidates.map((entry) => {
-      const serialized = serializeSubjectiveBufferEntry(entry, entity);
-      return `ID: ${entry.id} | Timestamp: ${entry.timestamp} | Location: ${entry.locationId || "None"}\nContent: ${serialized}`;
-    }).join("\n---\n");
+    const candidatesList = candidates
+      .map((entry) => {
+        const serialized = serializeSubjectiveBufferEntry(entry, entity);
+        return `ID: ${entry.id} | Timestamp: ${entry.timestamp} | Location: ${entry.locationId || "None"}\nContent: ${serialized}`;
+      })
+      .join("\n---\n");
 
     const systemPrompt = `
 You are the memory Handoff Engine. Your task is to process a list of recent working memory buffer entries for an entity and select which memories to promote to the long-term Ledger, and which to forget or summarize.
@@ -239,7 +259,11 @@ ${candidatesList}
     }
 
     const result = response.data;
-    const db = (this.bufferRepo as unknown as { db: { transaction: (fn: () => void) => void } }).db;
+    const db = (
+      this.bufferRepo as unknown as {
+        db: { transaction: (fn: () => void) => void };
+      }
+    ).db;
 
     const ledgerEntries: LedgerEntry[] = [];
     for (const chunk of result.chunks) {
@@ -252,7 +276,11 @@ ${candidatesList}
       }
 
       ledgerEntries.push({
-        id: "ledger-" + Math.random().toString(36).substr(2, 9) + "-" + Date.now(),
+        id:
+          "ledger-" +
+          Math.random().toString(36).substr(2, 9) +
+          "-" +
+          Date.now(),
         ownerId: entity.id,
         timestamp: now.toISOString(),
         locationId: entity.locationId,

@@ -64,9 +64,10 @@ CREATE INDEX IF NOT EXISTS idx_ledger_involved_entity ON ledger_involved_entitie
 
 ## 3. The Handoff Pipeline
 
-Working memory (Tier 1 Buffer) entries are promoted to the Ledger through the automated [Handoff Pipeline](./handoff). 
+Working memory (Tier 1 Buffer) entries are promoted to the Ledger through the automated [Handoff Pipeline](./handoff).
 
 During handoff:
+
 1. Candidate entries are clustered into narrative beats.
 2. Ambient stage business and redundant details are pruned.
 3. Chunks are synthesized into third-person summaries and assigned importance scores.
@@ -92,19 +93,23 @@ flowchart TD
 ```
 
 ### Phase 1: Deterministic Heuristic Filtering
+
 The primary selection uses indexes to retrieve a candidate pool (capped at 100 entries) from the database:
+
 1. **Spatial Cues**: Fetch entries matching the character's current `locationId`.
 2. **Social Cues**: Fetch entries where `involvedEntityIds` intersects with entities currently inside the character's perception radius.
 3. **High Salience**: Always retrieve high-salience entries where `importance >= 8`.
 
 ### Phase 2: Semantic & Episodic Ranking
+
 Once the candidate pool is loaded, the ranking engine evaluates entries in application memory:
+
 1. **Semantic Similarity**: Cosine similarity is computed directly in JS/TS memory between the current prompt context and the candidate embeddings.
 2. **Multi-Factor Scoring**: Candidates are ranked using a weighted linear combination:
    $$\text{Score} = (\alpha \times \text{recency}) + (\beta \times \text{importance}) + (\gamma \times \text{relevance})$$
-   * **Recency** is modeled via exponential decay based on elapsed simulation hours: $\text{decayRate}^{\text{hoursElapsed}}$.
-   * **Importance** is the normalized salience score (1-10) assigned during handoff.
-   * **Relevance** is the cosine similarity score.
+   - **Recency** is modeled via exponential decay based on elapsed simulation hours: $\text{decayRate}^{\text{hoursElapsed}}$.
+   - **Importance** is the normalized salience score (1-10) assigned during handoff.
+   - **Relevance** is the cosine similarity score.
 3. **Chronological Associative Chaining**: When a memory is selected, the system automatically pulls in its adjacent chronological neighbors (preceding and succeeding ledger entries) to preserve episodic continuity in the prompt.
 
 ---
@@ -113,11 +118,11 @@ Once the candidate pool is loaded, the ranking engine evaluates entries in appli
 
 In crowded settings (e.g., a room with many characters), retrieving long-term memories for all co-located entities would exhaust the prompt context window. To prevent this, retrieval uses an **Active Focus** selection strategy:
 
-* **Active Focus Set**: The prompt builder scans the last 10 entries of the character's working memory buffer. Any entity targeted by, spoken to, or mentioned in these entries is added to the Active Focus set.
-* **Dynamic Capacity Limits**:
-  * If the number of co-located characters is small ($\le 3$), long-term memory is retrieved for all of them.
-  * If the environment is crowded ($> 3$), long-term retrieval is strictly restricted to the top 3 characters in the Active Focus set.
-* This creates a realistic attention loop: when a new character interacts with the actor, they enter the working buffer, triggering the retrieval of their long-term history on the subsequent turn.
+- **Active Focus Set**: The prompt builder scans the last 10 entries of the character's working memory buffer. Any entity targeted by, spoken to, or mentioned in these entries is added to the Active Focus set.
+- **Dynamic Capacity Limits**:
+  - If the number of co-located characters is small ($\le 3$), long-term memory is retrieved for all of them.
+  - If the environment is crowded ($> 3$), long-term retrieval is strictly restricted to the top 3 characters in the Active Focus set.
+- This creates a realistic attention loop: when a new character interacts with the actor, they enter the working buffer, triggering the retrieval of their long-term history on the subsequent turn.
 
 ---
 
@@ -125,8 +130,8 @@ In crowded settings (e.g., a room with many characters), retrieving long-term me
 
 Retrieved ledger entries are formatted into the prompt chronologically and mapped to subjective aliases. Internal metrics (e.g., importance numbers and raw system IDs) are omitted to preserve immersion.
 
-* Working memory entries are injected under `=== RECENT EVENTS ===` (narrated relative to the present moment).
-* Recalled ledger entries are injected under `=== YOUR MEMORIES ===` (presented as long-term recollections).
+- Working memory entries are injected under `=== RECENT EVENTS ===` (narrated relative to the present moment).
+- Recalled ledger entries are injected under `=== YOUR MEMORIES ===` (presented as long-term recollections).
 
 ```text
 === RECENT EVENTS ===
