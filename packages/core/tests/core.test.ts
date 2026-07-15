@@ -61,16 +61,21 @@ describe("Attribute & AttributableObject Unit Tests (Tier 1)", () => {
   test("AttributableObject visibility filtering", () => {
     const actor = new MockAttributable("actor");
     actor.addAttribute("eyes", "blue", AttributeVisibility.PUBLIC);
-    actor.addAttribute("secret", "42", AttributeVisibility.PRIVATE, new Set(["friend"]));
+    actor.addAttribute(
+      "secret",
+      "42",
+      AttributeVisibility.PRIVATE,
+      new Set(["friend"]),
+    );
 
     // Public viewer should only see public attributes
     const publicAttrs = actor.getVisibleAttributesFor("stranger");
-    expect(publicAttrs.map(a => a.name)).toEqual(["eyes"]);
+    expect(publicAttrs.map((a) => a.name)).toEqual(["eyes"]);
 
     // Authorized viewer should see both
     const privateAttrs = actor.getVisibleAttributesFor("friend");
-    expect(privateAttrs.map(a => a.name)).toContain("eyes");
-    expect(privateAttrs.map(a => a.name)).toContain("secret");
+    expect(privateAttrs.map((a) => a.name)).toContain("eyes");
+    expect(privateAttrs.map((a) => a.name)).toContain("secret");
   });
 });
 
@@ -131,7 +136,12 @@ describe("SQLiteRepository Unit Tests (Tier 1)", () => {
     const alice = new Entity("alice", "location-a");
     alice.addAttribute("name", "Alice Smith", AttributeVisibility.PUBLIC);
     // Secret attribute visible only to 'bob'
-    alice.addAttribute("diaries", "Private thoughts", AttributeVisibility.PRIVATE, new Set(["bob"]));
+    alice.addAttribute(
+      "diaries",
+      "Private thoughts",
+      AttributeVisibility.PRIVATE,
+      new Set(["bob"]),
+    );
     world.addEntity(alice);
 
     const bob = new Entity("bob");
@@ -161,7 +171,9 @@ describe("SQLiteRepository Unit Tests (Tier 1)", () => {
     expect(loadedAlice!.locationId).toBe("location-a");
     expect(loadedBob!.locationId).toBeNull();
     expect(loadedAlice!.attributes.get("name")?.getValue()).toBe("Alice Smith");
-    expect(loadedAlice!.attributes.get("name")?.visibility).toBe(AttributeVisibility.PUBLIC);
+    expect(loadedAlice!.attributes.get("name")?.visibility).toBe(
+      AttributeVisibility.PUBLIC,
+    );
 
     const diaryAttr = loadedAlice!.attributes.get("diaries")!;
     expect(diaryAttr.getValue()).toBe("Private thoughts");
@@ -191,17 +203,46 @@ describe("SQLiteRepository Unit Tests (Tier 1)", () => {
 
     db.close();
   });
+
+  test("Save and load entity isAgent property", () => {
+    const db = new Database(":memory:");
+    const repo = new SQLiteRepository(db);
+
+    const world = new WorldState("world-xyz");
+    const alice = new Entity("alice", null, false);
+    const bob = new Entity("bob", null, true);
+    world.addEntity(alice);
+    world.addEntity(bob);
+
+    repo.saveWorldState(world);
+
+    const loadedWorld = repo.loadWorldState("world-xyz")!;
+    const loadedAlice = loadedWorld.getEntity("alice")!;
+    const loadedBob = loadedWorld.getEntity("bob")!;
+
+    expect(loadedAlice.isAgent).toBe(false);
+    expect(loadedBob.isAgent).toBe(true);
+
+    db.close();
+  });
 });
 
 describe("Serializer & serializeObjectiveWorldState Unit Tests (Tier 1)", () => {
   test("serializeAttributes utility", () => {
     const obj = new MockAttributable("obj-1");
     obj.addAttribute("health", "100", AttributeVisibility.PUBLIC);
-    obj.addAttribute("secret", "key-123", AttributeVisibility.PRIVATE, new Set(["alice"]));
+    obj.addAttribute(
+      "secret",
+      "key-123",
+      AttributeVisibility.PRIVATE,
+      new Set(["alice"]),
+    );
 
     const result = serializeAttributes(Array.from(obj.attributes.values()));
     expect(result).toContain("* health: 100 (Visibility: PUBLIC)");
-    expect(result).toContain("* secret: key-123 (Visibility: PRIVATE) (Visible to: alice)");
+    expect(result).toContain(
+      "* secret: key-123 (Visibility: PRIVATE) (Visible to: alice)",
+    );
   });
 
   test("serializeObjectiveWorldState utility", () => {

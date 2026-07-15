@@ -46,6 +46,7 @@ export interface EntityInfo {
   id: string;
   name: string;
   isPlayer: boolean;
+  isAgent: boolean;
 }
 
 export interface WaitingContext {

@@ -38,10 +38,12 @@ export const ScenarioMemoryEntrySchema = z.object({
     targetIds: z.array(z.string()),
     modifiers: z.array(z.string()).optional(),
   }),
-  outcome: z.object({
-    isValid: z.boolean(),
-    reason: z.string(),
-  }).optional(),
+  outcome: z
+    .object({
+      isValid: z.boolean(),
+      reason: z.string(),
+    })
+    .optional(),
 });
 
 export const ScenarioEntitySchema = z.object({
@@ -50,6 +52,7 @@ export const ScenarioEntitySchema = z.object({
   attributes: z.array(ScenarioAttributeSchema).optional(),
   aliases: z.record(z.string(), z.string()).optional(), // targetId -> subjective descriptor
   initialMemories: z.array(ScenarioMemoryEntrySchema).optional(),
+  isAgent: z.boolean().optional(),
 });
 
 export const ScenarioSchema = z.object({
@@ -57,9 +60,11 @@ export const ScenarioSchema = z.object({
   name: z.string(),
   description: z.string(),
   startTime: z.string(), // ISO string
-  world: z.object({
-    attributes: z.array(ScenarioAttributeSchema).optional(),
-  }).optional(),
+  world: z
+    .object({
+      attributes: z.array(ScenarioAttributeSchema).optional(),
+    })
+    .optional(),
   locations: z.array(ScenarioLocationSchema).optional(),
   entities: z.array(ScenarioEntitySchema).optional(),
 });

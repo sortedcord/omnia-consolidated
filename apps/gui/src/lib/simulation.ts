@@ -17,7 +17,12 @@ for (const c of envCandidates) {
   }
 }
 
-import { BufferRepository, LedgerRepository, HandoffEngine, checkHandoffTrigger } from "@omnia/memory";
+import {
+  BufferRepository,
+  LedgerRepository,
+  HandoffEngine,
+  checkHandoffTrigger,
+} from "@omnia/memory";
 import { Architect, AliasDeltaGenerator } from "@omnia/architect";
 import {
   ActorAgent,
@@ -25,7 +30,17 @@ import {
   IActorProseGenerator,
   buildBufferEntryForIntent,
 } from "@omnia/actor";
-import { GeminiProvider, ILLMProvider, MockLLMProvider, ProviderManager, OpenRouterProvider, IEmbeddingProvider, GeminiEmbeddingProvider, MockEmbeddingProvider, ModelProviderInstance } from "@omnia/llm";
+import {
+  GeminiProvider,
+  ILLMProvider,
+  MockLLMProvider,
+  ProviderManager,
+  OpenRouterProvider,
+  IEmbeddingProvider,
+  GeminiEmbeddingProvider,
+  MockEmbeddingProvider,
+  ModelProviderInstance,
+} from "@omnia/llm";
 import { ScenarioLoader } from "@omnia/scenario";
 
 import type {
@@ -69,15 +84,22 @@ interface SavedState {
   providerMappings: Record<string, string>;
 }
 
-function loadSessionState(db: Database.Database, id: string): SavedState | null {
+function loadSessionState(
+  db: Database.Database,
+  id: string,
+): SavedState | null {
   try {
-    db.prepare(`
+    db.prepare(
+      `
       CREATE TABLE IF NOT EXISTS gui_meta (
         id TEXT PRIMARY KEY,
         state_json TEXT
       )
-    `).run();
-    const row = db.prepare(`SELECT state_json FROM gui_meta WHERE id = ?`).get(id) as { state_json: string } | undefined;
+    `,
+    ).run();
+    const row = db
+      .prepare(`SELECT state_json FROM gui_meta WHERE id = ?`)
+      .get(id) as { state_json: string } | undefined;
     return row ? (JSON.parse(row.state_json) as SavedState) : null;
   } catch {
     return null;
@@ -129,7 +151,13 @@ class SimulationManager {
     if (!activeInstance) {
       const envKey = process.env.GOOGLE_API_KEY;
       if (envKey) {
-        activeInstance = ProviderManager.create("Default (Env)", "google-genai", envKey, undefined, "generative");
+        activeInstance = ProviderManager.create(
+          "Default (Env)",
+          "google-genai",
+          envKey,
+          undefined,
+          "generative",
+        );
       }
     }
     if (!activeInstance) {
@@ -143,7 +171,8 @@ class SimulationManager {
         entities: [],
         log: [],
         entityIndex: 0,
-        error: "No active LLM Provider Instance found. Please configure a key in Settings first.",
+        error:
+          "No active LLM Provider Instance found. Please configure a key in Settings first.",
       };
     }
 
@@ -184,6 +213,7 @@ class SimulationManager {
       id: e.id,
       name: (e.attributes.get("name")?.getValue() as string) || e.id,
       isPlayer: false,
+      isAgent: e.isAgent,
     }));
 
     let playerEntityId: string | undefined;
@@ -192,8 +222,7 @@ class SimulationManager {
       if (!matched) {
         for (const ent of rawEntities) {
           const nameAttr = ent.attributes.get("name")?.getValue() as
-            | string
-            | undefined;
+            string | undefined;
           if (nameAttr?.toLowerCase() === playEntityName.toLowerCase()) {
             matched = ent;
             break;
@@ -203,8 +232,7 @@ class SimulationManager {
       if (!matched) {
         for (const ent of rawEntities) {
           const nameAttr = ent.attributes.get("name")?.getValue() as
-            | string
-            | undefined;
+            string | undefined;
           if (
             nameAttr?.toLowerCase().includes(playEntityName.toLowerCase()) ||
             ent.id.toLowerCase().includes(playEntityName.toLowerCase())
@@ -232,7 +260,7 @@ class SimulationManager {
         inst = active;
       }
 
-      const key = inst ? inst.apiKey : (process.env.GOOGLE_API_KEY || "");
+      const key = inst ? inst.apiKey : process.env.GOOGLE_API_KEY || "";
       const providerName = inst ? inst.providerName : "google-genai";
       const modelName = inst ? inst.modelName : undefined;
       const instanceName = inst ? inst.name : undefined;
@@ -254,7 +282,7 @@ class SimulationManager {
         inst = ProviderManager.getActive("embedding");
       }
 
-      const key = inst ? inst.apiKey : (process.env.GOOGLE_API_KEY || "");
+      const key = inst ? inst.apiKey : process.env.GOOGLE_API_KEY || "";
       const providerName = inst ? inst.providerName : "google-genai";
       const modelName = inst ? inst.modelName : undefined;
 
@@ -340,6 +368,12 @@ class SimulationManager {
 
       const info = session.entities[session.entityIndex];
 
+      if (!info.isAgent) {
+        session.entityIndex++;
+        this.save(session);
+        return this.snapshot(session);
+      }
+
       if (info.isPlayer) {
         await this.preparePlayerTurn(session, info);
         this.save(session);
@@ -402,8 +436,14 @@ class SimulationManager {
         },
       };
 
-      if (session.decoderProvider.lastCalls && session.decoderProvider.lastCalls.length > 0) {
-        const call = session.decoderProvider.lastCalls[session.decoderProvider.lastCalls.length - 1];
+      if (
+        session.decoderProvider.lastCalls &&
+        session.decoderProvider.lastCalls.length > 0
+      ) {
+        const call =
+          session.decoderProvider.lastCalls[
+            session.decoderProvider.lastCalls.length - 1
+          ];
         entry.decoderPrompt = {
           systemPrompt: call.systemPrompt,
           userContext: call.userContext,
@@ -487,15 +527,17 @@ class SimulationManager {
     session: SimSession,
     info: EntityInfo,
   ): Promise<void> {
-    const worldState = session.coreRepo.loadWorldState(
-      session.worldInstanceId,
-    );
+    const worldState = session.coreRepo.loadWorldState(session.worldInstanceId);
     if (!worldState) throw new Error("World state lost");
 
     const entity = worldState.getEntity(info.id);
     if (!entity) throw new Error(`Entity "${info.id}" not found`);
 
-    const promptBuilder = new ActorPromptBuilder(session.bufferRepo, session.ledgerRepo, 20);
+    const promptBuilder = new ActorPromptBuilder(
+      session.bufferRepo,
+      session.ledgerRepo,
+      20,
+    );
     const { systemPrompt, userContext } = promptBuilder.build(
       worldState,
       entity,
@@ -514,9 +556,7 @@ class SimulationManager {
     session: SimSession,
     info: EntityInfo,
   ): Promise<void> {
-    const worldState = session.coreRepo.loadWorldState(
-      session.worldInstanceId,
-    );
+    const worldState = session.coreRepo.loadWorldState(session.worldInstanceId);
     if (!worldState) throw new Error("World state lost");
 
     const entity = worldState.getEntity(info.id);
@@ -539,8 +579,14 @@ class SimulationManager {
       timestamp: worldState.clock.get().toISOString(),
     };
 
-    if (session.actorProvider.lastCalls && session.actorProvider.lastCalls.length > 0) {
-      const actorCall = session.actorProvider.lastCalls[session.actorProvider.lastCalls.length - 1];
+    if (
+      session.actorProvider.lastCalls &&
+      session.actorProvider.lastCalls.length > 0
+    ) {
+      const actorCall =
+        session.actorProvider.lastCalls[
+          session.actorProvider.lastCalls.length - 1
+        ];
       entry.rawPrompt = {
         systemPrompt: actorCall.systemPrompt,
         userContext: actorCall.userContext,
@@ -548,8 +594,14 @@ class SimulationManager {
       entry.usage = actorCall.usage;
     }
 
-    if (session.decoderProvider.lastCalls && session.decoderProvider.lastCalls.length > 0) {
-      const decoderCall = session.decoderProvider.lastCalls[session.decoderProvider.lastCalls.length - 1];
+    if (
+      session.decoderProvider.lastCalls &&
+      session.decoderProvider.lastCalls.length > 0
+    ) {
+      const decoderCall =
+        session.decoderProvider.lastCalls[
+          session.decoderProvider.lastCalls.length - 1
+        ];
       entry.decoderPrompt = {
         systemPrompt: decoderCall.systemPrompt,
         userContext: decoderCall.userContext,
@@ -558,10 +610,7 @@ class SimulationManager {
     }
 
     for (const intent of result.intents.intents) {
-      const outcome = await session.architect.processIntent(
-        worldState,
-        intent,
-      );
+      const outcome = await session.architect.processIntent(worldState, intent);
       const ts = worldState.clock.get().toISOString();
 
       entry.intents.push({
@@ -593,10 +642,7 @@ class SimulationManager {
         (intent.type === "dialogue" || intent.type === "action")
       ) {
         for (const [, other] of worldState.entities) {
-          if (
-            other.id !== info.id &&
-            other.locationId === entity.locationId
-          ) {
+          if (other.id !== info.id && other.locationId === entity.locationId) {
             const observerEntry = buildBufferEntryForIntent(
               intent,
               ts,
@@ -619,9 +665,7 @@ class SimulationManager {
   }
 
   private async runHandoffResolution(session: SimSession): Promise<void> {
-    const worldState = session.coreRepo.loadWorldState(
-      session.worldInstanceId,
-    );
+    const worldState = session.coreRepo.loadWorldState(session.worldInstanceId);
     if (!worldState) throw new Error("World state lost");
 
     const handoffEngine = new HandoffEngine(
@@ -633,24 +677,36 @@ class SimulationManager {
 
     const entities = Array.from(worldState.entities.values());
     for (const entity of entities) {
+      if (!entity.isAgent) continue;
       const bufferEntries = session.bufferRepo.listForOwner(entity.id);
-      const maxContext = session.handoffProvider.maxContext !== undefined ? session.handoffProvider.maxContext : 32768;
+      const maxContext =
+        session.handoffProvider.maxContext !== undefined
+          ? session.handoffProvider.maxContext
+          : 32768;
 
-      const trigger = checkHandoffTrigger(entity, bufferEntries, worldState.clock.get(), maxContext);
+      const trigger = checkHandoffTrigger(
+        entity,
+        bufferEntries,
+        worldState.clock.get(),
+        maxContext,
+      );
       if (trigger !== "none") {
-        await handoffEngine.runHandoff(entity, bufferEntries, worldState.clock.get());
+        await handoffEngine.runHandoff(
+          entity,
+          bufferEntries,
+          worldState.clock.get(),
+        );
       }
     }
   }
 
   private async runAliasResolution(session: SimSession): Promise<void> {
-    const worldState = session.coreRepo.loadWorldState(
-      session.worldInstanceId,
-    );
+    const worldState = session.coreRepo.loadWorldState(session.worldInstanceId);
     if (!worldState) throw new Error("World state lost");
 
     const entities = Array.from(worldState.entities.values());
     for (const viewer of entities) {
+      if (!viewer.isAgent) continue;
       if (!viewer.locationId) continue;
       for (const target of entities) {
         if (viewer.id === target.id) continue;
@@ -723,18 +779,36 @@ class SimulationManager {
         if (!inst) {
           const envKey = process.env.GOOGLE_API_KEY;
           if (envKey) {
-            inst = ProviderManager.create("Default (Env)", "google-genai", envKey, undefined, "generative");
+            inst = ProviderManager.create(
+              "Default (Env)",
+              "google-genai",
+              envKey,
+              undefined,
+              "generative",
+            );
           }
         }
 
         if (!inst) {
-          throw new Error(`No active LLM Provider Instance found for task "${task}". Please configure a key in Settings first.`);
+          throw new Error(
+            `No active LLM Provider Instance found for task "${task}". Please configure a key in Settings first.`,
+          );
         }
 
         if (inst.providerName === "google-genai") {
-          return new GeminiProvider(inst.apiKey, inst.modelName, inst.name, inst.maxContext);
+          return new GeminiProvider(
+            inst.apiKey,
+            inst.modelName,
+            inst.name,
+            inst.maxContext,
+          );
         } else if (inst.providerName === "openrouter") {
-          return new OpenRouterProvider(inst.apiKey, inst.modelName, inst.name, inst.maxContext);
+          return new OpenRouterProvider(
+            inst.apiKey,
+            inst.modelName,
+            inst.name,
+            inst.maxContext,
+          );
         } else {
           return new MockLLMProvider([]);
         }
@@ -749,12 +823,20 @@ class SimulationManager {
         if (!inst) {
           const envKey = process.env.GOOGLE_API_KEY;
           if (envKey) {
-            inst = ProviderManager.create("Default Embed (Env)", "google-genai", envKey, "gemini-embedding-001", "embedding");
+            inst = ProviderManager.create(
+              "Default Embed (Env)",
+              "google-genai",
+              envKey,
+              "gemini-embedding-001",
+              "embedding",
+            );
           }
         }
 
         if (!inst) {
-          throw new Error(`No active Embedding Provider Instance found for task "embeddings". Please configure an embedding key in Settings first.`);
+          throw new Error(
+            `No active Embedding Provider Instance found for task "embeddings". Please configure an embedding key in Settings first.`,
+          );
         }
 
         if (inst.providerName === "google-genai") {
@@ -824,7 +906,9 @@ class SimulationManager {
     if (!fs.existsSync(dbDir)) return [];
 
     const snapshots: SimSnapshot[] = [];
-    const files = fs.readdirSync(dbDir).filter(f => f.startsWith("sim-") && f.endsWith(".db"));
+    const files = fs
+      .readdirSync(dbDir)
+      .filter((f) => f.startsWith("sim-") && f.endsWith(".db"));
 
     for (const file of files) {
       const id = file.replace(".db", "");
@@ -872,15 +956,19 @@ class SimulationManager {
     const dbDir = path.resolve(process.cwd(), "data");
     if (!fs.existsSync(dbDir)) return;
 
-    const files = fs.readdirSync(dbDir).filter(f => f.startsWith("sim-") && f.endsWith(".db"));
+    const files = fs
+      .readdirSync(dbDir)
+      .filter((f) => f.startsWith("sim-") && f.endsWith(".db"));
 
     const list = ProviderManager.list();
-    let inst = newProviderInstanceId ? list.find((p) => p.id === newProviderInstanceId) : null;
+    let inst = newProviderInstanceId
+      ? list.find((p) => p.id === newProviderInstanceId)
+      : null;
     if (!inst || inst.type !== "embedding") {
       inst = ProviderManager.getActive("embedding");
     }
 
-    const key = inst ? inst.apiKey : (process.env.GOOGLE_API_KEY || "");
+    const key = inst ? inst.apiKey : process.env.GOOGLE_API_KEY || "";
     const providerName = inst ? inst.providerName : "google-genai";
     const modelName = inst ? inst.modelName : undefined;
 
@@ -898,12 +986,16 @@ class SimulationManager {
       const db = activeSession ? activeSession.db : new Database(dbPath);
 
       try {
-        const rows = db.prepare(`SELECT id, content FROM ledger_entries`).all() as { id: string; content: string }[];
-        
+        const rows = db
+          .prepare(`SELECT id, content FROM ledger_entries`)
+          .all() as { id: string; content: string }[];
+
         for (const row of rows) {
           const vector = await embeddingProvider.embed(row.content);
           const buffer = Buffer.from(new Float32Array(vector).buffer);
-          db.prepare(`UPDATE ledger_entries SET embedding = ? WHERE id = ?`).run(buffer, row.id);
+          db.prepare(
+            `UPDATE ledger_entries SET embedding = ? WHERE id = ?`,
+          ).run(buffer, row.id);
         }
       } catch (err) {
         console.error(`Failed to regenerate embeddings for ${file}:`, err);
@@ -932,18 +1024,26 @@ class SimulationManager {
       providerMappings: session.providerMappings,
     };
 
-    session.db.prepare(`
+    session.db
+      .prepare(
+        `
       CREATE TABLE IF NOT EXISTS gui_meta (
         id TEXT PRIMARY KEY,
         state_json TEXT
       )
-    `).run();
+    `,
+      )
+      .run();
 
-    session.db.prepare(`
+    session.db
+      .prepare(
+        `
       INSERT INTO gui_meta (id, state_json)
       VALUES (?, ?)
       ON CONFLICT(id) DO UPDATE SET state_json = excluded.state_json
-    `).run(session.worldInstanceId, JSON.stringify(state));
+    `,
+      )
+      .run(session.worldInstanceId, JSON.stringify(state));
   }
 
   getSnapshot(id: string): SimSnapshot | null {

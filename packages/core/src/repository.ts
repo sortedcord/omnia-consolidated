@@ -73,6 +73,13 @@ export class SQLiteRepository {
     } catch {
       // Column already exists, ignore error
     }
+
+    // Safely add is_agent column if it does not exist in an existing database
+    try {
+      this.db.exec("ALTER TABLE objects ADD COLUMN is_agent INTEGER;");
+    } catch {
+      // Column already exists, ignore error
+    }
   }
 
   save(obj: AttributableObject, type: string, worldId?: string): void {
@@ -85,15 +92,20 @@ export class SQLiteRepository {
       let locationId: string | null = null;
       let aliasesJson: string | null = null;
       let connectionsJson: string | null = null;
+      let isAgent: number | null = null;
 
       if (obj instanceof Entity) {
         locationId = obj.locationId;
         aliasesJson = JSON.stringify(Array.from(obj.aliases.entries()));
+        isAgent = obj.isAgent ? 1 : 0;
       }
 
       // Check if it's a location (using duck typing to avoid circular import of Location)
       if (type === "location") {
-        const loc = obj as { parentId?: string | null; connections?: unknown[] };
+        const loc = obj as {
+          parentId?: string | null;
+          connections?: unknown[];
+        };
         locationId = loc.parentId ?? null;
         if (loc.connections) {
           connectionsJson = JSON.stringify(loc.connections);
@@ -104,18 +116,28 @@ export class SQLiteRepository {
       this.db
         .prepare(
           `
-        INSERT INTO objects (id, type, world_id, clock_iso, location_id, aliases_json, connections_json)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO objects (id, type, world_id, clock_iso, location_id, aliases_json, connections_json, is_agent)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         ON CONFLICT(id) DO UPDATE SET 
           type = excluded.type, 
           world_id = excluded.world_id,
           clock_iso = excluded.clock_iso,
           location_id = excluded.location_id,
           aliases_json = excluded.aliases_json,
-          connections_json = excluded.connections_json
+          connections_json = excluded.connections_json,
+          is_agent = excluded.is_agent
       `,
         )
-        .run(obj.id, type, worldId || null, clockIso, locationId, aliasesJson, connectionsJson);
+        .run(
+          obj.id,
+          type,
+          worldId || null,
+          clockIso,
+          locationId,
+          aliasesJson,
+          connectionsJson,
+          isAgent,
+        );
 
       // Get current attributes from db to delete the ones that are no longer present
       const existingAttrs = this.db
@@ -208,16 +230,27 @@ export class SQLiteRepository {
     const objRow = this.db
       .prepare(
         `
-      SELECT type, location_id, aliases_json FROM objects WHERE id = ?
+      SELECT type, location_id, aliases_json, is_agent FROM objects WHERE id = ?
     `,
       )
-      .get(id) as { type: string; location_id: string | null; aliases_json: string | null } | undefined;
+      .get(id) as
+      | {
+          type: string;
+          location_id: string | null;
+          aliases_json: string | null;
+          is_agent: number | null;
+        }
+      | undefined;
 
     if (!objRow || objRow.type !== "entity") {
       return null;
     }
 
-    const entity = new Entity(id, objRow.location_id);
+    const entity = new Entity(
+      id,
+      objRow.location_id,
+      objRow.is_agent !== null ? objRow.is_agent === 1 : true,
+    );
     if (objRow.aliases_json) {
       const entries = JSON.parse(objRow.aliases_json) as [string, string][];
       for (const [k, v] of entries) {
@@ -238,7 +271,13 @@ export class SQLiteRepository {
       SELECT type, location_id, connections_json FROM objects WHERE id = ?
     `,
       )
-      .get(id) as { type: string; location_id: string | null; connections_json: string | null } | undefined;
+      .get(id) as
+      | {
+          type: string;
+          location_id: string | null;
+          connections_json: string | null;
+        }
+      | undefined;
 
     if (!objRow || objRow.type !== "location") {
       return null;
@@ -246,7 +285,9 @@ export class SQLiteRepository {
 
     const location = factory(id, objRow.location_id);
     if (objRow.connections_json) {
-      (location as { connections?: unknown[] }).connections = JSON.parse(objRow.connections_json);
+      (location as { connections?: unknown[] }).connections = JSON.parse(
+        objRow.connections_json,
+      );
     }
     this.reconstituteAttributes(location);
     return location;
@@ -262,13 +303,19 @@ export class SQLiteRepository {
       SELECT id, location_id, connections_json FROM objects WHERE type = 'location' AND world_id = ?
     `,
       )
-      .all(worldId) as { id: string; location_id: string | null; connections_json: string | null }[];
+      .all(worldId) as {
+      id: string;
+      location_id: string | null;
+      connections_json: string | null;
+    }[];
 
     const locations: T[] = [];
     for (const row of rows) {
       const loc = factory(row.id, row.location_id);
       if (row.connections_json) {
-        (loc as { connections?: unknown[] }).connections = JSON.parse(row.connections_json);
+        (loc as { connections?: unknown[] }).connections = JSON.parse(
+          row.connections_json,
+        );
       }
       this.reconstituteAttributes(loc);
       locations.push(loc);
@@ -300,13 +347,19 @@ export class SQLiteRepository {
       SELECT id, location_id, connections_json FROM objects WHERE type = 'location' AND world_id = ?
     `,
       )
-      .all(id) as { id: string; location_id: string | null; connections_json: string | null }[];
+      .all(id) as {
+      id: string;
+      location_id: string | null;
+      connections_json: string | null;
+    }[];
 
     for (const row of locationRows) {
       const loc = new GenericObject(row.id);
       (loc as { parentId?: string | null }).parentId = row.location_id;
       if (row.connections_json) {
-        (loc as { connections?: unknown[] }).connections = JSON.parse(row.connections_json);
+        (loc as { connections?: unknown[] }).connections = JSON.parse(
+          row.connections_json,
+        );
       }
       this.reconstituteAttributes(loc);
       worldState.addLocation(loc);
@@ -316,13 +369,22 @@ export class SQLiteRepository {
     const entityRows = this.db
       .prepare(
         `
-      SELECT id, location_id, aliases_json FROM objects WHERE type = 'entity' AND world_id = ?
+      SELECT id, location_id, aliases_json, is_agent FROM objects WHERE type = 'entity' AND world_id = ?
     `,
       )
-      .all(id) as { id: string; location_id: string | null; aliases_json: string | null }[];
+      .all(id) as {
+      id: string;
+      location_id: string | null;
+      aliases_json: string | null;
+      is_agent: number | null;
+    }[];
 
     for (const row of entityRows) {
-      const entity = new Entity(row.id, row.location_id);
+      const entity = new Entity(
+        row.id,
+        row.location_id,
+        row.is_agent !== null ? row.is_agent === 1 : true,
+      );
       if (row.aliases_json) {
         const entries = JSON.parse(row.aliases_json) as [string, string][];
         for (const [k, v] of entries) {
@@ -340,14 +402,22 @@ export class SQLiteRepository {
     const rows = this.db
       .prepare(
         `
-      SELECT id, aliases_json FROM objects WHERE type = 'entity'
+      SELECT id, aliases_json, is_agent FROM objects WHERE type = 'entity'
     `,
       )
-      .all() as { id: string; aliases_json: string | null }[];
+      .all() as {
+      id: string;
+      aliases_json: string | null;
+      is_agent: number | null;
+    }[];
 
     const entities: Entity[] = [];
     for (const row of rows) {
-      const entity = new Entity(row.id);
+      const entity = new Entity(
+        row.id,
+        null,
+        row.is_agent !== null ? row.is_agent === 1 : true,
+      );
       if (row.aliases_json) {
         const entries = JSON.parse(row.aliases_json) as [string, string][];
         for (const [k, v] of entries) {

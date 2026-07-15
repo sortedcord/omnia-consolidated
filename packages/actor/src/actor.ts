@@ -1,23 +1,22 @@
 import { Entity, WorldState } from "@omnia/core";
 import { ILLMProvider } from "@omnia/llm";
+import { BufferEntry, BufferRepository, LedgerRepository } from "@omnia/memory";
+import { Intent, IntentDecoder, IntentSequence } from "@omnia/intent";
 import {
-  BufferEntry,
-  BufferRepository,
-  LedgerRepository,
-} from "@omnia/memory";
-import {
-  Intent,
-  IntentDecoder,
-  IntentSequence,
-} from "@omnia/intent";
-import { ActorPromptBuilder, ActorResponseSchema } from "./actor-prompt-builder.js";
+  ActorPromptBuilder,
+  ActorResponseSchema,
+} from "./actor-prompt-builder.js";
 
 /**
  * Interface to generate narrative prose for an actor.
  * Allows switching between LLM generators and human CLI inputs.
  */
 export interface IActorProseGenerator {
-  generate(entityId: string, systemPrompt: string, userContext: string): Promise<string>;
+  generate(
+    entityId: string,
+    systemPrompt: string,
+    userContext: string,
+  ): Promise<string>;
 }
 
 /**
@@ -26,7 +25,11 @@ export interface IActorProseGenerator {
 export class LLMActorProseGenerator implements IActorProseGenerator {
   constructor(private llmProvider: ILLMProvider) {}
 
-  async generate(entityId: string, systemPrompt: string, userContext: string): Promise<string> {
+  async generate(
+    entityId: string,
+    systemPrompt: string,
+    userContext: string,
+  ): Promise<string> {
     const response = await this.llmProvider.generateStructuredResponse({
       systemPrompt,
       userContext,
@@ -89,7 +92,11 @@ export class ActorAgent {
       decoderProv = llmProvider;
     }
 
-    this.promptBuilder = new ActorPromptBuilder(bufferRepo, ledgerRepo, memoryLimit);
+    this.promptBuilder = new ActorPromptBuilder(
+      bufferRepo,
+      ledgerRepo,
+      memoryLimit,
+    );
     this.decoder = new IntentDecoder(decoderProv);
     this.generator = generator ?? new LLMActorProseGenerator(actorProv);
     this.llmProvider = actorProv;
@@ -102,10 +109,13 @@ export class ActorAgent {
    * 2. Asks the generator (LLM or human) for narrative prose.
    * 3. Decodes the prose into a structured IntentSequence.
    */
-  async act(
-    worldState: WorldState,
-    entity: Entity,
-  ): Promise<ActorTurnResult> {
+  async act(worldState: WorldState, entity: Entity): Promise<ActorTurnResult> {
+    if (!entity.isAgent) {
+      throw new Error(
+        `Entity "${entity.id}" is not an agent and cannot use the actor interface.`,
+      );
+    }
+
     const { systemPrompt, userContext } = this.promptBuilder.build(
       worldState,
       entity,
