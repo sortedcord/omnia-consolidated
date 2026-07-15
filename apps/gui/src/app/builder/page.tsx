@@ -604,6 +604,7 @@ export default function BuilderPage() {
                   worldAttributes={worldAttributes}
                   setWorldAttributes={setWorldAttributes}
                   entityIds={entityIds}
+                  entities={entities}
                 />
               )}
 
@@ -612,6 +613,7 @@ export default function BuilderPage() {
                 <LocationsTab
                   locations={locations}
                   setLocations={setLocations}
+                  entities={entities}
                   locationIds={locationIds}
                   entityIds={entityIds}
                   selectedLocIndex={selectedLocIndex}
@@ -625,6 +627,7 @@ export default function BuilderPage() {
                 <EntitiesTab
                   entities={entities}
                   setEntities={setEntities}
+                  locations={locations}
                   locationIds={locationIds}
                   entityIds={entityIds}
                   selectedEntIndex={selectedEntIndex}

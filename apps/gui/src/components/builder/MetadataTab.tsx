@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { AttributeEditor } from "./AttributeEditor";
-import type { AttributeData } from "./types";
+import type { AttributeData, EntityData } from "./types";
 
 interface MetadataTabProps {
   scenarioId: string;
@@ -18,6 +18,7 @@ interface MetadataTabProps {
   worldAttributes: AttributeData[];
   setWorldAttributes: (attrs: AttributeData[]) => void;
   entityIds: string[];
+  entities: EntityData[];
 }
 
 export function MetadataTab({
@@ -32,6 +33,7 @@ export function MetadataTab({
   worldAttributes,
   setWorldAttributes,
   entityIds,
+  entities,
 }: MetadataTabProps) {
   const addWorldAttribute = () => {
     setWorldAttributes([
@@ -41,7 +43,7 @@ export function MetadataTab({
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 pb-12">
       {/* Basic Fields */}
       <div className="lg:col-span-2 space-y-5 border border-border/20 bg-card p-6 shadow-[2px_2px_0_0_var(--border)]">
         <h2 className="text-body-lg text-primary font-bold border-b border-border/20 pb-2">
@@ -113,6 +115,7 @@ export function MetadataTab({
           onChange={setWorldAttributes}
           onAdd={addWorldAttribute}
           entityIds={entityIds}
+          entities={entities}
         />
       </div>
     </div>

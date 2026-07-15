@@ -5,7 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Plus, Trash2 } from "lucide-react";
-import type { AttributeData } from "./types";
+import type { AttributeData, EntityData } from "./types";
+import { getEntityDisplayNameById } from "./utils";
 
 interface AttributeEditorProps {
   title?: string;
@@ -13,6 +14,7 @@ interface AttributeEditorProps {
   onChange: (attrs: AttributeData[]) => void;
   onAdd: () => void;
   entityIds: string[];
+  entities?: EntityData[];
 }
 
 export function AttributeEditor({
@@ -21,6 +23,7 @@ export function AttributeEditor({
   onChange,
   onAdd,
   entityIds,
+  entities,
 }: AttributeEditorProps) {
   const handleAttrChange = <K extends keyof AttributeData>(
     index: number,
@@ -144,7 +147,9 @@ export function AttributeEditor({
                                   : "bg-background border-border/30 text-muted-foreground hover:bg-secondary"
                               }`}
                             >
-                              {entId}
+                              {entities
+                                ? getEntityDisplayNameById(entId, entities)
+                                : entId}
                             </button>
                           );
                         })}

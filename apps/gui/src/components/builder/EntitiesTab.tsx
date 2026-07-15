@@ -6,11 +6,17 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { AttributeEditor } from "./AttributeEditor";
 import { Plus, Trash2, ChevronRight } from "lucide-react";
-import type { EntityData, MemoryData } from "./types";
+import type { EntityData, MemoryData, LocationData } from "./types";
+import {
+  getEntityDisplayName,
+  getEntityDisplayNameById,
+  getLocationDisplayNameById,
+} from "./utils";
 
 interface EntitiesTabProps {
   entities: EntityData[];
   setEntities: (ents: EntityData[]) => void;
+  locations: LocationData[];
   locationIds: string[];
   entityIds: string[];
   selectedEntIndex: number;
@@ -22,6 +28,7 @@ interface EntitiesTabProps {
 export function EntitiesTab({
   entities,
   setEntities,
+  locations,
   locationIds,
   entityIds,
   selectedEntIndex,
@@ -32,7 +39,7 @@ export function EntitiesTab({
   const selectedEnt = entities[selectedEntIndex];
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-4 gap-8 items-start min-h-0">
+    <div className="grid grid-cols-1 md:grid-cols-4 gap-8 items-start min-h-0 pb-12">
       {/* Left sidebar: Entities list */}
       <div className="md:col-span-1 border border-border/20 bg-card shadow-[2px_2px_0_0_var(--border)] flex flex-col max-h-[500px]">
         <div className="p-3 border-b border-border/25 flex justify-between items-center bg-secondary/15">
@@ -72,7 +79,9 @@ export function EntitiesTab({
                   : "hover:bg-secondary/40 text-foreground"
               }`}
             >
-              <span className="truncate">{ent.id || `(Empty ID)`}</span>
+              <span className="truncate">
+                {getEntityDisplayName(ent) || `(Empty ID)`}
+              </span>
               {entities.length > 1 && (
                 <button
                   type="button"
@@ -104,16 +113,9 @@ export function EntitiesTab({
             <div className="space-y-1.5">
               <Label>Entity ID</Label>
               <Input
-                placeholder="e.g. alice"
                 value={selectedEnt.id}
-                onChange={(e) => {
-                  const copy = [...entities];
-                  copy[selectedEntIndex].id = e.target.value
-                    .toLowerCase()
-                    .replace(/[^a-z0-9-_]/g, "");
-                  setEntities(copy);
-                }}
-                className="font-mono text-xs"
+                readOnly
+                className="font-mono text-xs bg-muted cursor-not-allowed text-muted-foreground"
               />
             </div>
 
@@ -132,7 +134,7 @@ export function EntitiesTab({
                 <option value="">-- No Location (floating) --</option>
                 {locationIds.map((id) => (
                   <option key={id} value={id}>
-                    {id}
+                    {getLocationDisplayNameById(id, locations)}
                   </option>
                 ))}
               </select>
@@ -162,6 +164,7 @@ export function EntitiesTab({
                   setEntities(copy);
                 }}
                 entityIds={entityIds}
+                entities={entities}
               />
             </div>
           </div>
@@ -211,8 +214,11 @@ export function EntitiesTab({
                         key={targetId}
                         className="flex gap-2 items-center bg-secondary/15 p-2 rounded"
                       >
-                        <span className="text-[11px] font-mono text-muted-foreground w-1/3 truncate">
-                          {targetId}
+                        <span
+                          className="text-[11px] font-mono text-muted-foreground w-1/3 truncate"
+                          title={targetId}
+                        >
+                          {getEntityDisplayNameById(targetId, entities)}
                         </span>
                         <ChevronRight className="size-3 text-muted-foreground shrink-0" />
                         <Input
@@ -352,7 +358,7 @@ export function EntitiesTab({
                             <option value="">-- Nowhere --</option>
                             {locationIds.map((id) => (
                               <option key={id} value={id}>
-                                {id}
+                                {getLocationDisplayNameById(id, locations)}
                               </option>
                             ))}
                           </select>
@@ -435,7 +441,7 @@ export function EntitiesTab({
                                       : "bg-background border-border/30 text-muted-foreground hover:bg-secondary"
                                   }`}
                                 >
-                                  {entId}
+                                  {getEntityDisplayNameById(entId, entities)}
                                 </button>
                               );
                             })}
