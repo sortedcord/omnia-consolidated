@@ -82,6 +82,17 @@ interface EntityData {
   initialMemories: MemoryData[];
 }
 
+const generateUUID = () => {
+  if (typeof window !== "undefined" && window.crypto && window.crypto.randomUUID) {
+    return window.crypto.randomUUID();
+  }
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    const v = c === "x" ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
+};
+
 export default function BuilderPage() {
   const router = useRouter();
 
@@ -95,17 +106,32 @@ export default function BuilderPage() {
   const [activeTab, setActiveTab] = useState<"metadata" | "locations" | "entities" | "json">("metadata");
 
   // Form State
-  const [scenarioId, setScenarioId] = useState("custom-scenario");
+  const [scenarioId, setScenarioId] = useState("");
   const [name, setName] = useState("My Custom Scenario");
   const [description, setDescription] = useState("A custom scenario template created via builder.");
   const [startTime, setStartTime] = useState("2026-07-06T12:00:00.000Z");
   const [worldAttributes, setWorldAttributes] = useState<AttributeData[]>([]);
-  const [locations, setLocations] = useState<LocationData[]>([
-    { id: "room-1", attributes: [], connections: [] }
-  ]);
-  const [entities, setEntities] = useState<EntityData[]>([
-    { id: "hero-1", locationId: "room-1", attributes: [{ name: "role", value: "adventurer", visibility: "PUBLIC", allowedEntities: [] }], aliases: {}, initialMemories: [] }
-  ]);
+  const [locations, setLocations] = useState<LocationData[]>([]);
+  const [entities, setEntities] = useState<EntityData[]>([]);
+
+  // Initialize dynamic UUIDs client-side to prevent NextJS SSR hydration mismatch
+  useEffect(() => {
+    if (!scenarioId) {
+      const uId = generateUUID();
+      const locId = generateUUID();
+      const entId = generateUUID();
+      
+      setScenarioId(uId);
+      setLocations([{ id: locId, attributes: [], connections: [] }]);
+      setEntities([{
+        id: entId,
+        locationId: locId,
+        attributes: [{ name: "role", value: "adventurer", visibility: "PUBLIC", allowedEntities: [] }],
+        aliases: {},
+        initialMemories: []
+      }]);
+    }
+  }, [scenarioId]);
 
   // Selected sub-items for active editing lists
   const [selectedLocIndex, setSelectedLocIndex] = useState(0);
@@ -192,7 +218,7 @@ export default function BuilderPage() {
           bidirectional: c.bidirectional ?? true,
         })),
       }));
-      setLocations(locs.length > 0 ? locs : [{ id: "room-1", attributes: [], connections: [] }]);
+      setLocations(locs.length > 0 ? locs : [{ id: generateUUID(), attributes: [], connections: [] }]);
       setSelectedLocIndex(0);
 
       // Entities
@@ -207,7 +233,7 @@ export default function BuilderPage() {
         })),
         aliases: e.aliases || {},
         initialMemories: (e.initialMemories || []).map(m => ({
-          id: m.id || "mem-" + Math.random().toString(36).substr(2, 9),
+          id: m.id || generateUUID(),
           timestamp: m.timestamp || s.startTime,
           locationId: m.locationId || null,
           intent: {
@@ -225,7 +251,7 @@ export default function BuilderPage() {
           } : undefined,
         })),
       }));
-      setEntities(ents.length > 0 ? ents : [{ id: "hero-1", locationId: locs[0]?.id || "room-1", attributes: [], aliases: {}, initialMemories: [] }]);
+      setEntities(ents.length > 0 ? ents : [{ id: generateUUID(), locationId: locs[0]?.id || generateUUID(), attributes: [], aliases: {}, initialMemories: [] }]);
       setSelectedEntIndex(0);
 
       setStatusMessage({ text: "Template loaded successfully!", type: "success" });
@@ -587,7 +613,7 @@ export default function BuilderPage() {
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-border/20 pb-4 shrink-0">
               <div>
                 <h1 className="text-headline-md text-primary flex items-center gap-2 font-head">
-                  Scenario Builder
+                  <Sparkles className="size-6 text-primary" /> Scenario Builder
                 </h1>
               </div>
               
@@ -716,7 +742,7 @@ export default function BuilderPage() {
                         type="button" 
                         size="sm" 
                         onClick={() => {
-                          const newId = `room-${locations.length + 1}`;
+                          const newId = generateUUID();
                           setLocations([...locations, { id: newId, attributes: [], connections: [] }]);
                           setSelectedLocIndex(locations.length);
                         }}
@@ -944,7 +970,7 @@ export default function BuilderPage() {
                         type="button" 
                         size="sm" 
                         onClick={() => {
-                          const newId = `actor-${entities.length + 1}`;
+                          const newId = generateUUID();
                           setEntities([...entities, { id: newId, locationId: locationIds[0], attributes: [], aliases: {}, initialMemories: [] }]);
                           setSelectedEntIndex(entities.length);
                         }}
@@ -1031,7 +1057,7 @@ export default function BuilderPage() {
                           onChange={(newAttrs) => {
                             const copy = [...entities];
                             copy[selectedEntIndex].attributes = newAttrs;
-                            setLocations(copy); // Typo check: actually it's setEntities. Let's make sure it calls setEntities(copy) instead of setLocations(copy)!
+                            setEntities(copy);
                           }}
                           onAdd={() => {
                             const copy = [...entities];
@@ -1125,7 +1151,7 @@ export default function BuilderPage() {
                             onClick={() => {
                               const copy = [...entities];
                               const newMem: MemoryData = {
-                                id: "mem-" + Math.random().toString(36).substr(2, 9),
+                                id: generateUUID(),
                                 timestamp: startTime,
                                 locationId: copy[selectedEntIndex].locationId || null,
                                 intent: {
