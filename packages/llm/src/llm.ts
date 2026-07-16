@@ -91,6 +91,20 @@ export const AVAILABLE_PROVIDERS: ModelProviderMeta[] = [
     defaultEmbeddingModel: "",
   },
   {
+    id: "groq",
+    displayName: "Groq",
+    description: "Official Groq integration using @langchain/groq SDK",
+    defaultModel: "llama-3.3-70b-versatile",
+    defaultEmbeddingModel: "",
+  },
+  {
+    id: "deepseek",
+    displayName: "DeepSeek",
+    description: "Official DeepSeek integration using @langchain/deepseek SDK",
+    defaultModel: "deepseek-chat",
+    defaultEmbeddingModel: "",
+  },
+  {
     id: "openrouter",
     displayName: "OpenRouter",
     description:

@@ -8,6 +8,8 @@ import {
   AnthropicProvider,
   OpenAIProvider,
   OpenAIEmbeddingProvider,
+  GroqProvider,
+  DeepSeekProvider,
   GeminiEmbeddingProvider,
   MockEmbeddingProvider,
 } from "@omnia/llm";
@@ -79,6 +81,20 @@ function buildLLMProvider(inst: ModelProviderInstance): ILLMProvider {
     );
   } else if (inst.providerName === "openai") {
     return new OpenAIProvider(
+      inst.apiKey,
+      inst.modelName,
+      inst.name,
+      inst.maxContext,
+    );
+  } else if (inst.providerName === "groq") {
+    return new GroqProvider(
+      inst.apiKey,
+      inst.modelName,
+      inst.name,
+      inst.maxContext,
+    );
+  } else if (inst.providerName === "deepseek") {
+    return new DeepSeekProvider(
       inst.apiKey,
       inst.modelName,
       inst.name,

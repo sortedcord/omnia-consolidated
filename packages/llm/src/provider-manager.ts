@@ -101,6 +101,8 @@ function getSettingsDb() {
         const openRouterKey = process.env.OPENROUTER_API_KEY;
         const anthropicKey = process.env.ANTHROPIC_API_KEY;
         const openaiKey = process.env.OPENAI_API_KEY;
+        const groqKey = process.env.GROQ_API_KEY;
+        const deepseekKey = process.env.DEEPSEEK_API_KEY;
         let hasInsertedGenerative = false;
         let hasInsertedEmbedding = false;
 
@@ -206,6 +208,52 @@ function getSettingsDb() {
           );
           if (isEmbedActive === 1) {
             hasInsertedEmbedding = true;
+          }
+        }
+
+        if (groqKey && groqKey.trim()) {
+          const id = "provider-default-groq";
+          const isActive = hasInsertedGenerative ? 0 : 1;
+          db.prepare(
+            `
+            INSERT INTO provider_instances (id, name, providerName, apiKey, isActive, modelName, type, maxContext)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+          `,
+          ).run(
+            id,
+            "Groq (Env)",
+            "groq",
+            groqKey.trim(),
+            isActive,
+            "llama-3.3-70b-versatile",
+            "generative",
+            8192,
+          );
+          if (isActive === 1) {
+            hasInsertedGenerative = true;
+          }
+        }
+
+        if (deepseekKey && deepseekKey.trim()) {
+          const id = "provider-default-deepseek";
+          const isActive = hasInsertedGenerative ? 0 : 1;
+          db.prepare(
+            `
+            INSERT INTO provider_instances (id, name, providerName, apiKey, isActive, modelName, type, maxContext)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+          `,
+          ).run(
+            id,
+            "DeepSeek (Env)",
+            "deepseek",
+            deepseekKey.trim(),
+            isActive,
+            "deepseek-chat",
+            "generative",
+            64000,
+          );
+          if (isActive === 1) {
+            hasInsertedGenerative = true;
           }
         }
 
@@ -464,6 +512,8 @@ export class ProviderManager {
           const openRouterKey = process.env.OPENROUTER_API_KEY;
           const anthropicKey = process.env.ANTHROPIC_API_KEY;
           const openaiKey = process.env.OPENAI_API_KEY;
+          const groqKey = process.env.GROQ_API_KEY;
+          const deepseekKey = process.env.DEEPSEEK_API_KEY;
           let hasInsertedGenerative = false;
           let hasInsertedEmbedding = false;
 
@@ -569,6 +619,52 @@ export class ProviderManager {
             );
             if (isEmbedActive === 1) {
               hasInsertedEmbedding = true;
+            }
+          }
+
+          if (groqKey && groqKey.trim()) {
+            const id = "provider-default-groq";
+            const isActive = hasInsertedGenerative ? 0 : 1;
+            db.prepare(
+              `
+              INSERT INTO provider_instances (id, name, providerName, apiKey, isActive, modelName, type, maxContext)
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            `,
+            ).run(
+              id,
+              "Groq (Env)",
+              "groq",
+              groqKey.trim(),
+              isActive,
+              "llama-3.3-70b-versatile",
+              "generative",
+              8192,
+            );
+            if (isActive === 1) {
+              hasInsertedGenerative = true;
+            }
+          }
+
+          if (deepseekKey && deepseekKey.trim()) {
+            const id = "provider-default-deepseek";
+            const isActive = hasInsertedGenerative ? 0 : 1;
+            db.prepare(
+              `
+              INSERT INTO provider_instances (id, name, providerName, apiKey, isActive, modelName, type, maxContext)
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            `,
+            ).run(
+              id,
+              "DeepSeek (Env)",
+              "deepseek",
+              deepseekKey.trim(),
+              isActive,
+              "deepseek-chat",
+              "generative",
+              64000,
+            );
+            if (isActive === 1) {
+              hasInsertedGenerative = true;
             }
           }
 
@@ -755,6 +851,32 @@ export class ProviderManager {
           modelName: "claude-3-5-sonnet-latest",
           type: "generative",
           maxContext: 200000,
+        };
+      }
+      const groqKey = process.env.GROQ_API_KEY;
+      if (groqKey && groqKey.trim()) {
+        return {
+          id: "provider-default-env-fallback",
+          name: "Groq (Env Fallback)",
+          providerName: "groq",
+          apiKey: groqKey.trim(),
+          isActive: true,
+          modelName: "llama-3.3-70b-versatile",
+          type: "generative",
+          maxContext: 8192,
+        };
+      }
+      const deepseekKey = process.env.DEEPSEEK_API_KEY;
+      if (deepseekKey && deepseekKey.trim()) {
+        return {
+          id: "provider-default-env-fallback",
+          name: "DeepSeek (Env Fallback)",
+          providerName: "deepseek",
+          apiKey: deepseekKey.trim(),
+          isActive: true,
+          modelName: "deepseek-chat",
+          type: "generative",
+          maxContext: 64000,
         };
       }
       const openRouterKey = process.env.OPENROUTER_API_KEY;

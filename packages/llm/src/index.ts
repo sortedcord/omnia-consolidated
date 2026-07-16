@@ -6,4 +6,6 @@ export * from "./providers/ollama.js";
 export * from "./providers/openrouter.js";
 export * from "./providers/anthropic.js";
 export * from "./providers/openai.js";
+export * from "./providers/groq.js";
+export * from "./providers/deepseek.js";
 export * from "./provider-manager.js";

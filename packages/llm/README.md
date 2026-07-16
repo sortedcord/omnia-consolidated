@@ -279,6 +279,48 @@ Also exports `GeminiEmbeddingProvider` (implements `IEmbeddingProvider`) using t
 4. None found                     → throw Error
 ```
 
+### Groq — `GroqProvider`
+
+| Property                    | Value                                        |
+| --------------------------- | -------------------------------------------- |
+| **File**                    | [`providers/groq.ts`](src/providers/groq.ts) |
+| **Provider ID**             | `groq`                                       |
+| **SDK**                     | `@langchain/groq` (`ChatGroq`)               |
+| **Default Model**           | `llama-3.3-70b-versatile`                    |
+| **Default Embedding Model** | _(none)_                                     |
+| **Default Max Context**     | `8192`                                       |
+| **Type**                    | Generative only (no embedding provider)      |
+
+**Key resolution** in the constructor follows this cascade:
+
+```
+1. Explicit apiKey argument       → use it
+2. ProviderManager.getActive()    → if providerName matches "groq"
+3. GROQ_API_KEY env var           → final fallback
+4. None found                     → throw Error
+```
+
+### DeepSeek — `DeepSeekProvider`
+
+| Property                    | Value                                                |
+| --------------------------- | ---------------------------------------------------- |
+| **File**                    | [`providers/deepseek.ts`](src/providers/deepseek.ts) |
+| **Provider ID**             | `deepseek`                                           |
+| **SDK**                     | `@langchain/deepseek` (`ChatDeepSeek`)               |
+| **Default Model**           | `deepseek-chat`                                      |
+| **Default Embedding Model** | _(none)_                                             |
+| **Default Max Context**     | `64000`                                              |
+| **Type**                    | Generative only (no embedding provider)              |
+
+**Key resolution** in the constructor follows this cascade:
+
+```
+1. Explicit apiKey argument       → use it
+2. ProviderManager.getActive()    → if providerName matches "deepseek"
+3. DEEPSEEK_API_KEY env var       → final fallback
+4. None found                     → throw Error
+```
+
 ### OpenAI — `OpenAIProvider`
 
 | Property                    | Value                                                  |
@@ -404,6 +446,8 @@ The `buildLLMProvider()` and `buildEmbeddingProvider()` functions perform the fi
 | `"openrouter"`    | `OpenRouterProvider` | _(falls through to mock)_ |
 | `"ollama"`        | `OllamaProvider`     | `OllamaEmbeddingProvider` |
 | `"anthropic"`     | `AnthropicProvider`  | _(falls through to mock)_ |
+| `"groq"`          | `GroqProvider`       | _(falls through to mock)_ |
+| `"deepseek"`      | `DeepSeekProvider`   | _(falls through to mock)_ |
 | _(anything else)_ | `MockLLMProvider`    | `MockEmbeddingProvider`   |
 
 ## Structured Output
@@ -432,6 +476,8 @@ This sends the Zod schema to the model as a structured output constraint. The re
 | `OPENAI_API_KEY`     | No       | OpenAI API key           |
 | `OPENROUTER_API_KEY` | No       | OpenRouter API key       |
 | `ANTHROPIC_API_KEY`  | No       | Anthropic Claude API key |
+| `GROQ_API_KEY`       | No       | Groq API key             |
+| `DEEPSEEK_API_KEY`   | No       | DeepSeek API key         |
 
 Both are optional because providers can also be configured through the database via the GUI settings page.
 
@@ -450,6 +496,8 @@ packages/llm/
 │       ├── openrouter.ts     # OpenRouterProvider
 │       ├── anthropic.ts      # AnthropicProvider
 │       ├── openai.ts         # OpenAIProvider + OpenAIEmbeddingProvider
+│       ├── groq.ts           # GroqProvider
+│       ├── deepseek.ts       # DeepSeekProvider
 │       └── mock.ts           # MockLLMProvider + MockEmbeddingProvider
 ├── tests/
 │   ├── mock.test.ts
