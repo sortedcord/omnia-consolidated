@@ -99,6 +99,7 @@ function getSettingsDb() {
       if (totalCount.count === 0) {
         const googleKey = process.env.GOOGLE_API_KEY;
         const openRouterKey = process.env.OPENROUTER_API_KEY;
+        const anthropicKey = process.env.ANTHROPIC_API_KEY;
         let hasInsertedGenerative = false;
 
         if (googleKey && googleKey.trim()) {
@@ -136,6 +137,29 @@ function getSettingsDb() {
             "embedding",
             0,
           );
+        }
+
+        if (anthropicKey && anthropicKey.trim()) {
+          const id = "provider-default-anthropic";
+          const isActive = hasInsertedGenerative ? 0 : 1;
+          db.prepare(
+            `
+            INSERT INTO provider_instances (id, name, providerName, apiKey, isActive, modelName, type, maxContext)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+          `,
+          ).run(
+            id,
+            "Anthropic (Env)",
+            "anthropic",
+            anthropicKey.trim(),
+            isActive,
+            "claude-3-5-sonnet-latest",
+            "generative",
+            200000,
+          );
+          if (isActive === 1) {
+            hasInsertedGenerative = true;
+          }
         }
 
         if (openRouterKey && openRouterKey.trim()) {
@@ -391,6 +415,7 @@ export class ProviderManager {
         if (totalCount.count === 0) {
           const googleKey = process.env.GOOGLE_API_KEY;
           const openRouterKey = process.env.OPENROUTER_API_KEY;
+          const anthropicKey = process.env.ANTHROPIC_API_KEY;
           let hasInsertedGenerative = false;
 
           if (googleKey && googleKey.trim()) {
@@ -428,6 +453,29 @@ export class ProviderManager {
               "embedding",
               0,
             );
+          }
+
+          if (anthropicKey && anthropicKey.trim()) {
+            const id = "provider-default-anthropic";
+            const isActive = hasInsertedGenerative ? 0 : 1;
+            db.prepare(
+              `
+              INSERT INTO provider_instances (id, name, providerName, apiKey, isActive, modelName, type, maxContext)
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            `,
+            ).run(
+              id,
+              "Anthropic (Env)",
+              "anthropic",
+              anthropicKey.trim(),
+              isActive,
+              "claude-3-5-sonnet-latest",
+              "generative",
+              200000,
+            );
+            if (isActive === 1) {
+              hasInsertedGenerative = true;
+            }
           }
 
           if (openRouterKey && openRouterKey.trim()) {
@@ -574,6 +622,19 @@ export class ProviderManager {
           modelName: "gemini-2.5-flash",
           type: "generative",
           maxContext: 32768,
+        };
+      }
+      const anthropicKey = process.env.ANTHROPIC_API_KEY;
+      if (anthropicKey && anthropicKey.trim()) {
+        return {
+          id: "provider-default-env-fallback",
+          name: "Anthropic (Env Fallback)",
+          providerName: "anthropic",
+          apiKey: anthropicKey.trim(),
+          isActive: true,
+          modelName: "claude-3-5-sonnet-latest",
+          type: "generative",
+          maxContext: 200000,
         };
       }
       const openRouterKey = process.env.OPENROUTER_API_KEY;

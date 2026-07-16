@@ -5,6 +5,7 @@ import {
   OllamaEmbeddingProvider,
   ProviderManager,
   OpenRouterProvider,
+  AnthropicProvider,
   GeminiEmbeddingProvider,
   MockEmbeddingProvider,
 } from "@omnia/llm";
@@ -63,6 +64,13 @@ function buildLLMProvider(inst: ModelProviderInstance): ILLMProvider {
   } else if (inst.providerName === "ollama") {
     return new OllamaProvider(
       inst.endpointUrl,
+      inst.modelName,
+      inst.name,
+      inst.maxContext,
+    );
+  } else if (inst.providerName === "anthropic") {
+    return new AnthropicProvider(
+      inst.apiKey,
       inst.modelName,
       inst.name,
       inst.maxContext,

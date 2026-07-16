@@ -77,6 +77,13 @@ export const AVAILABLE_PROVIDERS: ModelProviderMeta[] = [
     defaultEmbeddingModel: "gemini-embedding-001",
   },
   {
+    id: "anthropic",
+    displayName: "Anthropic Claude",
+    description: "Official Claude integration using @langchain/anthropic SDK",
+    defaultModel: "claude-3-5-sonnet-latest",
+    defaultEmbeddingModel: "",
+  },
+  {
     id: "openrouter",
     displayName: "OpenRouter",
     description:

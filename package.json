@@ -47,6 +47,7 @@
     "zod": "^4.4.3"
   },
   "dependencies": {
+    "@langchain/anthropic": "^0.3.11",
     "@langchain/google-genai": "^2.2.0",
     "@langchain/ollama": "^0.2.3",
     "@langchain/openrouter": "^0.4.3",

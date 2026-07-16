@@ -4,4 +4,5 @@ export * from "./providers/google-genai.js";
 export * from "./providers/mock.js";
 export * from "./providers/ollama.js";
 export * from "./providers/openrouter.js";
+export * from "./providers/anthropic.js";
 export * from "./provider-manager.js";

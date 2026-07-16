@@ -258,6 +258,27 @@ When no active row is found for the requested type:
 
 Also exports `GeminiEmbeddingProvider` (implements `IEmbeddingProvider`) using the same key resolution pattern but querying for the `"embedding"` type.
 
+### Anthropic Claude — `AnthropicProvider`
+
+| Property                    | Value                                                  |
+| --------------------------- | ------------------------------------------------------ |
+| **File**                    | [`providers/anthropic.ts`](src/providers/anthropic.ts) |
+| **Provider ID**             | `anthropic`                                            |
+| **SDK**                     | `@langchain/anthropic` (`ChatAnthropic`)               |
+| **Default Model**           | `claude-3-5-sonnet-latest`                             |
+| **Default Embedding Model** | _(none)_                                               |
+| **Default Max Context**     | `200000`                                               |
+| **Type**                    | Generative only (no embedding provider)                |
+
+**Key resolution** in the constructor follows this cascade:
+
+```
+1. Explicit apiKey argument       → use it
+2. ProviderManager.getActive()    → if providerName matches "anthropic"
+3. ANTHROPIC_API_KEY env var      → final fallback
+4. None found                     → throw Error
+```
+
 ### OpenRouter — `OpenRouterProvider`
 
 | Property                    | Value                                                    |
@@ -284,21 +305,21 @@ Same three-step key resolution as Gemini (`explicit → ProviderManager → env 
 | **Default Max Context**     | `32768`                                          |
 | **Type**                    | Generative + Embedding                           |
 
-Ollama runs **locally** — no API key is required. The `apiKey` field in `ModelProviderInstance` is repurposed to store the Ollama server base URL (default: `http://localhost:11434`).
+Ollama runs **locally** — no API key is required. The `endpointUrl` field in `ModelProviderInstance` stores the Ollama server base URL (default: `http://localhost:11434`).
 
 **Key resolution** in the constructor:
 
 ```
 1. Explicit baseUrl argument        → use it
 2. ProviderManager.getActive()      → if providerName matches "ollama"
-                                      (apiKey field = base URL)
+                                      (endpointUrl field = base URL)
 3. Default                          → http://localhost:11434
 ```
 
 Also exports `OllamaEmbeddingProvider` (implements `IEmbeddingProvider`), which uses the same resolution pattern against the `"embedding"` type instance. The default embedding model is `nomic-embed-text`.
 
 > [!TIP]
-> To get started: `ollama pull llama3.1` and `ollama pull nomic-embed-text`. Then create a provider instance with `apiKey` = `http://localhost:11434`.
+> To get started: `ollama pull llama3.1` and `ollama pull nomic-embed-text`. Then create a provider instance with `endpointUrl` = `http://localhost:11434`.
 
 ### Mock — `MockLLMProvider`
 
@@ -358,6 +379,7 @@ The `buildLLMProvider()` and `buildEmbeddingProvider()` functions perform the fi
 | `"google-genai"`  | `GeminiProvider`     | `GeminiEmbeddingProvider` |
 | `"openrouter"`    | `OpenRouterProvider` | _(falls through to mock)_ |
 | `"ollama"`        | `OllamaProvider`     | `OllamaEmbeddingProvider` |
+| `"anthropic"`     | `AnthropicProvider`  | _(falls through to mock)_ |
 | _(anything else)_ | `MockLLMProvider`    | `MockEmbeddingProvider`   |
 
 ## Structured Output
@@ -380,10 +402,11 @@ This sends the Zod schema to the model as a structured output constraint. The re
 
 [`config.ts`](src/config.ts) parses environment variables using Zod:
 
-| Variable             | Required | Description           |
-| -------------------- | -------- | --------------------- |
-| `GOOGLE_API_KEY`     | No       | Google Gemini API key |
-| `OPENROUTER_API_KEY` | No       | OpenRouter API key    |
+| Variable             | Required | Description              |
+| -------------------- | -------- | ------------------------ |
+| `GOOGLE_API_KEY`     | No       | Google Gemini API key    |
+| `OPENROUTER_API_KEY` | No       | OpenRouter API key       |
+| `ANTHROPIC_API_KEY`  | No       | Anthropic Claude API key |
 
 Both are optional because providers can also be configured through the database via the GUI settings page.
 
@@ -400,6 +423,7 @@ packages/llm/
 │       ├── google-genai.ts   # GeminiProvider + GeminiEmbeddingProvider
 │       ├── ollama.ts         # OllamaProvider + OllamaEmbeddingProvider
 │       ├── openrouter.ts     # OpenRouterProvider
+│       ├── anthropic.ts      # AnthropicProvider
 │       └── mock.ts           # MockLLMProvider + MockEmbeddingProvider
 ├── tests/
 │   ├── mock.test.ts
