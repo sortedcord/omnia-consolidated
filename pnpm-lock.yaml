@@ -263,9 +263,12 @@ importers:
       "@langchain/google-genai":
         specifier: ^2.2.0
         version: 2.2.0(@langchain/core@1.2.1(openai@6.45.0(ws@8.21.0)(zod@4.4.3))(ws@8.21.0))
+      "@langchain/ollama":
+        specifier: ^0.2.3
+        version: 0.2.4
       "@langchain/openrouter":
         specifier: ^0.4.3
-        version: 0.4.3(@langchain/core@1.2.1(openai@6.45.0(ws@8.21.0)(zod@4.4.3))(ws@8.21.0))(ws@8.21.0)(zod@4.4.3)
+        version: 0.4.3(ws@8.21.0)(zod@4.4.3)
       "@types/node":
         specifier: ^20.19.43
         version: 20.19.43
@@ -2064,6 +2067,15 @@ packages:
     engines: { node: ">=20" }
     peerDependencies:
       "@langchain/core": ^1.2.0
+
+  "@langchain/ollama@0.2.4":
+    resolution:
+      {
+        integrity: sha512-XThDrZurNPcUO6sasN13rkes1aGgu5gWAtDkkyIGT3ZeMOvrYgPKGft+bbhvsigTIH9C01TfPzrSp8LAmvHIjA==,
+      }
+    engines: { node: ">=18" }
+    peerDependencies:
+      "@langchain/core": ">=0.3.58 <0.4.0"
 
   "@langchain/openai@1.5.3":
     resolution:
@@ -7468,6 +7480,12 @@ packages:
         integrity: sha512-RdR9FQrFwNBNXAr4GixM8YaRZRJ5PUWbKYbE5eOsrwAjJW0q2REGcf79oYPsLyskQCZG1PLN+S/K1V00joZAoQ==,
       }
 
+  ollama@0.5.18:
+    resolution:
+      {
+        integrity: sha512-lTFqTf9bo7Cd3hpF6CviBe/DEhewjoZYd9N/uCe7O20qYTvGqrNOFOBDj3lbZgFWHUgDv5EeyusYxsZSLS8nvg==,
+      }
+
   on-finished@2.4.1:
     resolution:
       {
@@ -9136,6 +9154,14 @@ packages:
         integrity: sha512-EPD5q1uXyFxJpCrLnCc1nHnq3gOa6DZBocAIiI2TaSCA7VCJ1UJDMagCzIkXNsUYfD1daK//LTEQ8xiIbrHtcw==,
       }
 
+  uuid@10.0.0:
+    resolution:
+      {
+        integrity: sha512-8XkAphELsDnEGrDxUOHB3RGvXz6TeuYSGEZBOjtTtPm2lwhGBjLgOzLHB63IUWfBpNucQjND6d3AOudO+H3RWQ==,
+      }
+    deprecated: uuid@10 and below is no longer supported.  For ESM codebases, update to uuid@latest.  For CommonJS codebases, use uuid@11 (but be aware this version will likely be deprecated in 2028).
+    hasBin: true
+
   uuid@14.0.1:
     resolution:
       {
@@ -9280,6 +9306,12 @@ packages:
     resolution:
       {
         integrity: sha512-bKr1DkiNa2krS7qxNtdrtHAmzuYGFQLiQ13TsorsdT6ULTkPLKuu5+GsFpDlg6JFjUTwX2DyhMPG2be8uPrqsQ==,
+      }
+
+  whatwg-fetch@3.6.20:
+    resolution:
+      {
+        integrity: sha512-EqhiFU6daOA8kpjOWTL0olhVOF3i7OrFzSYiGsEMB8GcXS+RrzauAERX65xMeNWVqxA6HXH2m69Z9LaKKdisfg==,
       }
 
   which@2.0.2:
@@ -10356,9 +10388,13 @@ snapshots:
       "@google/generative-ai": 0.24.1
       "@langchain/core": 1.2.1(openai@6.45.0(ws@8.21.0)(zod@4.4.3))(ws@8.21.0)
 
-  "@langchain/openai@1.5.3(@langchain/core@1.2.1(openai@6.45.0(ws@8.21.0)(zod@4.4.3))(ws@8.21.0))(ws@8.21.0)":
+  "@langchain/ollama@0.2.4":
     dependencies:
-      "@langchain/core": 1.2.1(openai@6.45.0(ws@8.21.0)(zod@4.4.3))(ws@8.21.0)
+      ollama: 0.5.18
+      uuid: 10.0.0
+
+  "@langchain/openai@1.5.3(ws@8.21.0)":
+    dependencies:
       js-tiktoken: 1.0.21
       openai: 6.45.0(ws@8.21.0)(zod@4.4.3)
       zod: 4.4.3
@@ -10368,10 +10404,9 @@ snapshots:
       - "@smithy/signature-v4"
       - ws
 
-  "@langchain/openrouter@0.4.3(@langchain/core@1.2.1(openai@6.45.0(ws@8.21.0)(zod@4.4.3))(ws@8.21.0))(ws@8.21.0)(zod@4.4.3)":
+  "@langchain/openrouter@0.4.3(ws@8.21.0)(zod@4.4.3)":
     dependencies:
-      "@langchain/core": 1.2.1(openai@6.45.0(ws@8.21.0)(zod@4.4.3))(ws@8.21.0)
-      "@langchain/openai": 1.5.3(@langchain/core@1.2.1(openai@6.45.0(ws@8.21.0)(zod@4.4.3))(ws@8.21.0))(ws@8.21.0)
+      "@langchain/openai": 1.5.3(ws@8.21.0)
       eventsource-parser: 3.1.0
       openai: 6.45.0(ws@8.21.0)(zod@4.4.3)
     transitivePeerDependencies:
@@ -14096,6 +14131,10 @@ snapshots:
 
   ohash@2.0.11: {}
 
+  ollama@0.5.18:
+    dependencies:
+      whatwg-fetch: 3.6.20
+
   on-finished@2.4.1:
     dependencies:
       ee-first: 1.1.1
@@ -15272,6 +15311,8 @@ snapshots:
 
   util-deprecate@1.0.2: {}
 
+  uuid@10.0.0: {}
+
   uuid@14.0.1: {}
 
   validate-npm-package-name@7.0.2: {}
@@ -15351,6 +15392,8 @@ snapshots:
       - msw
 
   web-namespaces@2.0.1: {}
+
+  whatwg-fetch@3.6.20: {}
 
   which@2.0.2:
     dependencies:

@@ -82,6 +82,14 @@ function getSettingsDb() {
     // ignore
   }
 
+  try {
+    db.prepare(
+      `ALTER TABLE provider_instances ADD COLUMN endpointUrl TEXT`,
+    ).run();
+  } catch {
+    // ignore
+  }
+
   // Auto-bootstrap environment variables if DB contains 0 instances
   try {
     if (!hasBootstrapped) {
@@ -172,6 +180,7 @@ export class ProviderManager {
         modelName?: string;
         type: string;
         maxContext?: number;
+        endpointUrl?: string;
       }[];
       return rows.map((r) => ({
         id: r.id,
@@ -187,6 +196,7 @@ export class ProviderManager {
             : r.type === "embedding"
               ? 0
               : 32768,
+        endpointUrl: r.endpointUrl || undefined,
       }));
     } finally {
       db.close();
@@ -200,6 +210,7 @@ export class ProviderManager {
     modelName?: string,
     type: "generative" | "embedding" = "generative",
     maxContext?: number,
+    endpointUrl?: string,
   ): ModelProviderInstance {
     const db = getSettingsDb();
     try {
@@ -220,8 +231,8 @@ export class ProviderManager {
 
       db.prepare(
         `
-        INSERT INTO provider_instances (id, name, providerName, apiKey, isActive, modelName, type, maxContext)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO provider_instances (id, name, providerName, apiKey, isActive, modelName, type, maxContext, endpointUrl)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
       `,
       ).run(
         id,
@@ -232,6 +243,7 @@ export class ProviderManager {
         modelName || null,
         type,
         actualMaxContext,
+        endpointUrl || null,
       );
 
       return {
@@ -243,6 +255,7 @@ export class ProviderManager {
         modelName,
         type,
         maxContext: actualMaxContext,
+        endpointUrl,
       };
     } finally {
       db.close();
@@ -299,6 +312,7 @@ export class ProviderManager {
     modelName?: string,
     type: "generative" | "embedding" = "generative",
     maxContext?: number,
+    endpointUrl?: string,
   ): void {
     const db = getSettingsDb();
     try {
@@ -312,7 +326,7 @@ export class ProviderManager {
         db.prepare(
           `
           UPDATE provider_instances
-          SET name = ?, providerName = ?, apiKey = ?, modelName = ?, type = ?, maxContext = ?
+          SET name = ?, providerName = ?, apiKey = ?, modelName = ?, type = ?, maxContext = ?, endpointUrl = ?
           WHERE id = ?
         `,
         ).run(
@@ -322,13 +336,14 @@ export class ProviderManager {
           modelName || null,
           type,
           actualMaxContext,
+          endpointUrl || null,
           id,
         );
       } else {
         db.prepare(
           `
           UPDATE provider_instances
-          SET name = ?, providerName = ?, modelName = ?, type = ?, maxContext = ?
+          SET name = ?, providerName = ?, modelName = ?, type = ?, maxContext = ?, endpointUrl = ?
           WHERE id = ?
         `,
         ).run(
@@ -337,6 +352,7 @@ export class ProviderManager {
           modelName || null,
           type,
           actualMaxContext,
+          endpointUrl || null,
           id,
         );
       }
@@ -364,6 +380,7 @@ export class ProviderManager {
             modelName?: string;
             type: string;
             maxContext?: number;
+            endpointUrl?: string;
           }
         | undefined;
 
@@ -447,6 +464,7 @@ export class ProviderManager {
                 modelName?: string;
                 type: string;
                 maxContext?: number;
+                endpointUrl?: string;
               }
             | undefined;
 
@@ -466,6 +484,7 @@ export class ProviderManager {
                   : retryRow.type === "embedding"
                     ? 0
                     : 32768,
+              endpointUrl: retryRow.endpointUrl || undefined,
             };
           }
         }
@@ -483,6 +502,7 @@ export class ProviderManager {
               modelName?: string;
               type: string;
               maxContext?: number;
+              endpointUrl?: string;
             }
           | undefined;
         if (firstRow) {
@@ -503,6 +523,7 @@ export class ProviderManager {
                 : firstRow.type === "embedding"
                   ? 0
                   : 32768,
+            endpointUrl: firstRow.endpointUrl || undefined,
           };
         }
         return null;
@@ -522,6 +543,7 @@ export class ProviderManager {
             : row.type === "embedding"
               ? 0
               : 32768,
+        endpointUrl: row.endpointUrl || undefined,
       };
     } catch {
       const googleKey = process.env.GOOGLE_API_KEY;

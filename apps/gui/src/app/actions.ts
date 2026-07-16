@@ -254,6 +254,7 @@ export async function createProviderInstance(
   modelName?: string,
   type: "generative" | "embedding" = "generative",
   maxContext?: number,
+  endpointUrl?: string,
 ): Promise<ModelProviderInstance> {
   return ProviderManager.create(
     name,
@@ -262,6 +263,7 @@ export async function createProviderInstance(
     modelName,
     type,
     maxContext,
+    endpointUrl,
   );
 }
 
@@ -281,6 +283,7 @@ export async function updateProviderInstance(
   modelName?: string,
   type: "generative" | "embedding" = "generative",
   maxContext?: number,
+  endpointUrl?: string,
 ): Promise<void> {
   ProviderManager.update(
     id,
@@ -290,6 +293,7 @@ export async function updateProviderInstance(
     modelName,
     type,
     maxContext,
+    endpointUrl,
   );
 }
 

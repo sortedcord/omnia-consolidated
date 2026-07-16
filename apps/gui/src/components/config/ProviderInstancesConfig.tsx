@@ -64,6 +64,7 @@ export function ProviderInstancesConfig({
     "generative",
   );
   const [editMaxContext, setEditMaxContext] = useState<number>(32768);
+  const [editEndpointUrl, setEditEndpointUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -76,6 +77,7 @@ export function ProviderInstancesConfig({
       setEditIsActive(false);
       setEditType("generative");
       setEditMaxContext(32768);
+      setEditEndpointUrl("");
     } else if (selectedInstanceId === "new") {
       setEditName("");
       const defaultProvider = "google-genai";
@@ -86,6 +88,7 @@ export function ProviderInstancesConfig({
       setEditModel(pMeta?.defaultModel || "gemini-2.5-flash");
       setEditIsActive(false);
       setEditMaxContext(32768);
+      setEditEndpointUrl("");
     } else {
       const inst = instances.find((i) => i.id === selectedInstanceId);
       if (inst) {
@@ -109,6 +112,7 @@ export function ProviderInstancesConfig({
             ? inst.maxContext
             : 32768,
         );
+        setEditEndpointUrl(inst.endpointUrl || "");
       }
     }
   }, [selectedInstanceId, instances, availableProviders]);
@@ -149,7 +153,7 @@ export function ProviderInstancesConfig({
       let targetInstanceId = selectedInstanceId;
 
       if (selectedInstanceId === "new") {
-        if (!editKey.trim()) {
+        if (editProvider !== "ollama" && !editKey.trim()) {
           setError("API Key is required for new instances.");
           setLoading(false);
           return;
@@ -157,10 +161,13 @@ export function ProviderInstancesConfig({
         const created = await createProviderInstance(
           editName,
           editProvider,
-          editKey,
+          editProvider === "ollama" ? "none" : editKey,
           editModel || undefined,
           editType,
           editType === "generative" ? editMaxContext : 0,
+          editProvider === "ollama"
+            ? editEndpointUrl || "http://localhost:11434"
+            : undefined,
         );
         if (editIsActive) {
           await setActiveProviderInstance(created.id);
@@ -194,10 +201,13 @@ export function ProviderInstancesConfig({
           selectedInstanceId,
           editName,
           editProvider,
-          editKey || undefined,
+          editProvider === "ollama" ? "none" : editKey || undefined,
           editModel || undefined,
           editType,
           editType === "generative" ? editMaxContext : 0,
+          editProvider === "ollama"
+            ? editEndpointUrl || "http://localhost:11434"
+            : undefined,
         );
         if (editIsActive) {
           await setActiveProviderInstance(selectedInstanceId);
@@ -336,11 +346,11 @@ export function ProviderInstancesConfig({
                       }
                       items={[
                         {
-                          label: "Generative (Text Completion)",
+                          label: "Generative (Text Generation)",
                           value: "generative",
                         },
                         {
-                          label: "Embedding (Vector generation)",
+                          label: "Embedding (Vector Embeddings)",
                           value: "embedding",
                         },
                       ]}
@@ -351,10 +361,10 @@ export function ProviderInstancesConfig({
                       <SelectContent>
                         <SelectGroup>
                           <SelectItem value="generative">
-                            Generative (Chat / Text Completion)
+                            Generative (Text Generation)
                           </SelectItem>
                           <SelectItem value="embedding">
-                            Embedding (Vector generation)
+                            Embedding (Vector Embeddings)
                           </SelectItem>
                         </SelectGroup>
                       </SelectContent>
@@ -398,21 +408,36 @@ export function ProviderInstancesConfig({
                   </span>
                 )}
 
-                <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="formKey">API Key</Label>
-                  <Input
-                    id="formKey"
-                    type="password"
-                    value={editKey}
-                    onChange={(e) => setEditKey(e.target.value)}
-                    placeholder={
-                      selectedInstanceId === "new"
-                        ? "AIzaSy..."
-                        : "•••••••• (unchanged)"
-                    }
-                    required={selectedInstanceId === "new"}
-                  />
-                </div>
+                {editProvider !== "ollama" && (
+                  <div className="flex flex-col gap-1.5">
+                    <Label htmlFor="formKey">API Key</Label>
+                    <Input
+                      id="formKey"
+                      type="password"
+                      value={editKey}
+                      onChange={(e) => setEditKey(e.target.value)}
+                      placeholder={
+                        selectedInstanceId === "new"
+                          ? "AIzaSy..."
+                          : "•••••••• (unchanged)"
+                      }
+                      required={selectedInstanceId === "new"}
+                    />
+                  </div>
+                )}
+
+                {editProvider === "ollama" && (
+                  <div className="flex flex-col gap-1.5">
+                    <Label htmlFor="formEndpoint">Endpoint URL</Label>
+                    <Input
+                      id="formEndpoint"
+                      value={editEndpointUrl}
+                      onChange={(e) => setEditEndpointUrl(e.target.value)}
+                      placeholder="e.g. http://localhost:11434"
+                      required
+                    />
+                  </div>
+                )}
 
                 <div className="flex flex-col gap-1.5">
                   <Label htmlFor="formModel">Model Name</Label>

@@ -57,6 +57,7 @@ export interface ModelProviderInstance {
   modelName?: string;
   type: "generative" | "embedding";
   maxContext?: number;
+  endpointUrl?: string;
 }
 
 export interface ModelProviderMeta {
@@ -82,6 +83,14 @@ export const AVAILABLE_PROVIDERS: ModelProviderMeta[] = [
       "Multi-model router supporting Anthropic, OpenAI, DeepSeek, and local models",
     defaultModel: "google/gemini-2.5-flash",
     defaultEmbeddingModel: "openai/text-embedding-3-small",
+  },
+  {
+    id: "ollama",
+    displayName: "Ollama",
+    description:
+      "Local model runner — no API key required, uses the Ollama server base URL instead",
+    defaultModel: "llama3.1",
+    defaultEmbeddingModel: "nomic-embed-text",
   },
   {
     id: "mock",

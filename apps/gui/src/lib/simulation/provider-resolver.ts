@@ -1,6 +1,8 @@
 import {
   GeminiProvider,
   MockLLMProvider,
+  OllamaProvider,
+  OllamaEmbeddingProvider,
   ProviderManager,
   OpenRouterProvider,
   GeminiEmbeddingProvider,
@@ -58,6 +60,13 @@ function buildLLMProvider(inst: ModelProviderInstance): ILLMProvider {
       inst.name,
       inst.maxContext,
     );
+  } else if (inst.providerName === "ollama") {
+    return new OllamaProvider(
+      inst.endpointUrl,
+      inst.modelName,
+      inst.name,
+      inst.maxContext,
+    );
   }
   return new MockLLMProvider([]);
 }
@@ -67,6 +76,8 @@ function buildEmbeddingProvider(
 ): IEmbeddingProvider {
   if (inst.providerName === "google-genai") {
     return new GeminiEmbeddingProvider(inst.apiKey, inst.modelName);
+  } else if (inst.providerName === "ollama") {
+    return new OllamaEmbeddingProvider(inst.endpointUrl, inst.modelName);
   }
   return new MockEmbeddingProvider(inst.modelName);
 }
