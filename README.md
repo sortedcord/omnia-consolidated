@@ -17,7 +17,7 @@
 The <b>world state lives outside the model</b>, characters act through <b>intents that get validated</b> and applied by engine code. Each character's knowledge, memory, and emotional state are subjective and partial by construction.
 
 <p align="center">
-  <img src="./web/docs/src/assets/img/puppet.webp" />
+  <img src="./web/docs/src/assets/img/puppet.webp" alt="This pixel-art style image, set against a black background with the title 'The Puppet Master Paradox' at the top, depicts two identical, stylized puppets with white, round heads and orange patterned bodies facing each other. Between them hovers a small, glowing, four-pointed star, while each puppet has an orange-outlined speech bubble above it: the left one states, 'Good evening. Welcome to my humble bakery!', and the right one replies, 'Nice to meet you Assassin Bob. Wait... wha-', concluding with a small white 'X' icon in the bottom right corner." />
 </p>
 
 Single-agent or single-context systems (AI Dungeon and its descendants) prompt one model to _be_ the world and everyone in it. That breaks in predictable ways over long sessions:
@@ -41,7 +41,7 @@ Omnia answers every one of these failures with the same move: **pull the thing t
 ## What this buys you
 
 <p align="center">
-  <img src="./web/docs/src/assets/img/features.webp" />
+  <img src="./web/docs/src/assets/img/features.webp" alt="This pixel-art image features a grid of six distinct panels, each with an orange-outlined, jagged border, illustrating different concepts: 'Emergent Deceit' shows a person hiding a sword behind their back while offering a rose to another person; 'Divergent Perceptions' depicts two figures sitting at a table with speech bubbles labeled 'A' and 'B'; 'Player Agnostic' shows three figures engaged in different activities—watering a plant, standing still, and juggling—under the plumbob symbol from the sims; 'State Validated Agency' displays a stylized symbol of a person partially inside a portal crossed out by a large red 'X'; 'Deterministic Time' shows four circular panels representing a day-night cycle connected by arrows and clock icons; and 'Bring Your Own Model' features a large, central omnia icon surrounded by various LLM model logos including chatgpt, mistral, deepseek, claude, etc****" />
 </p>
 
 The payoff is scenario complexity that **uni-agent systems structurally cannot represent, no matter how good the model gets**.
