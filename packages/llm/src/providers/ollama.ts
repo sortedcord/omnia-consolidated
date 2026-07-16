@@ -1,27 +1,72 @@
-import { z } from "zod";
 import { ChatOllama, OllamaEmbeddings } from "@langchain/ollama";
-import {
-  ILLMProvider,
-  LLMRequest,
-  LLMResponse,
-  LLMCallRecord,
-  IEmbeddingProvider,
-} from "../llm.js";
+import { ILLMProvider, IEmbeddingProvider } from "../llm.js";
+import type { ModelProviderInstance } from "../llm.js";
 import { ProviderManager } from "../provider-manager.js";
+import { BaseLLMProvider } from "../base-provider.js";
+import {
+  registerProvider,
+  registerGenerative,
+  registerEmbedding,
+} from "../registry.js";
+import { fetchWithTimeout, type ModelInfo } from "../model-lister.js";
 
-export class OllamaProvider implements ILLMProvider {
-  static readonly providerId = "ollama";
-  static readonly displayName = "Ollama";
-  static readonly description =
-    "Local model runner supporting open-source LLMs via the Ollama server";
-  static readonly defaultModel = "llama3.1";
+async function fetchOllamaModels(endpointUrl: string): Promise<ModelInfo[]> {
+  const base = endpointUrl.replace(/\/$/, "");
+  const res = await fetchWithTimeout(`${base}/api/tags`);
+  if (!res.ok) return [];
+
+  const json = (await res.json()) as {
+    models?: { name: string; model?: string }[];
+  };
+
+  return (json.models ?? []).map((m) => ({
+    id: m.name,
+    name: m.name,
+  }));
+}
+
+export class OllamaProvider extends BaseLLMProvider {
+  static {
+    registerProvider({
+      id: "ollama",
+      displayName: "Ollama",
+      description:
+        "Local model runner supporting open-source LLMs via the Ollama server",
+      capabilities: { generative: true, embedding: true },
+      defaultModel: "llama3.1",
+      defaultEmbeddingModel: "nomic-embed-text",
+      defaultMaxContext: 32768,
+      fallbackPriority: 100,
+      listModels: (_apiKey, endpointUrl) =>
+        fetchOllamaModels(endpointUrl || "http://localhost:11434"),
+    });
+    registerGenerative(
+      "ollama",
+      (inst: ModelProviderInstance) =>
+        new OllamaProvider(
+          inst.endpointUrl,
+          inst.modelName,
+          inst.name,
+          inst.maxContext,
+        ),
+    );
+  }
+
+  static create(inst: ModelProviderInstance): ILLMProvider {
+    return new OllamaProvider(
+      inst.endpointUrl,
+      inst.modelName,
+      inst.name,
+      inst.maxContext,
+    );
+  }
 
   providerName = "Ollama";
-  private model: ChatOllama;
-  private modelNameUsed: string;
-  private providerInstanceName?: string;
-  private maxContextUsed?: number;
-  lastCalls: LLMCallRecord[] = [];
+  protected readonly model: ChatOllama;
+  protected modelNameUsed: string;
+  protected providerInstanceName?: string;
+  protected maxContextUsed?: number;
+  protected defaultMaxContext = 32768;
 
   /**
    * Creates an OllamaProvider.
@@ -41,6 +86,7 @@ export class OllamaProvider implements ILLMProvider {
     providerInstanceName?: string,
     maxContext?: number,
   ) {
+    super();
     let url = baseUrl;
     let model = modelName;
     this.providerInstanceName = providerInstanceName;
@@ -48,7 +94,7 @@ export class OllamaProvider implements ILLMProvider {
 
     if (!url || !model) {
       const active = ProviderManager.getActive("generative");
-      if (active && active.providerName === OllamaProvider.providerId) {
+      if (active && active.providerName === "ollama") {
         if (!url) {
           url = active.endpointUrl;
         }
@@ -64,59 +110,26 @@ export class OllamaProvider implements ILLMProvider {
       }
     }
 
-    this.modelNameUsed = model || OllamaProvider.defaultModel;
+    this.modelNameUsed = model || "llama3.1";
     this.model = new ChatOllama({
       baseUrl: url || "http://localhost:11434",
       model: this.modelNameUsed,
     });
   }
-
-  async generateStructuredResponse<T extends z.ZodTypeAny>(
-    request: LLMRequest<T>,
-  ): Promise<LLMResponse<z.infer<T>>> {
-    const structuredModel = this.model.withStructuredOutput(request.schema, {
-      includeRaw: true,
-    });
-    const result = (await structuredModel.invoke([
-      { role: "system", content: request.systemPrompt },
-      { role: "user", content: request.userContext },
-    ])) as unknown as {
-      parsed?: z.infer<T>;
-      raw?: {
-        usage_metadata?: {
-          input_tokens?: number;
-          output_tokens?: number;
-          total_tokens?: number;
-        };
-      };
-    };
-
-    const parsed = result?.parsed;
-    const raw = result?.raw;
-
-    const usage = {
-      inputTokens: raw?.usage_metadata?.input_tokens || 0,
-      outputTokens: raw?.usage_metadata?.output_tokens || 0,
-      totalTokens: raw?.usage_metadata?.total_tokens || 0,
-      modelName: this.modelNameUsed,
-      providerInstanceName: this.providerInstanceName || "Default",
-      maxContext:
-        this.maxContextUsed !== undefined ? this.maxContextUsed : 32768,
-    };
-
-    this.lastCalls.push({
-      systemPrompt: request.systemPrompt,
-      userContext: request.userContext,
-      usage,
-    });
-
-    return { success: true, data: parsed, usage };
-  }
 }
 
 export class OllamaEmbeddingProvider implements IEmbeddingProvider {
-  static readonly providerId = "ollama";
-  static readonly displayName = "Ollama Embeddings";
+  static {
+    registerEmbedding(
+      "ollama",
+      (inst: ModelProviderInstance) =>
+        new OllamaEmbeddingProvider(inst.endpointUrl, inst.modelName),
+    );
+  }
+
+  static create(inst: ModelProviderInstance): IEmbeddingProvider {
+    return new OllamaEmbeddingProvider(inst.endpointUrl, inst.modelName);
+  }
 
   providerName = "Ollama";
   private model: OllamaEmbeddings;
@@ -137,10 +150,7 @@ export class OllamaEmbeddingProvider implements IEmbeddingProvider {
 
     if (!url || !model) {
       const active = ProviderManager.getActive("embedding");
-      if (
-        active &&
-        active.providerName === OllamaEmbeddingProvider.providerId
-      ) {
+      if (active && active.providerName === "ollama") {
         if (!url) {
           url = active.endpointUrl;
         }

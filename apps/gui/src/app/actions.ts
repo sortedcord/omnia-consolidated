@@ -7,7 +7,7 @@ import type { SimSnapshot } from "@/lib/simulation";
 import {
   ProviderManager,
   ModelProviderInstance,
-  AVAILABLE_PROVIDERS,
+  getAvailableProviders as listAvailableProviders,
   ModelProviderMeta,
   ModelLister,
   ModelInfo,
@@ -311,7 +311,7 @@ export async function setProviderMapping(
 }
 
 export async function getAvailableProviders(): Promise<ModelProviderMeta[]> {
-  return AVAILABLE_PROVIDERS;
+  return listAvailableProviders();
 }
 
 export async function regenerateEmbeddings(

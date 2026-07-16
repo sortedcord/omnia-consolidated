@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { ProviderRegistry } from "./registry.js";
 
 export interface LLMRequest<T extends z.ZodTypeAny> {
   systemPrompt: string;
@@ -68,63 +69,21 @@ export interface ModelProviderMeta {
   defaultEmbeddingModel: string;
 }
 
-export const AVAILABLE_PROVIDERS: ModelProviderMeta[] = [
-  {
-    id: "google-genai",
-    displayName: "Google Gemini",
-    description: "Official Gemini integration using Google Gen AI SDK",
-    defaultModel: "gemini-2.5-flash",
-    defaultEmbeddingModel: "gemini-embedding-001",
+export function getAvailableProviders(): ModelProviderMeta[] {
+  return ProviderRegistry.all().map((def) => ({
+    id: def.id,
+    displayName: def.displayName,
+    description: def.description,
+    defaultModel: def.defaultModel,
+    defaultEmbeddingModel: def.defaultEmbeddingModel || "",
+  }));
+}
+
+export const AVAILABLE_PROVIDERS = {
+  get count(): number {
+    return getAvailableProviders().length;
   },
-  {
-    id: "openai",
-    displayName: "OpenAI",
-    description: "Official OpenAI integration using @langchain/openai SDK",
-    defaultModel: "gpt-4o-mini",
-    defaultEmbeddingModel: "text-embedding-3-small",
+  toArray(): ModelProviderMeta[] {
+    return getAvailableProviders();
   },
-  {
-    id: "anthropic",
-    displayName: "Anthropic Claude",
-    description: "Official Claude integration using @langchain/anthropic SDK",
-    defaultModel: "claude-3-5-sonnet-latest",
-    defaultEmbeddingModel: "",
-  },
-  {
-    id: "groq",
-    displayName: "Groq",
-    description: "Official Groq integration using @langchain/groq SDK",
-    defaultModel: "llama-3.3-70b-versatile",
-    defaultEmbeddingModel: "",
-  },
-  {
-    id: "deepseek",
-    displayName: "DeepSeek",
-    description: "Official DeepSeek integration using @langchain/deepseek SDK",
-    defaultModel: "deepseek-chat",
-    defaultEmbeddingModel: "",
-  },
-  {
-    id: "openrouter",
-    displayName: "OpenRouter",
-    description:
-      "Multi-model router supporting Anthropic, OpenAI, DeepSeek, and local models",
-    defaultModel: "google/gemini-2.5-flash",
-    defaultEmbeddingModel: "openai/text-embedding-3-small",
-  },
-  {
-    id: "ollama",
-    displayName: "Ollama",
-    description:
-      "Local model runner — no API key required, uses the Ollama server base URL instead",
-    defaultModel: "llama3.1",
-    defaultEmbeddingModel: "nomic-embed-text",
-  },
-  {
-    id: "mock",
-    displayName: "Mock LLM Provider",
-    description: "Stateless mock provider for testing and offline development",
-    defaultModel: "mock",
-    defaultEmbeddingModel: "mock-embeddings",
-  },
-];
+};

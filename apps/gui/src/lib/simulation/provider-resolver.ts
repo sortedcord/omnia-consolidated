@@ -1,17 +1,9 @@
 import {
-  GeminiProvider,
   MockLLMProvider,
-  OllamaProvider,
-  OllamaEmbeddingProvider,
-  ProviderManager,
-  OpenRouterProvider,
-  AnthropicProvider,
-  OpenAIProvider,
-  OpenAIEmbeddingProvider,
-  GroqProvider,
-  DeepSeekProvider,
-  GeminiEmbeddingProvider,
   MockEmbeddingProvider,
+  ProviderManager,
+  buildLLMProvider,
+  buildEmbeddingProvider,
 } from "@omnia/llm";
 import type {
   ILLMProvider,
@@ -47,77 +39,10 @@ export interface ProviderResolverOptions {
 }
 
 // ---------------------------------------------------------------------------
-// Private builders
+// Resolution logic
 // ---------------------------------------------------------------------------
 
-function buildLLMProvider(inst: ModelProviderInstance): ILLMProvider {
-  if (inst.providerName === "google-genai") {
-    return new GeminiProvider(
-      inst.apiKey,
-      inst.modelName,
-      inst.name,
-      inst.maxContext,
-    );
-  } else if (inst.providerName === "openrouter") {
-    return new OpenRouterProvider(
-      inst.apiKey,
-      inst.modelName,
-      inst.name,
-      inst.maxContext,
-    );
-  } else if (inst.providerName === "ollama") {
-    return new OllamaProvider(
-      inst.endpointUrl,
-      inst.modelName,
-      inst.name,
-      inst.maxContext,
-    );
-  } else if (inst.providerName === "anthropic") {
-    return new AnthropicProvider(
-      inst.apiKey,
-      inst.modelName,
-      inst.name,
-      inst.maxContext,
-    );
-  } else if (inst.providerName === "openai") {
-    return new OpenAIProvider(
-      inst.apiKey,
-      inst.modelName,
-      inst.name,
-      inst.maxContext,
-    );
-  } else if (inst.providerName === "groq") {
-    return new GroqProvider(
-      inst.apiKey,
-      inst.modelName,
-      inst.name,
-      inst.maxContext,
-    );
-  } else if (inst.providerName === "deepseek") {
-    return new DeepSeekProvider(
-      inst.apiKey,
-      inst.modelName,
-      inst.name,
-      inst.maxContext,
-    );
-  }
-  return new MockLLMProvider([]);
-}
-
-function buildEmbeddingProvider(
-  inst: ModelProviderInstance,
-): IEmbeddingProvider {
-  if (inst.providerName === "google-genai") {
-    return new GeminiEmbeddingProvider(inst.apiKey, inst.modelName);
-  } else if (inst.providerName === "ollama") {
-    return new OllamaEmbeddingProvider(inst.endpointUrl, inst.modelName);
-  } else if (inst.providerName === "openai") {
-    return new OpenAIEmbeddingProvider(inst.apiKey, inst.modelName);
-  }
-  return new MockEmbeddingProvider(inst.modelName);
-}
-
-// ---------------------------------------------------------------------------
+/**
 // Public API
 // ---------------------------------------------------------------------------
 

@@ -1,7 +1,34 @@
 import { describe, test, expect, vi } from "vitest";
 import { z } from "zod";
+
+const mockConfig: Record<string, string | undefined> = {};
+
+vi.mock("../src/config.js", () => ({
+  getLlmConfig: () => mockConfig,
+  resetLlmConfig: () => {
+    for (const key of Object.keys(mockConfig)) {
+      delete mockConfig[key];
+    }
+  },
+}));
+
+const { getActiveMock } = vi.hoisted(() => ({
+  getActiveMock: vi.fn().mockReturnValue(null),
+}));
+
+vi.mock("../src/provider-manager.js", async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import("../src/provider-manager.js")>();
+  return {
+    ...actual,
+    ProviderManager: {
+      ...actual.ProviderManager,
+      getActive: getActiveMock,
+    },
+  };
+});
+
 import { DeepSeekProvider } from "../src/providers/deepseek.js";
-import { llmConfig } from "../src/config.js";
 
 // Mock the ChatDeepSeek class
 vi.mock("@langchain/deepseek", () => {
@@ -41,27 +68,30 @@ describe("DeepSeekProvider Unit Tests (Tier 1)", () => {
   });
 
   test("initializes successfully with apiKey from config", () => {
-    const originalKey = llmConfig.DEEPSEEK_API_KEY;
-    llmConfig.DEEPSEEK_API_KEY = "env-dummy-key";
+    const originalKey = process.env.DEEPSEEK_API_KEY;
+    process.env.DEEPSEEK_API_KEY = "env-dummy-key";
+    mockConfig.DEEPSEEK_API_KEY = "env-dummy-key";
 
     try {
       const provider = new DeepSeekProvider();
       expect(provider.providerName).toBe("DeepSeek");
     } finally {
-      llmConfig.DEEPSEEK_API_KEY = originalKey;
+      process.env.DEEPSEEK_API_KEY = originalKey;
+      delete mockConfig.DEEPSEEK_API_KEY;
     }
   });
 
   test("throws error if no API key is provided or in config", () => {
-    const originalKey = llmConfig.DEEPSEEK_API_KEY;
-    llmConfig.DEEPSEEK_API_KEY = undefined;
+    const originalKey = process.env.DEEPSEEK_API_KEY;
+    process.env.DEEPSEEK_API_KEY = undefined;
+    mockConfig.DEEPSEEK_API_KEY = undefined;
 
     try {
       expect(() => new DeepSeekProvider()).toThrow(
         "DEEPSEEK_API_KEY is required to initialize DeepSeekProvider",
       );
     } finally {
-      llmConfig.DEEPSEEK_API_KEY = originalKey;
+      process.env.DEEPSEEK_API_KEY = originalKey;
     }
   });
 

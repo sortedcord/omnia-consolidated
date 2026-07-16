@@ -1,10 +1,37 @@
 import { describe, test, expect, vi } from "vitest";
 import { z } from "zod";
+
+const mockConfig: Record<string, string | undefined> = {};
+
+vi.mock("../src/config.js", () => ({
+  getLlmConfig: () => mockConfig,
+  resetLlmConfig: () => {
+    for (const key of Object.keys(mockConfig)) {
+      delete mockConfig[key];
+    }
+  },
+}));
+
+const { getActiveMock } = vi.hoisted(() => ({
+  getActiveMock: vi.fn().mockReturnValue(null),
+}));
+
+vi.mock("../src/provider-manager.js", async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import("../src/provider-manager.js")>();
+  return {
+    ...actual,
+    ProviderManager: {
+      ...actual.ProviderManager,
+      getActive: getActiveMock,
+    },
+  };
+});
+
 import {
   OpenAIProvider,
   OpenAIEmbeddingProvider,
 } from "../src/providers/openai.js";
-import { llmConfig } from "../src/config.js";
 
 // Mock the ChatOpenAI and OpenAIEmbeddings classes
 vi.mock("@langchain/openai", () => {
@@ -53,27 +80,30 @@ describe("OpenAIProvider Unit Tests (Tier 1)", () => {
   });
 
   test("initializes successfully with apiKey from config", () => {
-    const originalKey = llmConfig.OPENAI_API_KEY;
-    llmConfig.OPENAI_API_KEY = "env-dummy-key";
+    const originalKey = process.env.OPENAI_API_KEY;
+    process.env.OPENAI_API_KEY = "env-dummy-key";
+    mockConfig.OPENAI_API_KEY = "env-dummy-key";
 
     try {
       const provider = new OpenAIProvider();
       expect(provider.providerName).toBe("OpenAI");
     } finally {
-      llmConfig.OPENAI_API_KEY = originalKey;
+      process.env.OPENAI_API_KEY = originalKey;
+      delete mockConfig.OPENAI_API_KEY;
     }
   });
 
   test("throws error if no API key is provided or in config", () => {
-    const originalKey = llmConfig.OPENAI_API_KEY;
-    llmConfig.OPENAI_API_KEY = undefined;
+    const originalKey = process.env.OPENAI_API_KEY;
+    process.env.OPENAI_API_KEY = undefined;
+    mockConfig.OPENAI_API_KEY = undefined;
 
     try {
       expect(() => new OpenAIProvider()).toThrow(
         "OPENAI_API_KEY is required to initialize OpenAIProvider",
       );
     } finally {
-      llmConfig.OPENAI_API_KEY = originalKey;
+      process.env.OPENAI_API_KEY = originalKey;
     }
   });
 
@@ -116,14 +146,16 @@ describe("OpenAIEmbeddingProvider Unit Tests (Tier 1)", () => {
   });
 
   test("initializes successfully with apiKey from config", () => {
-    const originalKey = llmConfig.OPENAI_API_KEY;
-    llmConfig.OPENAI_API_KEY = "env-dummy-key";
+    const originalKey = process.env.OPENAI_API_KEY;
+    process.env.OPENAI_API_KEY = "env-dummy-key";
+    mockConfig.OPENAI_API_KEY = "env-dummy-key";
 
     try {
       const provider = new OpenAIEmbeddingProvider();
       expect(provider.providerName).toBe("OpenAI");
     } finally {
-      llmConfig.OPENAI_API_KEY = originalKey;
+      process.env.OPENAI_API_KEY = originalKey;
+      delete mockConfig.OPENAI_API_KEY;
     }
   });
 

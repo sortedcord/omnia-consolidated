@@ -4,21 +4,16 @@ LLM abstraction layer providing pluggable, database-backed provider instances fo
 
 ## Architecture Overview
 
-The system is built around three layers:
+The system is built around four layers:
 
-1. **Interfaces** — contracts that all providers implement
-2. **Provider Manager** — SQLite-backed CRUD for persisted provider instances
-3. **Provider Resolver** — runtime instantiation of concrete provider classes from stored instances
+1. **Registry** — each provider class self-registers its metadata (id, envVar, capabilities, default model, etc.) via `static {}` blocks; `PROVIDER_REGISTRY` is derived from these registrations at runtime — there is no hand-maintained provider list
+2. **Provider Manager** — SQLite-backed CRUD for persisted provider instances, with env-var bootstrap driven by the registry
+3. **Provider Factory** — `buildLLMProvider(inst)` / `buildEmbeddingProvider(inst)` resolve a stored instance to a live provider class via the registry
+4. **Interfaces** — contracts that all providers implement
 
 ```mermaid
 graph TD
-    subgraph Interfaces
-        ILP["ILLMProvider"]
-        IEP["IEmbeddingProvider"]
-        MPI["ModelProviderInstance"]
-    end
-
-    subgraph Concrete Providers
+    subgraph Self-Registering Providers
         GP["GeminiProvider"]
         ORP["OpenRouterProvider"]
         MP["MockLLMProvider"]
@@ -26,32 +21,31 @@ graph TD
         MEP["MockEmbeddingProvider"]
     end
 
+    subgraph Registry
+        PR["ProviderRegistry\n(derived, not authored)"]
+    end
+
     subgraph Storage
-        PM["ProviderManager"]
-        DB[("settings.db\nprovider_instances")]
-        DBMAP[("settings.db\nprovider_mappings")]
+        PM["ProviderManager\n(db.ts + bootstrap.ts + row-mapper.ts)"]
+        DB[("settings.db")]
     end
 
-    subgraph Resolution
-        PR["resolveProviders()"]
+    subgraph Factory
+        PF["buildLLMProvider()\nbuildEmbeddingProvider()"]
     end
 
-    GP -->|implements| ILP
-    ORP -->|implements| ILP
-    MP -->|implements| ILP
-    GEP -->|implements| IEP
-    MEP -->|implements| IEP
+    GP -->|static block| PR
+    ORP -->|static block| PR
+    MP -->|static block| PR
+    GEP -->|static block| PR
+    MEP -->|static block| PR
 
     PM -->|reads/writes| DB
-    PM -->|reads/writes| DBMAP
-    PM -->|returns| MPI
+    PM -->|bootstrap from| PR
 
-    PR -->|queries| PM
-    PR -->|instantiates| GP
-    PR -->|instantiates| ORP
-    PR -->|instantiates| GEP
-    PR -->|fallback| MP
-    PR -->|fallback| MEP
+    PF -->|looks up| PR
+    PF -->|instantiates| GP
+    PF -->|instantiates| ORP
 ```
 
 ## Core Interfaces
@@ -140,11 +134,16 @@ Static metadata for each available provider type (used by the UI's provider pick
 | `defaultModel`          | `string` | Default generative model                                     |
 | `defaultEmbeddingModel` | `string` | Default embedding model                                      |
 
-The [`AVAILABLE_PROVIDERS`](src/llm.ts#L70-L103) constant exports all four provider metas.
+Provider metadata is **self-declared** by each provider class in a `static {}` block and collected into `PROVIDER_REGISTRY` (derived, not authored). The `getAvailableProviders()` function and `AVAILABLE_PROVIDERS` helper in [`llm.ts`](src/llm.ts) read from the registry at call time.
 
 ## Provider Manager
 
-[`ProviderManager`](src/provider-manager.ts) is a **static class** that provides full CRUD over provider instances, backed by a SQLite database (`data/settings.db` at the workspace root).
+`ProviderManager` is a **static class** that provides full CRUD over provider instances, backed by a SQLite database (`data/settings.db` at the workspace root). Internally split across:
+
+- [`db.ts`](src/db.ts) — memoized DB handle + schema migrations (`PRAGMA user_version`)
+- [`bootstrap.ts`](src/bootstrap.ts) — `seedFromEnvVars()` driven by `PROVIDER_REGISTRY` (one implementation, not duplicated)
+- [`row-mapper.ts`](src/row-mapper.ts) — `mapRow()` + `synthInstance()` (written once, used everywhere)
+- [`provider-manager.ts`](src/provider-manager.ts) — thin CRUD: `list`, `create`, `delete`, `setActive`, `update`, `getActive`, `getMappings`, `setMapping`
 
 ### Storage
 
@@ -511,7 +510,7 @@ This sends the Zod schema to the model as a structured output constraint. The re
 | `GROQ_API_KEY`       | No       | Groq API key             |
 | `DEEPSEEK_API_KEY`   | No       | DeepSeek API key         |
 
-Both are optional because providers can also be configured through the database via the GUI settings page.
+Env var keys are derived from `PROVIDER_REGISTRY` — each provider's `envVar` field is read by `getLlmConfig()` to build the zod schema lazily. Adding a new provider with `envVar: "NEW_KEY"` automatically adds it to config validation.
 
 ## File Map
 
@@ -519,12 +518,18 @@ Both are optional because providers can also be configured through the database 
 packages/llm/
 ├── src/
 │   ├── index.ts              # Re-exports everything
-│   ├── llm.ts                # Interfaces, types, AVAILABLE_PROVIDERS
-│   ├── config.ts             # Env var parsing (Zod)
-│   ├── model-lister.ts       # ModelLister with cache and API fetching
-│   ├── provider-manager.ts   # ProviderManager (SQLite CRUD)
+│   ├── llm.ts                # Interfaces, types, getAvailableProviders()
+│   ├── registry.ts           # ProviderRegistry (derived), registerProvider/registerGenerative/registerEmbedding
+│   ├── base-provider.ts      # BaseLLMProvider (shared generateStructuredResponse), resolveCredentials
+│   ├── config.ts             # Env var parsing (lazy, registry-derived Zod)
+│   ├── model-lister.ts       # ModelLister (cache + fetchWithTimeout), fetchOpenAICompatibleModels
+│   ├── provider-factory.ts   # buildLLMProvider() / buildEmbeddingProvider() (registry lookup)
+│   ├── provider-manager.ts   # ProviderManager (thin CRUD)
+│   ├── db.ts                 # Memoized DB handle + migrations
+│   ├── bootstrap.ts          # seedFromEnvVars() (registry-driven)
+│   ├── row-mapper.ts         # mapRow() + synthInstance()
 │   └── providers/
-│       ├── google-genai.ts   # GeminiProvider + GeminiEmbeddingProvider
+│       ├── google-genai.ts   # GeminiProvider + GeminiEmbeddingProvider (self-registering)
 │       ├── ollama.ts         # OllamaProvider + OllamaEmbeddingProvider
 │       ├── openrouter.ts     # OpenRouterProvider
 │       ├── anthropic.ts      # AnthropicProvider

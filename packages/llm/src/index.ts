@@ -1,6 +1,9 @@
 export * from "./llm.js";
 export * from "./config.js";
+export * from "./registry.js";
+export * from "./provider-factory.js";
 export * from "./model-lister.js";
+export * from "./provider-manager.js";
 export * from "./providers/google-genai.js";
 export * from "./providers/mock.js";
 export * from "./providers/ollama.js";
@@ -9,4 +12,3 @@ export * from "./providers/anthropic.js";
 export * from "./providers/openai.js";
 export * from "./providers/groq.js";
 export * from "./providers/deepseek.js";
-export * from "./provider-manager.js";

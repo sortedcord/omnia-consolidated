@@ -6,13 +6,33 @@ import {
   LLMCallRecord,
   IEmbeddingProvider,
 } from "../llm.js";
+import type { ModelProviderInstance } from "../llm.js";
+import {
+  registerProvider,
+  registerGenerative,
+  registerEmbedding,
+} from "../registry.js";
 
 export class MockLLMProvider implements ILLMProvider {
-  static readonly providerId = "mock";
-  static readonly displayName = "Mock LLM Provider";
-  static readonly description =
-    "Stateless mock provider for testing and offline development";
-  static readonly defaultModel = "mock";
+  static {
+    registerProvider({
+      id: "mock",
+      displayName: "Mock LLM Provider",
+      description:
+        "Stateless mock provider for testing and offline development",
+      capabilities: { generative: true, embedding: true },
+      defaultModel: "mock",
+      defaultEmbeddingModel: "mock-embeddings",
+      defaultMaxContext: 0,
+      fallbackPriority: 1000,
+      listModels: () => Promise.resolve([{ id: "mock", name: "Mock Model" }]),
+    });
+    registerGenerative("mock", () => new MockLLMProvider([]));
+  }
+
+  static create(inst: ModelProviderInstance): ILLMProvider {
+    return new MockLLMProvider([]);
+  }
 
   providerName = "mock";
   private callCount = 0;
@@ -46,7 +66,17 @@ export class MockLLMProvider implements ILLMProvider {
 }
 
 export class MockEmbeddingProvider implements IEmbeddingProvider {
-  static readonly providerId = "mock";
+  static {
+    registerEmbedding(
+      "mock",
+      (inst: ModelProviderInstance) =>
+        new MockEmbeddingProvider(inst.modelName),
+    );
+  }
+
+  static create(inst: ModelProviderInstance): IEmbeddingProvider {
+    return new MockEmbeddingProvider(inst.modelName);
+  }
 
   providerName = "mock";
 
