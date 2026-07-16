@@ -1,10 +1,9 @@
 import {
-  GeminiProvider,
   MockLLMProvider,
-  ProviderManager,
-  OpenRouterProvider,
-  GeminiEmbeddingProvider,
   MockEmbeddingProvider,
+  ProviderManager,
+  buildLLMProvider,
+  buildEmbeddingProvider,
 } from "@omnia/llm";
 import type {
   ILLMProvider,
@@ -40,38 +39,10 @@ export interface ProviderResolverOptions {
 }
 
 // ---------------------------------------------------------------------------
-// Private builders
+// Resolution logic
 // ---------------------------------------------------------------------------
 
-function buildLLMProvider(inst: ModelProviderInstance): ILLMProvider {
-  if (inst.providerName === "google-genai") {
-    return new GeminiProvider(
-      inst.apiKey,
-      inst.modelName,
-      inst.name,
-      inst.maxContext,
-    );
-  } else if (inst.providerName === "openrouter") {
-    return new OpenRouterProvider(
-      inst.apiKey,
-      inst.modelName,
-      inst.name,
-      inst.maxContext,
-    );
-  }
-  return new MockLLMProvider([]);
-}
-
-function buildEmbeddingProvider(
-  inst: ModelProviderInstance,
-): IEmbeddingProvider {
-  if (inst.providerName === "google-genai") {
-    return new GeminiEmbeddingProvider(inst.apiKey, inst.modelName);
-  }
-  return new MockEmbeddingProvider(inst.modelName);
-}
-
-// ---------------------------------------------------------------------------
+/**
 // Public API
 // ---------------------------------------------------------------------------
 

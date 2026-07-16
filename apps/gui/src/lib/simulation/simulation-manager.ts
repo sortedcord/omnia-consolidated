@@ -5,11 +5,7 @@ import fs from "fs";
 import { SQLiteRepository } from "@omnia/core";
 import { BufferRepository, LedgerRepository } from "@omnia/memory";
 import { Architect, AliasDeltaGenerator } from "@omnia/architect";
-import {
-  ProviderManager,
-  GeminiEmbeddingProvider,
-  MockEmbeddingProvider,
-} from "@omnia/llm";
+import { ProviderManager, buildEmbeddingProvider } from "@omnia/llm";
 import type { ModelProviderInstance, IEmbeddingProvider } from "@omnia/llm";
 import { ScenarioLoader } from "@omnia/scenario";
 import type { SimSnapshot } from "../simulation-types";
@@ -398,14 +394,34 @@ export class SimulationManager {
       inst = ProviderManager.getActive("embedding");
     }
 
-    const key = inst ? inst.apiKey : process.env.GOOGLE_API_KEY || "";
-    const providerName = inst ? inst.providerName : "google-genai";
-    const modelName = inst ? inst.modelName : undefined;
+    if (!inst) {
+      const envKey = process.env.GOOGLE_API_KEY || "";
+      if (envKey) {
+        inst = {
+          id: "regen-env-fallback",
+          name: "Gemini Embed (Env)",
+          providerName: "google-genai",
+          apiKey: envKey,
+          isActive: true,
+          modelName: "gemini-embedding-001",
+          type: "embedding",
+          maxContext: 0,
+        };
+      } else {
+        inst = {
+          id: "regen-mock-fallback",
+          name: "Mock Embed (Fallback)",
+          providerName: "mock",
+          apiKey: "",
+          isActive: true,
+          modelName: undefined,
+          type: "embedding",
+          maxContext: 0,
+        };
+      }
+    }
 
-    const embeddingProvider: IEmbeddingProvider =
-      providerName === "google-genai"
-        ? new GeminiEmbeddingProvider(key, modelName)
-        : new MockEmbeddingProvider(modelName);
+    const embeddingProvider: IEmbeddingProvider = buildEmbeddingProvider(inst);
 
     for (const file of files) {
       const dbPath = path.join(DATA_DIR, file);

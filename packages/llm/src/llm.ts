@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { ProviderRegistry } from "./registry.js";
 
 export interface LLMRequest<T extends z.ZodTypeAny> {
   systemPrompt: string;
@@ -57,6 +58,7 @@ export interface ModelProviderInstance {
   modelName?: string;
   type: "generative" | "embedding";
   maxContext?: number;
+  endpointUrl?: string;
 }
 
 export interface ModelProviderMeta {
@@ -67,27 +69,21 @@ export interface ModelProviderMeta {
   defaultEmbeddingModel: string;
 }
 
-export const AVAILABLE_PROVIDERS: ModelProviderMeta[] = [
-  {
-    id: "google-genai",
-    displayName: "Google Gemini",
-    description: "Official Gemini integration using Google Gen AI SDK",
-    defaultModel: "gemini-2.5-flash",
-    defaultEmbeddingModel: "gemini-embedding-001",
+export function getAvailableProviders(): ModelProviderMeta[] {
+  return ProviderRegistry.all().map((def) => ({
+    id: def.id,
+    displayName: def.displayName,
+    description: def.description,
+    defaultModel: def.defaultModel,
+    defaultEmbeddingModel: def.defaultEmbeddingModel || "",
+  }));
+}
+
+export const AVAILABLE_PROVIDERS = {
+  get count(): number {
+    return getAvailableProviders().length;
   },
-  {
-    id: "openrouter",
-    displayName: "OpenRouter",
-    description:
-      "Multi-model router supporting Anthropic, OpenAI, DeepSeek, and local models",
-    defaultModel: "google/gemini-2.5-flash",
-    defaultEmbeddingModel: "openai/text-embedding-3-small",
+  toArray(): ModelProviderMeta[] {
+    return getAvailableProviders();
   },
-  {
-    id: "mock",
-    displayName: "Mock LLM Provider",
-    description: "Stateless mock provider for testing and offline development",
-    defaultModel: "mock",
-    defaultEmbeddingModel: "mock-embeddings",
-  },
-];
+};

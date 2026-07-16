@@ -6,6 +6,9 @@
   "exports": {
     ".": "./dist/index.js"
   },
+  "scripts": {
+    "setup-provider": "node ./dist/bin/setup-provider.js"
+  },
   "dependencies": {
     "@types/node": "^26.1.0",
     "better-sqlite3": "^12.11.1"

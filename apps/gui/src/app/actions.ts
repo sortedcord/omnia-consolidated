@@ -7,8 +7,10 @@ import type { SimSnapshot } from "@/lib/simulation";
 import {
   ProviderManager,
   ModelProviderInstance,
-  AVAILABLE_PROVIDERS,
+  getAvailableProviders as listAvailableProviders,
   ModelProviderMeta,
+  ModelLister,
+  ModelInfo,
 } from "@omnia/llm";
 
 function resolveScenarioPath(relative: string): string {
@@ -254,6 +256,7 @@ export async function createProviderInstance(
   modelName?: string,
   type: "generative" | "embedding" = "generative",
   maxContext?: number,
+  endpointUrl?: string,
 ): Promise<ModelProviderInstance> {
   return ProviderManager.create(
     name,
@@ -262,6 +265,7 @@ export async function createProviderInstance(
     modelName,
     type,
     maxContext,
+    endpointUrl,
   );
 }
 
@@ -281,6 +285,7 @@ export async function updateProviderInstance(
   modelName?: string,
   type: "generative" | "embedding" = "generative",
   maxContext?: number,
+  endpointUrl?: string,
 ): Promise<void> {
   ProviderManager.update(
     id,
@@ -290,6 +295,7 @@ export async function updateProviderInstance(
     modelName,
     type,
     maxContext,
+    endpointUrl,
   );
 }
 
@@ -305,11 +311,40 @@ export async function setProviderMapping(
 }
 
 export async function getAvailableProviders(): Promise<ModelProviderMeta[]> {
-  return AVAILABLE_PROVIDERS;
+  return listAvailableProviders();
 }
 
 export async function regenerateEmbeddings(
   newProviderInstanceId?: string,
 ): Promise<void> {
   await simulationManager.regenerateAllEmbeddings(newProviderInstanceId);
+}
+
+/**
+ * Fetch available models for a provider given its credentials.
+ * Used when creating a new instance (before it's saved to the DB).
+ */
+export async function fetchAvailableModels(
+  providerName: string,
+  apiKey: string,
+  endpointUrl?: string,
+): Promise<ModelInfo[]> {
+  return ModelLister.listModels(providerName, apiKey, endpointUrl);
+}
+
+/**
+ * Fetch available models for an existing saved provider instance.
+ * The API key is retrieved from the DB server-side — never sent to the client.
+ */
+export async function fetchAvailableModelsForInstance(
+  instanceId: string,
+): Promise<ModelInfo[]> {
+  const instances = ProviderManager.list();
+  const inst = instances.find((i) => i.id === instanceId);
+  if (!inst) return [];
+  return ModelLister.listModels(
+    inst.providerName,
+    inst.apiKey,
+    inst.endpointUrl,
+  );
 }

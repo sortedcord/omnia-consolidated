@@ -1,14 +1,20 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   createProviderInstance,
   updateProviderInstance,
   setActiveProviderInstance,
   regenerateEmbeddings,
   deleteProviderInstance,
+  fetchAvailableModels,
+  fetchAvailableModelsForInstance,
 } from "@/app/actions";
-import type { ModelProviderInstance, ModelProviderMeta } from "@omnia/llm";
+import type {
+  ModelInfo,
+  ModelProviderInstance,
+  ModelProviderMeta,
+} from "@omnia/llm";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -22,6 +28,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Combobox,
+  ComboboxContent,
+  ComboboxEmpty,
+  ComboboxInput,
+  ComboboxItem,
+  ComboboxList,
+} from "@/components/ui/combobox";
 import {
   Card,
   CardHeader,
@@ -38,6 +52,7 @@ import {
 } from "@/components/ui/item";
 import { Empty, EmptyTitle, EmptyDescription } from "@/components/ui/empty";
 import { cn } from "@/lib/utils";
+import { RefreshCwIcon } from "lucide-react";
 
 interface ProviderInstancesConfigProps {
   instances: ModelProviderInstance[];
@@ -64,8 +79,64 @@ export function ProviderInstancesConfig({
     "generative",
   );
   const [editMaxContext, setEditMaxContext] = useState<number>(32768);
+  const [editEndpointUrl, setEditEndpointUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  // Model listing state
+  const [availableModels, setAvailableModels] = useState<ModelInfo[]>([]);
+  const [modelsLoading, setModelsLoading] = useState(false);
+  const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Fetch models for an existing saved instance
+  const fetchModelsForExistingInstance = async (instanceId: string) => {
+    setModelsLoading(true);
+    setAvailableModels([]);
+    try {
+      const models = await fetchAvailableModelsForInstance(instanceId);
+      setAvailableModels(models);
+    } catch {
+      setAvailableModels([]);
+    } finally {
+      setModelsLoading(false);
+    }
+  };
+
+  // Fetch models for a new instance (using live key/endpoint from form)
+  const fetchModelsForNewInstance = (
+    provider: string,
+    apiKey: string,
+    endpointUrl: string,
+  ) => {
+    if (debounceTimer.current) clearTimeout(debounceTimer.current);
+
+    const isOllama = provider === "ollama";
+    const hasCredentials = isOllama
+      ? endpointUrl.trim().length > 0
+      : apiKey.trim().length > 8; // don't spam API with partial keys
+
+    if (!hasCredentials) {
+      setAvailableModels([]);
+      return;
+    }
+
+    debounceTimer.current = setTimeout(async () => {
+      setModelsLoading(true);
+      setAvailableModels([]);
+      try {
+        const models = await fetchAvailableModels(
+          provider,
+          isOllama ? "none" : apiKey,
+          isOllama ? endpointUrl : undefined,
+        );
+        setAvailableModels(models);
+      } catch {
+        setAvailableModels([]);
+      } finally {
+        setModelsLoading(false);
+      }
+    }, 600);
+  };
 
   useEffect(() => {
     if (selectedInstanceId === null) {
@@ -76,6 +147,8 @@ export function ProviderInstancesConfig({
       setEditIsActive(false);
       setEditType("generative");
       setEditMaxContext(32768);
+      setEditEndpointUrl("");
+      setAvailableModels([]);
     } else if (selectedInstanceId === "new") {
       setEditName("");
       const defaultProvider = "google-genai";
@@ -86,6 +159,8 @@ export function ProviderInstancesConfig({
       setEditModel(pMeta?.defaultModel || "gemini-2.5-flash");
       setEditIsActive(false);
       setEditMaxContext(32768);
+      setEditEndpointUrl("");
+      setAvailableModels([]);
     } else {
       const inst = instances.find((i) => i.id === selectedInstanceId);
       if (inst) {
@@ -109,9 +184,21 @@ export function ProviderInstancesConfig({
             ? inst.maxContext
             : 32768,
         );
+        setEditEndpointUrl(inst.endpointUrl || "");
+        setAvailableModels([]);
+        // Auto-fetch models for existing instances
+        fetchModelsForExistingInstance(selectedInstanceId);
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedInstanceId, instances, availableProviders]);
+
+  // Re-fetch models when provider/key/endpoint changes on new instance form
+  useEffect(() => {
+    if (selectedInstanceId !== "new") return;
+    fetchModelsForNewInstance(editProvider, editKey, editEndpointUrl);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editProvider, editKey, editEndpointUrl, selectedInstanceId]);
 
   const handleProviderChange = (providerId: string | null) => {
     if (!providerId) return;
@@ -122,6 +209,7 @@ export function ProviderInstancesConfig({
         ? pMeta?.defaultEmbeddingModel || ""
         : pMeta?.defaultModel || "",
     );
+    setAvailableModels([]);
   };
 
   const handleTypeChange = (type: "generative" | "embedding") => {
@@ -132,6 +220,14 @@ export function ProviderInstancesConfig({
         ? pMeta?.defaultEmbeddingModel || ""
         : pMeta?.defaultModel || "",
     );
+  };
+
+  const handleRefreshModels = () => {
+    if (selectedInstanceId && selectedInstanceId !== "new") {
+      fetchModelsForExistingInstance(selectedInstanceId);
+    } else {
+      fetchModelsForNewInstance(editProvider, editKey, editEndpointUrl);
+    }
   };
 
   const handleSave = async (e: React.FormEvent) => {
@@ -149,7 +245,7 @@ export function ProviderInstancesConfig({
       let targetInstanceId = selectedInstanceId;
 
       if (selectedInstanceId === "new") {
-        if (!editKey.trim()) {
+        if (editProvider !== "ollama" && !editKey.trim()) {
           setError("API Key is required for new instances.");
           setLoading(false);
           return;
@@ -157,10 +253,13 @@ export function ProviderInstancesConfig({
         const created = await createProviderInstance(
           editName,
           editProvider,
-          editKey,
+          editProvider === "ollama" ? "none" : editKey,
           editModel || undefined,
           editType,
           editType === "generative" ? editMaxContext : 0,
+          editProvider === "ollama"
+            ? editEndpointUrl || "http://localhost:11434"
+            : undefined,
         );
         if (editIsActive) {
           await setActiveProviderInstance(created.id);
@@ -194,10 +293,13 @@ export function ProviderInstancesConfig({
           selectedInstanceId,
           editName,
           editProvider,
-          editKey || undefined,
+          editProvider === "ollama" ? "none" : editKey || undefined,
           editModel || undefined,
           editType,
           editType === "generative" ? editMaxContext : 0,
+          editProvider === "ollama"
+            ? editEndpointUrl || "http://localhost:11434"
+            : undefined,
         );
         if (editIsActive) {
           await setActiveProviderInstance(selectedInstanceId);
@@ -336,11 +438,11 @@ export function ProviderInstancesConfig({
                       }
                       items={[
                         {
-                          label: "Generative (Text Completion)",
+                          label: "Generative (Text Generation)",
                           value: "generative",
                         },
                         {
-                          label: "Embedding (Vector generation)",
+                          label: "Embedding (Vector Embeddings)",
                           value: "embedding",
                         },
                       ]}
@@ -351,10 +453,10 @@ export function ProviderInstancesConfig({
                       <SelectContent>
                         <SelectGroup>
                           <SelectItem value="generative">
-                            Generative (Chat / Text Completion)
+                            Generative (Text Generation)
                           </SelectItem>
                           <SelectItem value="embedding">
-                            Embedding (Vector generation)
+                            Embedding (Vector Embeddings)
                           </SelectItem>
                         </SelectGroup>
                       </SelectContent>
@@ -398,30 +500,109 @@ export function ProviderInstancesConfig({
                   </span>
                 )}
 
-                <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="formKey">API Key</Label>
-                  <Input
-                    id="formKey"
-                    type="password"
-                    value={editKey}
-                    onChange={(e) => setEditKey(e.target.value)}
-                    placeholder={
-                      selectedInstanceId === "new"
-                        ? "AIzaSy..."
-                        : "•••••••• (unchanged)"
-                    }
-                    required={selectedInstanceId === "new"}
-                  />
-                </div>
+                {editProvider !== "ollama" && (
+                  <div className="flex flex-col gap-1.5">
+                    <Label htmlFor="formKey">API Key</Label>
+                    <Input
+                      id="formKey"
+                      type="password"
+                      value={editKey}
+                      onChange={(e) => setEditKey(e.target.value)}
+                      placeholder={
+                        selectedInstanceId === "new"
+                          ? "AIzaSy..."
+                          : "•••••••• (unchanged)"
+                      }
+                      required={selectedInstanceId === "new"}
+                    />
+                  </div>
+                )}
+
+                {editProvider === "ollama" && (
+                  <div className="flex flex-col gap-1.5">
+                    <Label htmlFor="formEndpoint">Endpoint URL</Label>
+                    <Input
+                      id="formEndpoint"
+                      value={editEndpointUrl}
+                      onChange={(e) => setEditEndpointUrl(e.target.value)}
+                      placeholder="e.g. http://localhost:11434"
+                      required
+                    />
+                  </div>
+                )}
 
                 <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="formModel">Model Name</Label>
-                  <Input
-                    id="formModel"
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="formModel">Model</Label>
+                    <button
+                      type="button"
+                      onClick={handleRefreshModels}
+                      disabled={modelsLoading}
+                      className="flex items-center gap-1 rounded px-1.5 py-0.5 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-40"
+                      title="Refresh model list"
+                    >
+                      <RefreshCwIcon
+                        className={cn(
+                          "size-3",
+                          modelsLoading && "animate-spin",
+                        )}
+                      />
+                      {modelsLoading
+                        ? "Fetching…"
+                        : availableModels.length > 0
+                          ? `${availableModels.length} models`
+                          : "Fetch models"}
+                    </button>
+                  </div>
+                  <Combobox
                     value={editModel}
-                    onChange={(e) => setEditModel(e.target.value)}
-                    placeholder="e.g. gemini-2.5-flash, gemini-2.5-pro"
-                  />
+                    onValueChange={(v) => {
+                      if (v) setEditModel(v);
+                    }}
+                    items={availableModels.map((m) => m.id)}
+                  >
+                    <ComboboxInput
+                      id="formModel"
+                      placeholder={
+                        modelsLoading
+                          ? "Fetching models…"
+                          : availableModels.length > 0
+                            ? "Search or select a model…"
+                            : "e.g. gemini-2.5-flash"
+                      }
+                      disabled={modelsLoading}
+                      showClear={false}
+                      value={editModel}
+                      onChange={(e) =>
+                        setEditModel((e.target as HTMLInputElement).value)
+                      }
+                      className="w-full"
+                    />
+                    <ComboboxContent>
+                      <ComboboxEmpty>
+                        {modelsLoading
+                          ? "Fetching models…"
+                          : "No models found. Type a custom model name above."}
+                      </ComboboxEmpty>
+                      <ComboboxList>
+                        {(modelId: string) => {
+                          const model = availableModels.find(
+                            (m) => m.id === modelId,
+                          );
+                          return (
+                            <ComboboxItem key={modelId} value={modelId}>
+                              <span className="flex-1 truncate">{modelId}</span>
+                              {model?.ownedBy && (
+                                <span className="ml-2 shrink-0 text-xs text-muted-foreground">
+                                  {model.ownedBy}
+                                </span>
+                              )}
+                            </ComboboxItem>
+                          );
+                        }}
+                      </ComboboxList>
+                    </ComboboxContent>
+                  </Combobox>
                 </div>
 
                 {editType === "generative" && (

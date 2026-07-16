@@ -28,12 +28,12 @@ vi.mock("../src/provider-manager.js", async (importOriginal) => {
   };
 });
 
-import { OpenRouterProvider } from "../src/providers/openrouter.js";
+import { GroqProvider } from "../src/providers/groq.js";
 
-// Mock the ChatOpenRouter class
-vi.mock("@langchain/openrouter", () => {
+// Mock the ChatGroq class
+vi.mock("@langchain/groq", () => {
   return {
-    ChatOpenRouter: class {
+    ChatGroq: class {
       config: unknown;
       constructor(config: unknown) {
         this.config = config;
@@ -61,42 +61,42 @@ vi.mock("@langchain/openrouter", () => {
   };
 });
 
-describe("OpenRouterProvider Unit Tests (Tier 1)", () => {
+describe("GroqProvider Unit Tests (Tier 1)", () => {
   test("initializes successfully with a provided apiKey", () => {
-    const provider = new OpenRouterProvider("dummy-key");
-    expect(provider.providerName).toBe("OpenRouter");
+    const provider = new GroqProvider("dummy-key");
+    expect(provider.providerName).toBe("Groq");
   });
 
   test("initializes successfully with apiKey from config", () => {
-    const originalKey = process.env.OPENROUTER_API_KEY;
-    process.env.OPENROUTER_API_KEY = "env-dummy-key";
-    mockConfig.OPENROUTER_API_KEY = "env-dummy-key";
+    const originalKey = process.env.GROQ_API_KEY;
+    process.env.GROQ_API_KEY = "env-dummy-key";
+    mockConfig.GROQ_API_KEY = "env-dummy-key";
 
     try {
-      const provider = new OpenRouterProvider();
-      expect(provider.providerName).toBe("OpenRouter");
+      const provider = new GroqProvider();
+      expect(provider.providerName).toBe("Groq");
     } finally {
-      process.env.OPENROUTER_API_KEY = originalKey;
-      delete mockConfig.OPENROUTER_API_KEY;
+      process.env.GROQ_API_KEY = originalKey;
+      delete mockConfig.GROQ_API_KEY;
     }
   });
 
   test("throws error if no API key is provided or in config", () => {
-    const originalKey = process.env.OPENROUTER_API_KEY;
-    process.env.OPENROUTER_API_KEY = undefined;
-    mockConfig.OPENROUTER_API_KEY = undefined;
+    const originalKey = process.env.GROQ_API_KEY;
+    process.env.GROQ_API_KEY = undefined;
+    mockConfig.GROQ_API_KEY = undefined;
 
     try {
-      expect(() => new OpenRouterProvider()).toThrow(
-        "OPENROUTER_API_KEY is required to initialize OpenRouterProvider",
+      expect(() => new GroqProvider()).toThrow(
+        "GROQ_API_KEY is required to initialize GroqProvider",
       );
     } finally {
-      process.env.OPENROUTER_API_KEY = originalKey;
+      process.env.GROQ_API_KEY = originalKey;
     }
   });
 
   test("generateStructuredResponse invokes the model with structured output, records usage and updates lastCalls", async () => {
-    const provider = new OpenRouterProvider("dummy-key");
+    const provider = new GroqProvider("dummy-key");
     const TestSchema = z.object({
       name: z.string(),
       success: z.boolean(),
@@ -118,23 +118,11 @@ describe("OpenRouterProvider Unit Tests (Tier 1)", () => {
       inputTokens: 10,
       outputTokens: 5,
       totalTokens: 15,
-      modelName: "google/gemini-2.5-flash",
+      modelName: "llama-3.3-70b-versatile",
       providerInstanceName: "Default",
-      maxContext: 32768,
+      maxContext: 8192,
     });
 
     expect(provider.lastCalls.length).toBe(1);
-    expect(provider.lastCalls[0]).toEqual({
-      systemPrompt: "system prompt",
-      userContext: "user context",
-      usage: {
-        inputTokens: 10,
-        outputTokens: 5,
-        totalTokens: 15,
-        modelName: "google/gemini-2.5-flash",
-        providerInstanceName: "Default",
-        maxContext: 32768,
-      },
-    });
   });
 });

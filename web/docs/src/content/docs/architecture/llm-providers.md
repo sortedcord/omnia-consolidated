@@ -71,14 +71,27 @@ If no specific provider instance is mapped to a task, the task automatically rou
 
 ---
 
-## Automatic Bootstrapping (Environment Key Fallback)
+## CLI Setup & Seeding
 
-To maintain backwards-compatibility and support headless runs, live evaluation suites, and automated unit tests without requiring database pre-configuration, the config manager supports **self-bootstrapping**:
+Rather than automatically bootstrapping from environment variables at runtime, which adds runtime complexity, you can quickly seed the database using the CLI setup tool:
 
-1. When any database connection is initialized via the provider manager, if `data/settings.db` contains **0 registered keys**, it checks the process environment for `GOOGLE_API_KEY` and `OPENROUTER_API_KEY`.
-2. If `process.env.GOOGLE_API_KEY` is present, it automatically creates, saves, and activates a default provider instance (`Gemini (Env)`) in `settings.db`.
-3. If `process.env.OPENROUTER_API_KEY` is present, it automatically creates and saves a default provider instance (`OpenRouter (Env)`) in `settings.db`.
-4. If database write locks occur (e.g., during high-concurrency Vitest test suites), the system seamlessly returns a temporary in-memory `LLMProviderInstance` (`Gemini (Env Fallback)` or `OpenRouter (Env Fallback)`) to keep execution fluent and error-free.
+### Seeding All Environment-Variable Providers
+
+```bash
+pnpm setup-provider --all
+```
+
+This command auto-detects and inserts provider instances into `data/settings.db` for any registered providers whose corresponding environment variables (such as `GOOGLE_API_KEY`, `OPENAI_API_KEY`, etc.) are defined.
+
+### Creating a Specific Provider Instance
+
+```bash
+pnpm setup-provider --provider google-genai --key YOUR_API_KEY [--name "My Gemini"] [--model gemini-2.5-flash] [--type generative] [--max-context 32768] [--endpoint url]
+```
+
+### Environment Variable Fallback
+
+If the database contains no active provider instances, the LLM providers (e.g. `GeminiProvider`, `OpenAIProvider`, etc.) will fall back directly to reading their keys from environment variables (e.g. `GOOGLE_API_KEY`, `OPENAI_API_KEY`) via `resolveCredentials`.
 
 ---
 
