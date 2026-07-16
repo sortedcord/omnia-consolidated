@@ -100,7 +100,9 @@ function getSettingsDb() {
         const googleKey = process.env.GOOGLE_API_KEY;
         const openRouterKey = process.env.OPENROUTER_API_KEY;
         const anthropicKey = process.env.ANTHROPIC_API_KEY;
+        const openaiKey = process.env.OPENAI_API_KEY;
         let hasInsertedGenerative = false;
+        let hasInsertedEmbedding = false;
 
         if (googleKey && googleKey.trim()) {
           const id = "provider-default-google";
@@ -137,6 +139,7 @@ function getSettingsDb() {
             "embedding",
             0,
           );
+          hasInsertedEmbedding = true;
         }
 
         if (anthropicKey && anthropicKey.trim()) {
@@ -159,6 +162,50 @@ function getSettingsDb() {
           );
           if (isActive === 1) {
             hasInsertedGenerative = true;
+          }
+        }
+
+        if (openaiKey && openaiKey.trim()) {
+          const id = "provider-default-openai";
+          const isActive = hasInsertedGenerative ? 0 : 1;
+          db.prepare(
+            `
+            INSERT INTO provider_instances (id, name, providerName, apiKey, isActive, modelName, type, maxContext)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+          `,
+          ).run(
+            id,
+            "OpenAI (Env)",
+            "openai",
+            openaiKey.trim(),
+            isActive,
+            "gpt-4o-mini",
+            "generative",
+            128000,
+          );
+          if (isActive === 1) {
+            hasInsertedGenerative = true;
+          }
+
+          const embedId = "provider-default-openai-embed";
+          const isEmbedActive = hasInsertedEmbedding ? 0 : 1;
+          db.prepare(
+            `
+            INSERT INTO provider_instances (id, name, providerName, apiKey, isActive, modelName, type, maxContext)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+          `,
+          ).run(
+            embedId,
+            "OpenAI Embed (Env)",
+            "openai",
+            openaiKey.trim(),
+            isEmbedActive,
+            "text-embedding-3-small",
+            "embedding",
+            0,
+          );
+          if (isEmbedActive === 1) {
+            hasInsertedEmbedding = true;
           }
         }
 
@@ -416,7 +463,9 @@ export class ProviderManager {
           const googleKey = process.env.GOOGLE_API_KEY;
           const openRouterKey = process.env.OPENROUTER_API_KEY;
           const anthropicKey = process.env.ANTHROPIC_API_KEY;
+          const openaiKey = process.env.OPENAI_API_KEY;
           let hasInsertedGenerative = false;
+          let hasInsertedEmbedding = false;
 
           if (googleKey && googleKey.trim()) {
             const id = "provider-default-google";
@@ -453,6 +502,7 @@ export class ProviderManager {
               "embedding",
               0,
             );
+            hasInsertedEmbedding = true;
           }
 
           if (anthropicKey && anthropicKey.trim()) {
@@ -475,6 +525,50 @@ export class ProviderManager {
             );
             if (isActive === 1) {
               hasInsertedGenerative = true;
+            }
+          }
+
+          if (openaiKey && openaiKey.trim()) {
+            const id = "provider-default-openai";
+            const isActive = hasInsertedGenerative ? 0 : 1;
+            db.prepare(
+              `
+              INSERT INTO provider_instances (id, name, providerName, apiKey, isActive, modelName, type, maxContext)
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            `,
+            ).run(
+              id,
+              "OpenAI (Env)",
+              "openai",
+              openaiKey.trim(),
+              isActive,
+              "gpt-4o-mini",
+              "generative",
+              128000,
+            );
+            if (isActive === 1) {
+              hasInsertedGenerative = true;
+            }
+
+            const embedId = "provider-default-openai-embed";
+            const isEmbedActive = hasInsertedEmbedding ? 0 : 1;
+            db.prepare(
+              `
+              INSERT INTO provider_instances (id, name, providerName, apiKey, isActive, modelName, type, maxContext)
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            `,
+            ).run(
+              embedId,
+              "OpenAI Embed (Env)",
+              "openai",
+              openaiKey.trim(),
+              isEmbedActive,
+              "text-embedding-3-small",
+              "embedding",
+              0,
+            );
+            if (isEmbedActive === 1) {
+              hasInsertedEmbedding = true;
             }
           }
 
@@ -608,6 +702,19 @@ export class ProviderManager {
             maxContext: 0,
           };
         }
+        const openaiKey = process.env.OPENAI_API_KEY;
+        if (openaiKey && openaiKey.trim()) {
+          return {
+            id: "provider-default-env-embed-fallback",
+            name: "OpenAI Embed (Env Fallback)",
+            providerName: "openai",
+            apiKey: openaiKey.trim(),
+            isActive: true,
+            modelName: "text-embedding-3-small",
+            type: "embedding",
+            maxContext: 0,
+          };
+        }
         return null;
       }
 
@@ -622,6 +729,19 @@ export class ProviderManager {
           modelName: "gemini-2.5-flash",
           type: "generative",
           maxContext: 32768,
+        };
+      }
+      const openaiKey = process.env.OPENAI_API_KEY;
+      if (openaiKey && openaiKey.trim()) {
+        return {
+          id: "provider-default-env-fallback",
+          name: "OpenAI (Env Fallback)",
+          providerName: "openai",
+          apiKey: openaiKey.trim(),
+          isActive: true,
+          modelName: "gpt-4o-mini",
+          type: "generative",
+          maxContext: 128000,
         };
       }
       const anthropicKey = process.env.ANTHROPIC_API_KEY;

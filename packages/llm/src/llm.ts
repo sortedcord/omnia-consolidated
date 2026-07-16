@@ -77,6 +77,13 @@ export const AVAILABLE_PROVIDERS: ModelProviderMeta[] = [
     defaultEmbeddingModel: "gemini-embedding-001",
   },
   {
+    id: "openai",
+    displayName: "OpenAI",
+    description: "Official OpenAI integration using @langchain/openai SDK",
+    defaultModel: "gpt-4o-mini",
+    defaultEmbeddingModel: "text-embedding-3-small",
+  },
+  {
     id: "anthropic",
     displayName: "Anthropic Claude",
     description: "Official Claude integration using @langchain/anthropic SDK",

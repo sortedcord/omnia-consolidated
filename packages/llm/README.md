@@ -279,6 +279,29 @@ Also exports `GeminiEmbeddingProvider` (implements `IEmbeddingProvider`) using t
 4. None found                     → throw Error
 ```
 
+### OpenAI — `OpenAIProvider`
+
+| Property                    | Value                                                  |
+| --------------------------- | ------------------------------------------------------ |
+| **File**                    | [`providers/openai.ts`](src/providers/openai.ts)       |
+| **Provider ID**             | `openai`                                               |
+| **SDK**                     | `@langchain/openai` (`ChatOpenAI`, `OpenAIEmbeddings`) |
+| **Default Model**           | `gpt-4o-mini`                                          |
+| **Default Embedding Model** | `text-embedding-3-small`                               |
+| **Default Max Context**     | `128000`                                               |
+| **Type**                    | Generative + Embedding                                 |
+
+**Key resolution** in the constructor follows this cascade:
+
+```
+1. Explicit apiKey argument       → use it
+2. ProviderManager.getActive()    → if providerName matches "openai"
+3. OPENAI_API_KEY env var         → final fallback
+4. None found                     → throw Error
+```
+
+Also exports `OpenAIEmbeddingProvider` (implements `IEmbeddingProvider`) using the same key resolution pattern against the `"embedding"` type instance. The default embedding model is `text-embedding-3-small`.
+
 ### OpenRouter — `OpenRouterProvider`
 
 | Property                    | Value                                                    |
@@ -377,6 +400,7 @@ The `buildLLMProvider()` and `buildEmbeddingProvider()` functions perform the fi
 | `providerName`    | Generative Class     | Embedding Class           |
 | ----------------- | -------------------- | ------------------------- |
 | `"google-genai"`  | `GeminiProvider`     | `GeminiEmbeddingProvider` |
+| `"openai"`        | `OpenAIProvider`     | `OpenAIEmbeddingProvider` |
 | `"openrouter"`    | `OpenRouterProvider` | _(falls through to mock)_ |
 | `"ollama"`        | `OllamaProvider`     | `OllamaEmbeddingProvider` |
 | `"anthropic"`     | `AnthropicProvider`  | _(falls through to mock)_ |
@@ -405,6 +429,7 @@ This sends the Zod schema to the model as a structured output constraint. The re
 | Variable             | Required | Description              |
 | -------------------- | -------- | ------------------------ |
 | `GOOGLE_API_KEY`     | No       | Google Gemini API key    |
+| `OPENAI_API_KEY`     | No       | OpenAI API key           |
 | `OPENROUTER_API_KEY` | No       | OpenRouter API key       |
 | `ANTHROPIC_API_KEY`  | No       | Anthropic Claude API key |
 
@@ -424,6 +449,7 @@ packages/llm/
 │       ├── ollama.ts         # OllamaProvider + OllamaEmbeddingProvider
 │       ├── openrouter.ts     # OpenRouterProvider
 │       ├── anthropic.ts      # AnthropicProvider
+│       ├── openai.ts         # OpenAIProvider + OpenAIEmbeddingProvider
 │       └── mock.ts           # MockLLMProvider + MockEmbeddingProvider
 ├── tests/
 │   ├── mock.test.ts

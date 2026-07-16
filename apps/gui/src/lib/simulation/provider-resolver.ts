@@ -6,6 +6,8 @@ import {
   ProviderManager,
   OpenRouterProvider,
   AnthropicProvider,
+  OpenAIProvider,
+  OpenAIEmbeddingProvider,
   GeminiEmbeddingProvider,
   MockEmbeddingProvider,
 } from "@omnia/llm";
@@ -75,6 +77,13 @@ function buildLLMProvider(inst: ModelProviderInstance): ILLMProvider {
       inst.name,
       inst.maxContext,
     );
+  } else if (inst.providerName === "openai") {
+    return new OpenAIProvider(
+      inst.apiKey,
+      inst.modelName,
+      inst.name,
+      inst.maxContext,
+    );
   }
   return new MockLLMProvider([]);
 }
@@ -86,6 +95,8 @@ function buildEmbeddingProvider(
     return new GeminiEmbeddingProvider(inst.apiKey, inst.modelName);
   } else if (inst.providerName === "ollama") {
     return new OllamaEmbeddingProvider(inst.endpointUrl, inst.modelName);
+  } else if (inst.providerName === "openai") {
+    return new OpenAIEmbeddingProvider(inst.apiKey, inst.modelName);
   }
   return new MockEmbeddingProvider(inst.modelName);
 }
