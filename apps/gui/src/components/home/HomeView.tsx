@@ -34,7 +34,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-export function DashboardView() {
+export function HomeView() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [loadingData, setLoadingData] = useState(true);

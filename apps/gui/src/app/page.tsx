@@ -1,5 +1,5 @@
-import { DashboardView } from "@/components/play/DashboardView";
+import { HomeView } from "@/components/home/HomeView";
 
 export default function Home() {
-  return <DashboardView />;
+  return <HomeView />;
 }
