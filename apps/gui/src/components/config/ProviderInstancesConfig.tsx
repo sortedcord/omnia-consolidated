@@ -449,6 +449,7 @@ export function ProviderInstancesConfig({
                 <div className="grid grid-cols-[2fr_3fr] gap-4">
                   <div className="flex flex-col gap-1.5">
                     <Label>Instance Type</Label>
+                    {/* TODO: Change this to choice card */}
                     <Select
                       value={editType}
                       onValueChange={(v) =>
