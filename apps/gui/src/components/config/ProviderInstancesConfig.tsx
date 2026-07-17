@@ -55,13 +55,13 @@ import { cn } from "@/lib/utils";
 import { RefreshCwIcon } from "lucide-react";
 
 const providerLogoMap: Record<string, string> = {
-  anthropic: "/claude_logo.png",
-  "google-genai": "/gemini_logo.png",
-  openrouter: "/openrouter_logo.png",
-  ollama: "/ollama_logo.png",
-  deepseek: "/deepseek_logo.png",
-  openai: "/openai_logo.png",
-  groq: "/groq_logo.png",
+  anthropic: "/claude_logo.webp",
+  "google-genai": "/gemini_logo.webp",
+  openrouter: "/openrouter_logo.webp",
+  ollama: "/ollama_logo.webp",
+  deepseek: "/deepseek_logo.webp",
+  openai: "/openai_logo.webp",
+  groq: "/groq_logo.webp",
 };
 
 interface ProviderInstancesConfigProps {
@@ -394,7 +394,7 @@ export function ProviderInstancesConfig({
                         <img
                           src={providerLogoMap[inst.providerName]}
                           alt={inst.providerName}
-                          className="max-h-[30px] max-w-[30px] shrink-0 rounded-sm object-contain"
+                          className="max-h-[38px] max-w-[38px] shrink-0 rounded-sm object-contain"
                         />
                       )}
                       <div className="flex flex-col gap-1">
