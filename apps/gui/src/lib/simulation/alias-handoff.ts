@@ -33,11 +33,36 @@ export async function runHandoffResolution(session: SimSession): Promise<void> {
       maxContext,
     );
     if (trigger !== "none") {
-      await handoffEngine.runHandoff(
+      const ran = await handoffEngine.runHandoff(
         entity,
         bufferEntries,
         worldState.clock.get(),
       );
+      if (ran) {
+        const lastCall =
+          session.handoffProvider.lastCalls?.[
+            (session.handoffProvider.lastCalls?.length || 0) - 1
+          ];
+        const info = session.entities.find((e) => e.id === entity.id);
+        const entityName = info?.name || entity.id;
+        session.log.push({
+          turn: session.turn,
+          entityId: entity.id,
+          entityName,
+          narrativeProse: `Handoff triggered for ${entityName}: memories were transferred from Buffer to Memory Ledger`,
+          intents: [],
+          timestamp: worldState.clock.get().toISOString(),
+          isHandoff: true,
+          rawPrompt: lastCall
+            ? {
+                systemPrompt: lastCall.systemPrompt,
+                userContext: lastCall.userContext,
+              }
+            : undefined,
+          usage: lastCall?.usage,
+          handoffResult: lastCall?.response,
+        });
+      }
     }
   }
 }

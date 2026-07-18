@@ -48,15 +48,21 @@ export class MockLLMProvider implements ILLMProvider {
       return { success: false, error: "Mock responses exhausted" };
     }
     const usage = { inputTokens: 100, outputTokens: 50, totalTokens: 150 };
-    this.lastCalls.push({
-      systemPrompt: request.systemPrompt,
-      userContext: request.userContext,
-      usage,
-    });
     try {
       const parsed = request.schema.parse(next);
+      this.lastCalls.push({
+        systemPrompt: request.systemPrompt,
+        userContext: request.userContext,
+        usage,
+        response: parsed,
+      });
       return { success: true, data: parsed, usage };
     } catch (e) {
+      this.lastCalls.push({
+        systemPrompt: request.systemPrompt,
+        userContext: request.userContext,
+        usage,
+      });
       return {
         success: false,
         error: e instanceof Error ? e.message : String(e),

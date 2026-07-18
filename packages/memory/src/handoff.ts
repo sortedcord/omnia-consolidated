@@ -230,10 +230,12 @@ export class HandoffEngine {
 You are the memory Handoff Engine. Your task is to process a list of recent working memory buffer entries for an entity and select which memories to promote to the long-term Ledger, and which to forget or summarize.
 
 Instructions:
-1. **Cluster** related consecutive buffer entries into high-level narrative beats or events (e.g. a full back-and-forth conversation or a single physical action and its outcome). Combine them into a single summary chunk.
-2. **Write in the third-person** for the "content" of each chunk (e.g. "John asked Mary for the key, and Mary reluctantly handed it over").
+1. **Cluster** related consecutive buffer entries into high-level narrative beats or events (e.g. physical action and its outcome or trivial actions). Combine them into a single chunk.
+2. **Write in the third-person** for the events of other entities. (eg. Alan did that. Sarah did this, etc)
+2. **Write in first-person for the events that you yourself did. (eg. I did this, I did that.)
 3. **verbatim Quotes**: Extract verbatim, high-salience quotes from dialogue if relevant. Do not modify or invent quotes.
 4. **Determine Importance**: Assign an importance score from 1 (trivial, e.g. waking up) to 10 (life-altering, e.g. witnessing a crime).
+4. Discard small body movements like looking around, sighing, etc that do not contextually hold any meaning after it is done.
 5. **Involved Entities**: Identify all entity IDs involved in the memories in this chunk.
 6. **Retain in Buffer (Pinning)**: If a beat represents an unresolved high-stakes situation (e.g. a standing threat, an unanswered accusation, an ongoing chase or conflict), set "retainInBuffer" to true so it remains in the working memory buffer for immediate context. Otherwise, set it to false so it is safely pruned from the buffer.
 7. **Exclude stage business**: Glances, sighs, ambient noticing, and irrelevant sensory details should be ignored and not included in any promoted chunk. They will be forgotten.

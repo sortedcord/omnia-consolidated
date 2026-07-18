@@ -12,6 +12,13 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Spinner } from "@/components/ui/spinner";
 import { PromptModal } from "./PromptModal";
+import { HandoffModal } from "./HandoffModal";
+import {
+  Alert,
+  AlertAction,
+  AlertDescription,
+  AlertTitle,
+} from "@/components/ui/alert";
 import { cn } from "@/lib/utils";
 import { ChevronLeft } from "lucide-react";
 import {
@@ -161,6 +168,9 @@ export function PlayView() {
   const [error, setError] = useState("");
   const [statusText, setStatusText] = useState("");
   const [selectedEntryForModal, setSelectedEntryForModal] = useState<
+    SimSnapshot["log"][number] | null
+  >(null);
+  const [selectedHandoffForModal, setSelectedHandoffForModal] = useState<
     SimSnapshot["log"][number] | null
   >(null);
 
@@ -490,14 +500,43 @@ export function PlayView() {
                   const playerEntity = snapshot.entities.find(
                     (e) => e.isPlayer,
                   );
-                  return snapshot.log.map((entry, i) => (
-                    <LogEntryCard
-                      key={i}
-                      entry={entry}
-                      onShowPrompt={setSelectedEntryForModal}
-                      isPlayerCard={entry.entityId === playerEntity?.id}
-                    />
-                  ));
+                  return snapshot.log.map((entry, i) => {
+                    if (entry.isHandoff) {
+                      return (
+                        <Alert
+                          key={i}
+                          className="max-w-md border-dashed bg-secondary/10"
+                        >
+                          <div className="flex-1">
+                            <AlertTitle>
+                              Handoff triggered for {entry.entityName}
+                            </AlertTitle>
+                            <AlertDescription>
+                              Memories were transferred from Buffer to Memory
+                              Ledger
+                            </AlertDescription>
+                          </div>
+                          <AlertAction>
+                            <Button
+                              size="xs"
+                              variant="default"
+                              onClick={() => setSelectedHandoffForModal(entry)}
+                            >
+                              View Details
+                            </Button>
+                          </AlertAction>
+                        </Alert>
+                      );
+                    }
+                    return (
+                      <LogEntryCard
+                        key={i}
+                        entry={entry}
+                        onShowPrompt={setSelectedEntryForModal}
+                        isPlayerCard={entry.entityId === playerEntity?.id}
+                      />
+                    );
+                  });
                 })()}
                 {loading && (
                   <div className="flex items-center gap-2 text-sm italic text-muted-foreground p-2 font-mono">
@@ -660,6 +699,13 @@ export function PlayView() {
           <PromptModal
             entry={selectedEntryForModal}
             onClose={() => setSelectedEntryForModal(null)}
+          />
+        )}
+
+        {selectedHandoffForModal && (
+          <HandoffModal
+            entry={selectedHandoffForModal}
+            onClose={() => setSelectedHandoffForModal(null)}
           />
         )}
       </div>

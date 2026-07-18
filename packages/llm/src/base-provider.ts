@@ -105,6 +105,7 @@ export abstract class BaseLLMProvider implements ILLMProvider {
       systemPrompt: request.systemPrompt,
       userContext: request.userContext,
       usage,
+      response: parsed,
     });
 
     return { success: true, data: parsed, usage };

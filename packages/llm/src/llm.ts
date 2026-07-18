@@ -33,6 +33,7 @@ export interface LLMCallRecord {
     providerInstanceName?: string;
     maxContext?: number;
   };
+  response?: any;
 }
 
 export interface ILLMProvider {

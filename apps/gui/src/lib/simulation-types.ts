@@ -16,6 +16,8 @@ export interface LogEntry {
   narrativeProse: string;
   intents: IntentInfo[];
   timestamp: string;
+  isHandoff?: boolean;
+  handoffResult?: any;
   rawPrompt?: {
     systemPrompt: string;
     userContext: string;
