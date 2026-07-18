@@ -38,6 +38,7 @@ export async function startSimulation(input: {
   scenario?: string;
   playEntity?: string;
   providerInstanceId?: string;
+  customName?: string;
 }): Promise<ActionResult> {
   try {
     const scenarioFile =
@@ -52,6 +53,7 @@ export async function startSimulation(input: {
       resolved,
       input.playEntity || undefined,
       input.providerInstanceId,
+      input.customName,
     );
 
     if (snapshot.status === "error") {
@@ -347,4 +349,22 @@ export async function fetchAvailableModelsForInstance(
     inst.apiKey,
     inst.endpointUrl,
   );
+}
+
+export async function renameSimulation(
+  simId: string,
+  newName: string,
+): Promise<{ ok: true; snapshot: SimSnapshot } | { ok: false; error: string }> {
+  try {
+    const snapshot = await simulationManager.rename(simId, newName);
+    if (!snapshot) {
+      return { ok: false, error: "Simulation session not found" };
+    }
+    return { ok: true, snapshot };
+  } catch (err) {
+    return {
+      ok: false,
+      error: err instanceof Error ? err.message : "Failed to rename simulation",
+    };
+  }
 }

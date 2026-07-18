@@ -33,6 +33,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 
 export function HomeView() {
   const router = useRouter();
@@ -59,6 +60,7 @@ export function HomeView() {
   const [loadingEntities, setLoadingEntities] = useState(false);
   const [selectedEntityForModal, setSelectedEntityForModal] =
     useState<string>("");
+  const [customName, setCustomName] = useState<string>("");
 
   const loadSavedSessions = useCallback(async () => {
     try {
@@ -144,6 +146,7 @@ export function HomeView() {
     setScenarioForModal(scenario);
     setLoadingEntities(true);
     setSelectedEntityForModal(""); // Reset selection to Spectator
+    setCustomName(scenario.name); // Set custom simulation name default
     try {
       const res = await getScenarioEntities(scenario.path);
       if (res.ok) {
@@ -168,6 +171,7 @@ export function HomeView() {
       const result = await startSimulation({
         scenario: targetScenario.path,
         playEntity: selectedEntityForModal || undefined,
+        customName: customName.trim() || undefined,
       });
 
       if (!result.ok) {
@@ -394,6 +398,16 @@ export function HomeView() {
                   </div>
                 ) : (
                   <div className="flex flex-col gap-4 py-4">
+                    <div className="flex flex-col gap-2">
+                      <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground font-mono">
+                        Custom Simulation Name
+                      </label>
+                      <Input
+                        value={customName}
+                        onChange={(e) => setCustomName(e.target.value)}
+                        placeholder="Enter custom name..."
+                      />
+                    </div>
                     <div className="flex flex-col gap-2">
                       <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground font-mono">
                         Simulation Mode / Play as

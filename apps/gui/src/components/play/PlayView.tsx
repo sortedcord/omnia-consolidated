@@ -387,7 +387,7 @@ export function PlayView() {
               logEndRef={logEndRef}
             />
           ) : (
-            <ManageView snapshot={snapshot} />
+            <ManageView snapshot={snapshot} onRename={setSnapshot} />
           )}
         </div>
 

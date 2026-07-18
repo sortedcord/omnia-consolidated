@@ -36,6 +36,7 @@ export class SimulationManager {
     scenarioPath: string,
     playEntityName?: string,
     providerInstanceId?: string,
+    customName?: string,
   ): Promise<SimSnapshot> {
     // Resolve or validate the active generative provider upfront so we can
     // return a clean error snapshot before touching the filesystem.
@@ -168,7 +169,7 @@ export class SimulationManager {
       bufferRepo,
       ledgerRepo,
       worldInstanceId,
-      scenarioName: scenarioJson.name,
+      scenarioName: customName || scenarioJson.name,
       scenarioDescription: scenarioJson.description || "",
       turn: 1,
       maxTurns: 20,
@@ -289,6 +290,19 @@ export class SimulationManager {
   getSnapshot(id: string): SimSnapshot | null {
     const session = this.sessions.get(id);
     return session ? this.snapshot(session) : null;
+  }
+
+  async rename(id: string, newName: string): Promise<SimSnapshot | null> {
+    let session = this.sessions.get(id);
+    if (!session) {
+      await this.load(id);
+      session = this.sessions.get(id);
+    }
+    if (!session) return null;
+
+    session.scenarioName = newName;
+    saveSession(session);
+    return this.snapshot(session);
   }
 
   // ---------------------------------------------------------------------------
