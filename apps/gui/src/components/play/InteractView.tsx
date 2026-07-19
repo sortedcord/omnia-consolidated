@@ -20,11 +20,13 @@ function IntentTag({
   isSelf,
   playerAliases,
   playerId,
+  entities,
 }: {
   intent: SimSnapshot["log"][number]["intents"][number];
   isSelf?: boolean;
   playerAliases: Record<string, string>;
   playerId: string;
+  entities: SimSnapshot["entities"];
 }) {
   const labels: Record<string, string> = {
     monologue: "thought",
@@ -40,7 +42,18 @@ function IntentTag({
     outcome = intent.isValid ? " ✅" : ` ❌ (${intent.reason})`;
   }
 
-  const viewerAliasesMap = new Map(Object.entries(playerAliases || {}));
+  const viewerAliasesMap = new Map<string, string>();
+  if (entities) {
+    for (const ent of entities) {
+      viewerAliasesMap.set(ent.id, ent.name || ent.id);
+    }
+  }
+  if (playerAliases) {
+    for (const [targetId, alias] of Object.entries(playerAliases)) {
+      viewerAliasesMap.set(targetId, alias);
+    }
+  }
+
   const viewerEntityMock = {
     id: playerId || "",
     aliases: viewerAliasesMap,
@@ -86,12 +99,14 @@ function LogEntryCard({
   isPlayerCard,
   playerAliases,
   playerId,
+  entities,
 }: {
   entry: SimSnapshot["log"][number];
   onShowPrompt: (entry: SimSnapshot["log"][number]) => void;
   isPlayerCard: boolean;
   playerAliases: Record<string, string>;
   playerId: string;
+  entities: SimSnapshot["entities"];
 }) {
   const showMenu = !!(entry.rawPrompt || entry.decoderPrompt);
 
@@ -135,6 +150,7 @@ function LogEntryCard({
             isSelf={isPlayerCard}
             playerAliases={playerAliases}
             playerId={playerId}
+            entities={entities}
           />
         ))}
       </div>
@@ -213,6 +229,7 @@ export function InteractView({
                 isPlayerCard={entry.entityId === playerEntity?.id}
                 playerAliases={playerAliases}
                 playerId={playerId}
+                entities={snapshot.entities}
               />
             );
           })}
