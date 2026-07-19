@@ -13,7 +13,8 @@ import {
   LedgerEntry,
   LedgerRepository,
 } from "@omnia/memory";
-import { hydrate, PromptComponent } from "@omnia/voice";
+import { hydrate } from "@omnia/voice";
+import { PromptComponent } from "@omnia/llm";
 
 /**
  * Zod schema for the structured response expected from the actor LLM.

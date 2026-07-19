@@ -1,6 +1,22 @@
 import { z } from "zod";
 import { ProviderRegistry } from "./registry.js";
 
+export interface PromptComponent {
+  label: string;
+  type: "system" | "world" | "events" | "memories" | "input" | "other";
+  content: string;
+}
+
+export interface PromptBreakdown {
+  systemPrompt: string;
+  userContext: string;
+  components?: PromptComponent[];
+}
+
+export interface IPromptBuilder<TArgs extends any[]> {
+  build(...args: TArgs): PromptBreakdown;
+}
+
 export interface LLMRequest<T extends z.ZodTypeAny> {
   systemPrompt: string;
   userContext: string;

@@ -6,7 +6,8 @@ import {
   BufferRepository,
 } from "./buffer.js";
 import { LedgerEntry, LedgerRepository } from "./ledger.js";
-import { ILLMProvider, IEmbeddingProvider } from "@omnia/llm";
+import { ILLMProvider, IEmbeddingProvider, PromptComponent } from "@omnia/llm";
+import { HandoffPromptBuilder } from "./handoff-prompt-builder.js";
 
 export const HandoffChunkSchema = z.object({
   sourceEntryIds: z.array(z.string()), // buffer rows this chunk consumes
@@ -202,55 +203,44 @@ export function splitBufferForHandoff(
 /**
  * HandoffEngine processes memory handoffs using LLM summarization and DB transactions.
  */
+export interface HandoffRunResult {
+  success: boolean;
+  systemPrompt?: string;
+  userContext?: string;
+  promptComponents?: PromptComponent[];
+  response?: any;
+}
+
 export class HandoffEngine {
+  public lastResult: HandoffRunResult | null = null;
+  private promptBuilder: HandoffPromptBuilder;
+
   constructor(
     private llmProvider: ILLMProvider,
     private embedProvider: IEmbeddingProvider,
     private bufferRepo: BufferRepository,
     private ledgerRepo: LedgerRepository,
-  ) {}
+  ) {
+    this.promptBuilder = new HandoffPromptBuilder();
+  }
 
   async runHandoff(
     entity: Entity,
     bufferEntries: BufferEntry[],
     now: Date,
   ): Promise<boolean> {
+    this.lastResult = null;
     const { candidates } = splitBufferForHandoff(bufferEntries, now);
 
     if (candidates.length === 0) {
       return false;
     }
 
-    const candidatesList = candidates
-      .map((entry) => {
-        const serialized = serializeSubjectiveBufferEntry(entry, entity);
-        return `ID: ${entry.id} | Timestamp: ${entry.timestamp} | Location: ${entry.locationId || "None"}\nContent: ${serialized}`;
-      })
-      .join("\n---\n");
-
-    const systemPrompt = `
-You are the memory Handoff Engine. Your task is to process a list of Cognitive Buffer entries for an entity and select which memories to promote to the Memory Ledger, and which to forget or summarize.
-
-Instructions:
-1. **Cluster** related consecutive buffer entries into high-level narrative beats or events (e.g. physical action and its outcome or trivial actions). Combine them into a single chunk.
-2. **Write in the third-person** for the events of other entities. (eg. Alan did that. Sarah did this, etc)
-2. **Write in first-person for the events that you yourself did. (eg. I did this, I did that.)
-3. **verbatim Quotes**: Extract verbatim, high-salience quotes from dialogue if relevant. Do not modify or invent quotes.
-4. **Determine Importance**: Assign an importance score from 1 (trivial, e.g. waking up) to 10 (life-altering, e.g. witnessing a crime).
-4. Discard small body movements like looking around, sighing, etc that do not contextually hold any meaning after it is done.
-5. **Involved Entities**: Identify all entity IDs involved in the memories in this chunk.
-6. **Retain in Cognitive Buffer (Pinning)**: If a beat represents an unresolved high-stakes situation (e.g. a standing threat, an unanswered accusation, an ongoing chase or conflict), set "retainInBuffer" to true so it remains in the Cognitive Buffer for immediate context. Otherwise, set it to false so it is safely pruned from the Cognitive Buffer.
-7. **Exclude stage business**: Glances, sighs, ambient noticing, and irrelevant sensory details should be ignored and not included in any promoted chunk. They will be forgotten.
-8. **Forget by omission**: Any buffer entry ID that you do not include in any chunk's "sourceEntryIds" will be permanently deleted and forgotten.
-`.trim();
-
-    const userContext = `
-Subject Entity ID: ${entity.id}
-Current Time: ${now.toISOString()}
-
-Cognitive Buffer Candidates for Handoff:
-${candidatesList}
-`.trim();
+    const { systemPrompt, userContext, components } = this.promptBuilder.build(
+      entity,
+      candidates,
+      now,
+    );
 
     const response = await this.llmProvider.generateStructuredResponse({
       systemPrompt,
@@ -259,8 +249,22 @@ ${candidatesList}
     });
 
     if (!response.success || !response.data) {
+      this.lastResult = {
+        success: false,
+        systemPrompt,
+        userContext,
+        promptComponents: components,
+      };
       return false;
     }
+
+    this.lastResult = {
+      success: true,
+      systemPrompt,
+      userContext,
+      promptComponents: components,
+      response: response.data,
+    };
 
     const result = response.data;
     const db = (this.bufferRepo as any).db;

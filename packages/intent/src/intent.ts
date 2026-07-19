@@ -56,8 +56,14 @@ export const LLMIntentSequenceSchema = z.object({
  * The full output of the Intent Decoder: an ordered sequence of intents
  * extracted from a single narrative prose block.
  */
+import { PromptComponent } from "@omnia/llm";
+
 export const IntentSequenceSchema = z.object({
   intents: z.array(IntentSchema),
 });
 
-export type IntentSequence = z.infer<typeof IntentSequenceSchema>;
+export type IntentSequence = z.infer<typeof IntentSequenceSchema> & {
+  systemPrompt?: string;
+  userContext?: string;
+  promptComponents?: PromptComponent[];
+};

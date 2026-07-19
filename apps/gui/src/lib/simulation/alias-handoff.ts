@@ -39,44 +39,13 @@ export async function runHandoffResolution(session: SimSession): Promise<void> {
         worldState.clock.get(),
       );
       if (ran) {
+        const lastResult = (handoffEngine as any).lastResult;
         const lastCall =
           session.handoffProvider.lastCalls?.[
             (session.handoffProvider.lastCalls?.length || 0) - 1
           ];
         const info = session.entities.find((e) => e.id === entity.id);
         const entityName = info?.name || entity.id;
-        let handoffPrompt = undefined;
-        if (lastCall) {
-          const header = "Cognitive Buffer Candidates for Handoff:";
-          const userContext = lastCall.userContext;
-          const idx = userContext.indexOf(header);
-
-          let contextStr = userContext;
-          let candidatesStr = "";
-
-          if (idx !== -1) {
-            contextStr = userContext.substring(0, idx).trim();
-            candidatesStr = userContext.substring(idx).trim();
-          }
-
-          handoffPrompt = {
-            systemPrompt: lastCall.systemPrompt,
-            userContext: lastCall.userContext,
-            components: [
-              {
-                label: "System Prompt",
-                type: "system",
-                content: lastCall.systemPrompt,
-              },
-              { label: "Entity Context", type: "world", content: contextStr },
-              {
-                label: "Cognitive Candidates",
-                type: "input",
-                content: candidatesStr,
-              },
-            ],
-          };
-        }
 
         session.log.push({
           turn: session.turn,
@@ -86,9 +55,15 @@ export async function runHandoffResolution(session: SimSession): Promise<void> {
           intents: [],
           timestamp: worldState.clock.get().toISOString(),
           isHandoff: true,
-          rawPrompt: handoffPrompt,
+          rawPrompt: lastResult
+            ? {
+                systemPrompt: lastResult.systemPrompt || "",
+                userContext: lastResult.userContext || "",
+                components: lastResult.promptComponents,
+              }
+            : undefined,
           usage: lastCall?.usage,
-          handoffResult: lastCall?.response,
+          handoffResult: lastResult?.response || lastCall?.response,
         });
       }
     }

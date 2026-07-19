@@ -168,7 +168,7 @@ export async function processNpcTurn(
     rawPrompt: {
       systemPrompt: result.systemPrompt || "",
       userContext: result.userContext || "",
-      sections: result.promptComponents,
+      components: result.promptComponents,
     },
   };
 
@@ -267,7 +267,7 @@ export async function executePlayerAction(
     rawPrompt: {
       systemPrompt: result.systemPrompt || ctx.systemPrompt,
       userContext: result.userContext || ctx.userContext,
-      sections: result.promptComponents,
+      components: result.promptComponents,
     },
   };
 
@@ -279,9 +279,26 @@ export async function executePlayerAction(
       session.decoderProvider.lastCalls[
         session.decoderProvider.lastCalls.length - 1
       ];
+    const proseHeader = "=== NARRATIVE PROSE ===";
+    const userContext = call.userContext;
+    const idx = userContext.indexOf(proseHeader);
+
+    let contextStr = userContext;
+    let proseStr = "";
+
+    if (idx !== -1) {
+      contextStr = userContext.substring(0, idx).trim();
+      proseStr = userContext.substring(idx).trim();
+    }
+
     entry.decoderPrompt = {
       systemPrompt: call.systemPrompt,
       userContext: call.userContext,
+      components: [
+        { label: "System Prompt", type: "system", content: call.systemPrompt },
+        { label: "Decoder Context", type: "world", content: contextStr },
+        { label: "Narrative Prose", type: "input", content: proseStr },
+      ],
     };
     entry.decoderUsage = call.usage;
   }

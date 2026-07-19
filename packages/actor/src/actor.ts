@@ -1,8 +1,7 @@
 import { Entity, WorldState } from "@omnia/core";
-import { ILLMProvider } from "@omnia/llm";
+import { ILLMProvider, PromptComponent } from "@omnia/llm";
 import { BufferEntry, BufferRepository, LedgerRepository } from "@omnia/memory";
 import { Intent, IntentDecoder, IntentSequence } from "@omnia/intent";
-import { PromptComponent } from "@omnia/voice";
 import {
   ActorPromptBuilder,
   ActorResponseSchema,
