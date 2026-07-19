@@ -29,24 +29,37 @@ export function PromptModal({ entry, onClose }: PromptModalProps) {
     systemPrompt: string,
     userContext: string,
     inputTokens: number,
+    sectionsObj?: {
+      worldInfo: string;
+      memoryLedger: string;
+      cognitiveBuffer: string;
+    },
   ) => {
-    const recentHeader = "=== COGNITIVE BUFFER ===";
-    const ledgerHeader = "=== MEMORY LEDGER ===";
-
-    const recentIdx = userContext.indexOf(recentHeader);
-    let worldStr = userContext;
+    let worldStr = "";
     let recentStr = "";
     let ledgerStr = "";
 
-    if (recentIdx !== -1) {
-      worldStr = userContext.substring(0, recentIdx).trim();
-      const rest = userContext.substring(recentIdx).trim();
-      const ledgerIdx = rest.indexOf(ledgerHeader);
-      if (ledgerIdx !== -1) {
-        recentStr = rest.substring(0, ledgerIdx).trim();
-        ledgerStr = rest.substring(ledgerIdx).trim();
-      } else {
-        recentStr = rest;
+    if (sectionsObj) {
+      worldStr = sectionsObj.worldInfo;
+      recentStr = sectionsObj.cognitiveBuffer;
+      ledgerStr = sectionsObj.memoryLedger;
+    } else {
+      const recentHeader = "=== COGNITIVE BUFFER ===";
+      const ledgerHeader = "=== MEMORY LEDGER ===";
+
+      const recentIdx = userContext.indexOf(recentHeader);
+      worldStr = userContext;
+
+      if (recentIdx !== -1) {
+        worldStr = userContext.substring(0, recentIdx).trim();
+        const rest = userContext.substring(recentIdx).trim();
+        const ledgerIdx = rest.indexOf(ledgerHeader);
+        if (ledgerIdx !== -1) {
+          recentStr = rest.substring(0, ledgerIdx).trim();
+          ledgerStr = rest.substring(ledgerIdx).trim();
+        } else {
+          recentStr = rest;
+        }
       }
     }
 
@@ -144,6 +157,7 @@ export function PromptModal({ entry, onClose }: PromptModalProps) {
           entry.rawPrompt.systemPrompt,
           entry.rawPrompt.userContext,
           entry.usage.inputTokens,
+          entry.rawPrompt.sections,
         )
       : null;
   const decoderBreakdown =

@@ -54,6 +54,13 @@ export interface ActorTurnResult {
   narrativeProse: string;
   /** The decoded intent sequence (split/classified from the prose). */
   intents: IntentSequence;
+  systemPrompt?: string;
+  userContext?: string;
+  promptComponents?: {
+    worldInfo: string;
+    memoryLedger: string;
+    cognitiveBuffer: string;
+  };
 }
 
 /**
@@ -116,7 +123,7 @@ export class ActorAgent {
       );
     }
 
-    const { systemPrompt, userContext } = this.promptBuilder.build(
+    const { systemPrompt, userContext, sections } = this.promptBuilder.build(
       worldState,
       entity,
     );
@@ -145,6 +152,9 @@ export class ActorAgent {
     return {
       narrativeProse,
       intents,
+      systemPrompt,
+      userContext,
+      promptComponents: sections,
     };
   }
 }

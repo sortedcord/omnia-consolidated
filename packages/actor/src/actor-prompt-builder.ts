@@ -57,13 +57,24 @@ export class ActorPromptBuilder {
   /**
    * Assembles the system prompt and user context for a given entity.
    */
+  /**
+   * Assembles the system prompt and user context for a given entity.
+   */
   build(
     worldState: WorldState,
     entity: Entity,
-  ): { systemPrompt: string; userContext: string } {
+  ): {
+    systemPrompt: string;
+    userContext: string;
+    sections: {
+      worldInfo: string;
+      memoryLedger: string;
+      cognitiveBuffer: string;
+    };
+  } {
     const systemPrompt = this.buildSystemPrompt();
-    const userContext = this.buildUserContext(worldState, entity);
-    return { systemPrompt, userContext };
+    const { userContext, sections } = this.buildUserContext(worldState, entity);
+    return { systemPrompt, userContext, sections };
   }
 
   private buildSystemPrompt(): string {
@@ -84,23 +95,28 @@ Guidelines:
 - Stay strictly within what your character knows. Do not invent knowledge that doesn't exist or act on it.
 - You are limited by just your memory. If your memory is limited, then that's all you can remember. If you do make stuff up then that's lying. Which is allowed, but remember that you're lying
 - Only describe your character's own actions, spoken words, and internal reactions. Do NOT narrate the environment or your surroundings, or other characters' actions.
+- Be clear about who or what you are interacting with.
 ".
 `.trim();
   }
 
-  private buildUserContext(worldState: WorldState, entity: Entity): string {
-    const sections: string[] = [];
+  private buildUserContext(
+    worldState: WorldState,
+    entity: Entity,
+  ): {
+    userContext: string;
+    sections: {
+      worldInfo: string;
+      memoryLedger: string;
+      cognitiveBuffer: string;
+    };
+  } {
     const now = worldState.clock.get();
 
-    // --- Subjective present time ---
-    sections.push(
-      `=== CURRENT MOMENT ===\nIt is ${now.toISOString()} right now.`,
-    );
-
-    // --- Subjective world state (self + perceived entities + co-location) ---
-    sections.push(
-      `=== THE WORLD AS YOU PERCEIVE IT ===\n${serializeSubjectiveWorldState(worldState, entity.id)}`,
-    );
+    // --- Subjective present time & world state ---
+    const momentStr = `=== CURRENT MOMENT ===\nIt is ${now.toISOString()} right now.`;
+    const perceivedStr = `=== THE WORLD AS YOU PERCEIVE IT ===\n${serializeSubjectiveWorldState(worldState, entity.id)}`;
+    const worldInfo = `${momentStr}\n\n${perceivedStr}`;
 
     // Fetch recent buffer entries once
     let recentEntries: BufferEntry[] = [];
@@ -112,16 +128,6 @@ Guidelines:
       }
     }
 
-    // --- Cognitive Buffer ---
-    const memorySection = this.buildCognitiveBufferSection(
-      entity,
-      recentEntries,
-      now,
-    );
-    if (memorySection) {
-      sections.push(memorySection);
-    }
-
     // --- Recalled Memory Ledger ---
     const ledgerSection = this.buildLedgerSection(
       worldState,
@@ -129,11 +135,30 @@ Guidelines:
       recentEntries,
       now,
     );
-    if (ledgerSection) {
-      sections.push(ledgerSection);
-    }
+    const memoryLedger = ledgerSection || "";
 
-    return sections.join("\n\n");
+    // --- Cognitive Buffer ---
+    const memorySection = this.buildCognitiveBufferSection(
+      entity,
+      recentEntries,
+      now,
+    );
+    const cognitiveBuffer = memorySection || "";
+
+    // Assemble final user context
+    const parts: string[] = [worldInfo];
+    if (memoryLedger) parts.push(memoryLedger);
+    if (cognitiveBuffer) parts.push(cognitiveBuffer);
+    const userContext = parts.join("\n\n");
+
+    return {
+      userContext,
+      sections: {
+        worldInfo,
+        memoryLedger,
+        cognitiveBuffer,
+      },
+    };
   }
 
   private buildCognitiveBufferSection(

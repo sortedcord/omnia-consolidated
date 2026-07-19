@@ -165,6 +165,11 @@ export async function processNpcTurn(
     narrativeProse: result.narrativeProse,
     intents: [],
     timestamp: worldState.clock.get().toISOString(),
+    rawPrompt: {
+      systemPrompt: result.systemPrompt || "",
+      userContext: result.userContext || "",
+      sections: result.promptComponents,
+    },
   };
 
   if (
@@ -175,10 +180,6 @@ export async function processNpcTurn(
       session.actorProvider.lastCalls[
         session.actorProvider.lastCalls.length - 1
       ];
-    entry.rawPrompt = {
-      systemPrompt: actorCall.systemPrompt,
-      userContext: actorCall.userContext,
-    };
     entry.usage = actorCall.usage;
   }
 
@@ -243,8 +244,9 @@ export async function executePlayerAction(
     intents: [],
     timestamp: worldState.clock.get().toISOString(),
     rawPrompt: {
-      systemPrompt: ctx.systemPrompt,
-      userContext: ctx.userContext,
+      systemPrompt: result.systemPrompt || ctx.systemPrompt,
+      userContext: result.userContext || ctx.userContext,
+      sections: result.promptComponents,
     },
   };
 

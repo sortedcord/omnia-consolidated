@@ -20,6 +20,11 @@ export interface LogEntry {
   rawPrompt?: {
     systemPrompt: string;
     userContext: string;
+    sections?: {
+      worldInfo: string;
+      memoryLedger: string;
+      cognitiveBuffer: string;
+    };
   };
   usage?: {
     inputTokens: number;
