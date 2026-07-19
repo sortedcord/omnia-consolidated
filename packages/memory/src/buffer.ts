@@ -4,7 +4,7 @@ import { Intent } from "@omnia/intent";
 
 export interface BufferEntry {
   id: string;
-  ownerId: string; // Whose subjective memory buffer this lives in
+  ownerId: string; // Whose Cognitive Buffer this entry lives in
   timestamp: string; // WorldClock.get().toISOString() at write time
   locationId: string | null; // Actor's location when this happened
 

@@ -166,7 +166,7 @@ describe("Actor Agent + Monologue Intent Integration (Tier 2)", () => {
     const expectedTime = new Date(startTime.getTime() + 3 * 60_000);
     expect(world.clock.get().toISOString()).toBe(expectedTime.toISOString());
 
-    // 7. All three intents persisted to Alice's memory buffer.
+    // 7. All three intents persisted to Alice's Cognitive Buffer.
     const aliceMemory = bufferRepo.listForOwner("alice");
     expect(aliceMemory).toHaveLength(3);
     expect(aliceMemory[0].intent.type).toBe("monologue");

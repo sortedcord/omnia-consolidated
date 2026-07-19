@@ -61,7 +61,7 @@ export function PromptModal({ entry, onClose }: PromptModalProps) {
       {
         label: "Memory Ledger",
         type: "memories",
-        content: ledgerStr || "(No memory buffer entries.)",
+        content: ledgerStr || "(No memory ledger entries.)",
       },
     ];
 

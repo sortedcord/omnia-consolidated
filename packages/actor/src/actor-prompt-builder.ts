@@ -139,7 +139,7 @@ Guidelines:
     if (!this.bufferRepo) return null;
 
     if (entries.length === 0) {
-      return `=== COGNITIVE BUFFER ===\n(No recent events recorded.)`;
+      return `=== COGNITIVE BUFFER ===\n(No entries recorded.)`;
     }
 
     const recent = entries.slice(-this.memoryLimit);

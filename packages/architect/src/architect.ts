@@ -50,7 +50,7 @@ export class Architect {
    * "monologue" intents are internal thoughts — they bypass validation and
    * time-delta generation entirely: the clock does not advance, the world
    * state is not mutated or persisted. The caller is responsible for writing
-   * the monologue to the actor's memory buffer.
+   * the monologue to the actor's Cognitive Buffer.
    */
   async processIntent(
     worldState: WorldState,

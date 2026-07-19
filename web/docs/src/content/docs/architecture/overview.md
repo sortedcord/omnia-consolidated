@@ -12,7 +12,7 @@ omnia/
     intent/      intent types (dialogue/action/monologue) and the prose decoder
     architect/   World Architect: LLM validation plus time-delta generation
     actor/       actor agent: epistemically-bounded prompts, pluggable prose generators
-    memory/      verbatim buffer; later the vector archive, dossier, and affect vectors
+    memory/      Cognitive Buffer; Memory Ledger (vector archive), dossier, and affect vectors
     spatial/     location and POI graph, portal-based perception
     llm/         ILLMProvider interface plus Gemini and deterministic mock implementations
     scenario/    scenario JSON schema and loader (JSON → SQLite)

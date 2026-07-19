@@ -33,7 +33,7 @@ export function getMemorySectionLength(
   now: Date,
 ): number {
   if (entries.length === 0) {
-    return `=== COGNITIVE BUFFER ===\n(No recent events recorded.)`.length;
+    return `=== COGNITIVE BUFFER ===\n(No entries recorded.)`.length;
   }
 
   const groupedLines: string[] = [];
@@ -246,7 +246,7 @@ Instructions:
 Subject Entity ID: ${entity.id}
 Current Time: ${now.toISOString()}
 
-Working Memory Candidates for Handoff:
+Cognitive Buffer Candidates for Handoff:
 ${candidatesList}
 `.trim();
 

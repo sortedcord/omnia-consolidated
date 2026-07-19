@@ -72,7 +72,7 @@
       ],
       "initialMemories": [
         {
-          "id": "alpha-wake",
+          "id": "ab3f29d2-cf11-4111-9a99-b13c126d123e",
           "timestamp": "2026-07-09T07:58:00.000Z",
           "locationId": "white-room",
           "intent": {
@@ -119,7 +119,7 @@
       ],
       "initialMemories": [
         {
-          "id": "beta-wake",
+          "id": "7c9b83b3-8cfb-4e89-8d77-626a5757d591",
           "timestamp": "2026-07-09T07:58:30.000Z",
           "locationId": "white-room",
           "intent": {

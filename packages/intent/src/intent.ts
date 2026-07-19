@@ -6,7 +6,7 @@ import { z } from "zod";
  * - "action": A physical or logical action performed in the world.
  * - "monologue": An inner thought or internal monologue. Not perceivable by
  *   any other entity. Bypasses the Architect/validators entirely and is
- *   written directly to the actor's memory buffer with no outcome.
+ *   written directly to the actor's Cognitive Buffer with no outcome.
  */
 export const IntentTypeSchema = z.enum(["dialogue", "action", "monologue"]);
 export type IntentType = z.infer<typeof IntentTypeSchema>;
