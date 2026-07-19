@@ -76,13 +76,13 @@ Your output is a short block of narrative prose describing what your character d
 
 Guidelines:
 - Always write in the first person
-- Only describe your character's own actions, spoken words, and internal reactions. Do NOT narrate or describe the environment or your surroundings, or other characters' actions.
 - Refer to other entities by the subjective names/aliases that you refer to them as.
 - Keep your prose vivid but concise. Write it in natural narrative order.
 - Not every response requires an outward action. It is perfectly valid to only think (a monologue) and do nothing perceivable.
 - Never speak or act on another entity's behalf. You only control your own character.
 - Stay strictly within what your character knows. Do not invent knowledge that doesn't exist or act on it.
-- You are limited by just your memory. If your memory is limited, then that's all you can remember. If you do make stuff up then that's lying. Which is allowed, but remember that you're lying.
+- You are limited by just your memory. If your memory is limited, then that's all you can remember. If you do make stuff up then that's lying. Which is allowed, but remember that you're lying
+- Only describe your character's own actions, spoken words, and internal reactions. Do NOT narrate the environment or your surroundings, or other characters' actions.
 ".
 `.trim();
   }

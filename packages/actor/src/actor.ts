@@ -76,7 +76,7 @@ export class ActorAgent {
 
   constructor(
     llmProvider: ILLMProvider | { actor: ILLMProvider; decoder: ILLMProvider },
-    bufferRepo?: BufferRepository,
+    private bufferRepo?: BufferRepository,
     ledgerRepo?: LedgerRepository,
     memoryLimit?: number,
     generator?: IActorProseGenerator,
@@ -127,10 +127,19 @@ export class ActorAgent {
       userContext,
     );
 
+    const recentEntries = this.bufferRepo
+      ? this.bufferRepo.listForOwner(entity.id)
+      : [];
+    const recentIntents = recentEntries
+      .filter((e) => e.intent.actorId !== entity.id)
+      .slice(-3)
+      .map((e) => e.intent);
+
     const intents = await this.decoder.decode(
       worldState,
       entity.id,
       narrativeProse,
+      recentIntents,
     );
 
     return {
