@@ -18,7 +18,7 @@ interface PromptModalProps {
 }
 
 export function PromptModal({ entry, onClose }: PromptModalProps) {
-  const [activeTab, setActiveTab] = useState<"actor" | "decoder">("actor");
+  const [activeTab, setActiveTab] = useState<string>("actor");
 
   useEffect(() => {
     if (!entry.rawPrompt && entry.decoderPrompt) {
@@ -53,6 +53,17 @@ export function PromptModal({ entry, onClose }: PromptModalProps) {
   const actorComponents = getComponents(entry.rawPrompt, "world");
   const decoderComponents = getComponents(entry.decoderPrompt, "input");
 
+  const isValidatorTab = activeTab.startsWith("validator-");
+  const validatorIndex = isValidatorTab
+    ? parseInt(activeTab.substring("validator-".length), 10)
+    : -1;
+  const validatorCall = isValidatorTab
+    ? entry.validatorCalls?.find((c) => c.intentIndex === validatorIndex)
+    : null;
+  const validatorComponents = validatorCall
+    ? getComponents(validatorCall.prompt, "world")
+    : [];
+
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-[750px] sm:max-w-[750px] h-[90vh] overflow-hidden flex flex-col p-0 gap-0">
@@ -67,6 +78,12 @@ export function PromptModal({ entry, onClose }: PromptModalProps) {
           onTabChange={setActiveTab}
           hasActor={!!entry.rawPrompt}
           hasDecoder={!!entry.decoderPrompt}
+          validatorCalls={
+            entry.validatorCalls?.map((c) => ({
+              intentIndex: c.intentIndex,
+              intentContent: c.intentContent,
+            })) || []
+          }
         />
 
         <div className="overflow-y-auto flex-1 p-5">
@@ -99,9 +116,41 @@ export function PromptModal({ entry, onClose }: PromptModalProps) {
               modelName={entry.decoderUsage?.modelName}
               providerInstanceName={entry.decoderUsage?.providerInstanceName}
               outputLabel="LLM Output (Decoded Intent Sequence)"
-              outputText={JSON.stringify(entry.intents, null, 2)}
+              outputText={JSON.stringify(
+                entry.decodedIntents || entry.intents,
+                null,
+                2,
+              )}
               outputTokens={entry.decoderUsage?.outputTokens}
             />
+          )}
+
+          {validatorCall && validatorCall.prompt && (
+            <PromptAnalyzer
+              components={validatorComponents}
+              inputTokens={validatorCall.usage?.inputTokens || 0}
+              maxContext={
+                validatorCall.usage?.maxContext !== undefined
+                  ? validatorCall.usage.maxContext
+                  : 32768
+              }
+              modelName={validatorCall.usage?.modelName}
+              providerInstanceName={validatorCall.usage?.providerInstanceName}
+              outputLabel={`LLM Output (Validation for: "${validatorCall.intentContent}")`}
+              outputText={JSON.stringify(validatorCall.response, null, 2)}
+              outputTokens={validatorCall.usage?.outputTokens}
+            />
+          )}
+
+          {validatorCall && !validatorCall.prompt && (
+            <div className="flex flex-col items-center justify-center border border-dashed rounded-lg bg-muted/20 text-muted-foreground p-8 my-6">
+              <span className="text-sm font-semibold mb-2 text-foreground">
+                Bypassed LLM Validation
+              </span>
+              <p className="text-xs text-center text-muted-foreground max-w-md">
+                {validatorCall.response.reason}
+              </p>
+            </div>
           )}
         </div>
       </DialogContent>

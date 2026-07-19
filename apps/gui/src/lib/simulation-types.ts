@@ -20,6 +20,24 @@ export interface PromptBreakdown {
   components?: PromptComponent[];
 }
 
+export interface ValidatorCall {
+  intentIndex: number;
+  intentContent: string;
+  prompt?: PromptBreakdown;
+  response: {
+    isValid: boolean;
+    reason: string;
+  };
+  usage?: {
+    inputTokens: number;
+    outputTokens: number;
+    totalTokens: number;
+    modelName?: string;
+    providerInstanceName?: string;
+    maxContext?: number;
+  };
+}
+
 export interface LogEntry {
   turn: number;
   entityId: string;
@@ -29,6 +47,8 @@ export interface LogEntry {
   timestamp: string;
   isHandoff?: boolean;
   handoffResult?: any;
+  decodedIntents?: IntentInfo[];
+  validatorCalls?: ValidatorCall[];
   rawPrompt?: PromptBreakdown;
   usage?: {
     inputTokens: number;
