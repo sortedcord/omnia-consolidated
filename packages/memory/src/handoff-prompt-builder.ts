@@ -1,12 +1,14 @@
 import { Entity } from "@omnia/core";
-import { PromptBreakdown, PromptComponent } from "@omnia/llm";
+import { PromptBreakdown, PromptComponent, IPromptBuilder } from "@omnia/llm";
 import { BufferEntry, serializeSubjectiveBufferEntry } from "./buffer.js";
 
 /**
  * Prompt builder for the Handoff Engine.
  * Separates prompt generation, structure, and component breakdowns.
  */
-export class HandoffPromptBuilder {
+export class HandoffPromptBuilder implements IPromptBuilder<
+  [Entity, BufferEntry[], Date]
+> {
   build(entity: Entity, candidates: BufferEntry[], now: Date): PromptBreakdown {
     const candidatesList = candidates
       .map((entry) => {

@@ -9,7 +9,7 @@ export interface ProcessResult extends ValidationResult {
 }
 
 export class Architect {
-  private validator: LLMValidator;
+  public validator: LLMValidator;
   private timeDeltaGenerator: TimeDeltaGenerator;
 
   constructor(

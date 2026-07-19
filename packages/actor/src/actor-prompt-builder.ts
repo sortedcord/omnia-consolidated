@@ -14,7 +14,7 @@ import {
   LedgerRepository,
 } from "@omnia/memory";
 import { hydrate } from "@omnia/voice";
-import { PromptComponent } from "@omnia/llm";
+import { PromptComponent, IPromptBuilder, PromptBreakdown } from "@omnia/llm";
 
 /**
  * Zod schema for the structured response expected from the actor LLM.
@@ -38,7 +38,9 @@ export type ActorResponse = z.infer<typeof ActorResponseSchema>;
  * ACL'd to it), its own Cognitive Buffer, and the entities co-located
  * with it. System UUIDs are surfaced as subjective aliases.
  */
-export class ActorPromptBuilder {
+export class ActorPromptBuilder implements IPromptBuilder<
+  [WorldState, Entity]
+> {
   /**
    * @param bufferRepo  Used to fetch the actor's Cognitive Buffer. Optional —
    *                    if absent, the memory section is omitted.
@@ -64,14 +66,7 @@ export class ActorPromptBuilder {
   /**
    * Assembles the system prompt and user context for a given entity.
    */
-  build(
-    worldState: WorldState,
-    entity: Entity,
-  ): {
-    systemPrompt: string;
-    userContext: string;
-    components: PromptComponent[];
-  } {
+  build(worldState: WorldState, entity: Entity): PromptBreakdown {
     const systemPrompt = this.buildSystemPrompt();
     const { userContext, components } = this.buildUserContext(
       worldState,

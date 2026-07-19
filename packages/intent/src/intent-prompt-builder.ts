@@ -1,14 +1,14 @@
 import { WorldState, resolveAlias } from "@omnia/core";
-import { PromptBreakdown, PromptComponent } from "@omnia/llm";
+import { PromptBreakdown, PromptComponent, IPromptBuilder } from "@omnia/llm";
 import { Intent } from "./intent.js";
-
-// TODO: Builder a generic interface for prompt builders in @omnia/llm: IPromptBuilder or something
 
 /**
  * Prompt builder for the Intent Decoder.
  * Separates prompt generation, structure, and component breakdowns.
  */
-export class IntentDecoderPromptBuilder {
+export class IntentDecoderPromptBuilder implements IPromptBuilder<
+  [WorldState, string, string, Intent[]]
+> {
   build(
     worldState: WorldState,
     actorId: string,
