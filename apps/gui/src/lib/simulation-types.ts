@@ -1,7 +1,6 @@
 export interface IntentInfo {
   type: string;
-  description: string;
-  selfDescription?: string;
+  content: string;
   modifiers: string[];
   targetIds: string[];
   isValid?: boolean;
@@ -9,16 +8,25 @@ export interface IntentInfo {
   minutesToAdvance?: number;
 }
 
-export interface LogEntry {
-  turn: number;
-  entityId: string;
-  entityName: string;
-  narrativeProse: string;
-  intents: IntentInfo[];
-  timestamp: string;
-  rawPrompt?: {
-    systemPrompt: string;
-    userContext: string;
+export interface PromptComponent {
+  label: string;
+  type: "system" | "world" | "events" | "memories" | "input" | "other";
+  content: string;
+}
+
+export interface PromptBreakdown {
+  systemPrompt: string;
+  userContext: string;
+  components?: PromptComponent[];
+}
+
+export interface ValidatorCall {
+  intentIndex: number;
+  intentContent: string;
+  prompt?: PromptBreakdown;
+  response: {
+    isValid: boolean;
+    reason: string;
   };
   usage?: {
     inputTokens: number;
@@ -28,10 +36,36 @@ export interface LogEntry {
     providerInstanceName?: string;
     maxContext?: number;
   };
-  decoderPrompt?: {
-    systemPrompt: string;
-    userContext: string;
+}
+
+export interface HandoffResult {
+  chunks: {
+    content: string;
+    importance: number;
+  }[];
+}
+
+export interface LogEntry {
+  turn: number;
+  entityId: string;
+  entityName: string;
+  narrativeProse: string;
+  intents: IntentInfo[];
+  timestamp: string;
+  isHandoff?: boolean;
+  handoffResult?: HandoffResult;
+  decodedIntents?: IntentInfo[];
+  validatorCalls?: ValidatorCall[];
+  rawPrompt?: PromptBreakdown;
+  usage?: {
+    inputTokens: number;
+    outputTokens: number;
+    totalTokens: number;
+    modelName?: string;
+    providerInstanceName?: string;
+    maxContext?: number;
   };
+  decoderPrompt?: PromptBreakdown;
   decoderUsage?: {
     inputTokens: number;
     outputTokens: number;
@@ -47,6 +81,7 @@ export interface EntityInfo {
   name: string;
   isPlayer: boolean;
   isAgent: boolean;
+  aliases?: Record<string, string>;
 }
 
 export interface WaitingContext {

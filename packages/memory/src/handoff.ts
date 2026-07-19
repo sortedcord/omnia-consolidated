@@ -6,7 +6,8 @@ import {
   BufferRepository,
 } from "./buffer.js";
 import { LedgerEntry, LedgerRepository } from "./ledger.js";
-import { ILLMProvider, IEmbeddingProvider } from "@omnia/llm";
+import { ILLMProvider, IEmbeddingProvider, PromptComponent } from "@omnia/llm";
+import { HandoffPromptBuilder } from "./handoff-prompt-builder.js";
 
 export const HandoffChunkSchema = z.object({
   sourceEntryIds: z.array(z.string()), // buffer rows this chunk consumes
@@ -33,7 +34,7 @@ export function getMemorySectionLength(
   now: Date,
 ): number {
   if (entries.length === 0) {
-    return `=== RECENT EVENTS ===\n(No recent events recorded.)`.length;
+    return `=== COGNITIVE BUFFER ===\n(No entries recorded.)`.length;
   }
 
   const groupedLines: string[] = [];
@@ -52,7 +53,7 @@ export function getMemorySectionLength(
     groupedLines.push(`  - ${serialized}`);
   }
 
-  return `=== RECENT EVENTS ===\n${groupedLines.join("\n")}`.length;
+  return `=== COGNITIVE BUFFER ===\n${groupedLines.join("\n")}`.length;
 }
 
 function checkSceneExit(entity: Entity, bufferEntries: BufferEntry[]): boolean {
@@ -85,7 +86,9 @@ function checkIdleDecay(bufferEntries: BufferEntry[]): boolean {
 
   // Check the last N entries
   const lastN = bufferEntries.slice(-N);
-  return lastN.every((e) => e.intent.type === "monologue");
+  return lastN.every(
+    (e) => e.intent.type === "monologue" || e.intent.type === "thought",
+  );
 }
 
 function checkAttributeTrigger(entity: Entity): boolean {
@@ -200,53 +203,44 @@ export function splitBufferForHandoff(
 /**
  * HandoffEngine processes memory handoffs using LLM summarization and DB transactions.
  */
+export interface HandoffRunResult {
+  success: boolean;
+  systemPrompt?: string;
+  userContext?: string;
+  promptComponents?: PromptComponent[];
+  response?: unknown;
+}
+
 export class HandoffEngine {
+  public lastResult: HandoffRunResult | null = null;
+  private promptBuilder: HandoffPromptBuilder;
+
   constructor(
     private llmProvider: ILLMProvider,
     private embedProvider: IEmbeddingProvider,
     private bufferRepo: BufferRepository,
     private ledgerRepo: LedgerRepository,
-  ) {}
+  ) {
+    this.promptBuilder = new HandoffPromptBuilder();
+  }
 
   async runHandoff(
     entity: Entity,
     bufferEntries: BufferEntry[],
     now: Date,
   ): Promise<boolean> {
+    this.lastResult = null;
     const { candidates } = splitBufferForHandoff(bufferEntries, now);
 
     if (candidates.length === 0) {
       return false;
     }
 
-    const candidatesList = candidates
-      .map((entry) => {
-        const serialized = serializeSubjectiveBufferEntry(entry, entity);
-        return `ID: ${entry.id} | Timestamp: ${entry.timestamp} | Location: ${entry.locationId || "None"}\nContent: ${serialized}`;
-      })
-      .join("\n---\n");
-
-    const systemPrompt = `
-You are the memory Handoff Engine. Your task is to process a list of recent working memory buffer entries for an entity and select which memories to promote to the long-term Ledger, and which to forget or summarize.
-
-Instructions:
-1. **Cluster** related consecutive buffer entries into high-level narrative beats or events (e.g. a full back-and-forth conversation or a single physical action and its outcome). Combine them into a single summary chunk.
-2. **Write in the third-person** for the "content" of each chunk (e.g. "John asked Mary for the key, and Mary reluctantly handed it over").
-3. **verbatim Quotes**: Extract verbatim, high-salience quotes from dialogue if relevant. Do not modify or invent quotes.
-4. **Determine Importance**: Assign an importance score from 1 (trivial, e.g. waking up) to 10 (life-altering, e.g. witnessing a crime).
-5. **Involved Entities**: Identify all entity IDs involved in the memories in this chunk.
-6. **Retain in Buffer (Pinning)**: If a beat represents an unresolved high-stakes situation (e.g. a standing threat, an unanswered accusation, an ongoing chase or conflict), set "retainInBuffer" to true so it remains in the working memory buffer for immediate context. Otherwise, set it to false so it is safely pruned from the buffer.
-7. **Exclude stage business**: Glances, sighs, ambient noticing, and irrelevant sensory details should be ignored and not included in any promoted chunk. They will be forgotten.
-8. **Forget by omission**: Any buffer entry ID that you do not include in any chunk's "sourceEntryIds" will be permanently deleted and forgotten.
-`.trim();
-
-    const userContext = `
-Subject Entity ID: ${entity.id}
-Current Time: ${now.toISOString()}
-
-Working Memory Candidates for Handoff:
-${candidatesList}
-`.trim();
+    const { systemPrompt, userContext, components } = this.promptBuilder.build(
+      entity,
+      candidates,
+      now,
+    );
 
     const response = await this.llmProvider.generateStructuredResponse({
       systemPrompt,
@@ -255,11 +249,29 @@ ${candidatesList}
     });
 
     if (!response.success || !response.data) {
+      this.lastResult = {
+        success: false,
+        systemPrompt,
+        userContext,
+        promptComponents: components,
+      };
       return false;
     }
 
+    this.lastResult = {
+      success: true,
+      systemPrompt,
+      userContext,
+      promptComponents: components,
+      response: response.data,
+    };
+
     const result = response.data;
-    const db = (this.bufferRepo as any).db;
+    const db = (
+      this.bufferRepo as unknown as {
+        db: { transaction: (fn: () => void) => () => void };
+      }
+    ).db;
 
     const ledgerEntries: LedgerEntry[] = [];
     for (const chunk of result.chunks) {

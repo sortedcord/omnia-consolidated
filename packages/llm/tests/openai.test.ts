@@ -66,6 +66,7 @@ vi.mock("@langchain/openai", () => {
       constructor(config: unknown) {
         this.config = config;
       }
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       embedQuery = vi.fn().mockImplementation(async (text: string) => {
         return [0.1, 0.2, 0.3];
       });

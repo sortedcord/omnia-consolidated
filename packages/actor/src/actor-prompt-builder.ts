@@ -4,7 +4,6 @@ import {
   WorldState,
   naturalizeTime,
   serializeSubjectiveWorldState,
-  resolveAlias,
 } from "@omnia/core";
 import {
   BufferEntry,
@@ -13,6 +12,8 @@ import {
   LedgerEntry,
   LedgerRepository,
 } from "@omnia/memory";
+import { hydrate } from "@omnia/voice";
+import { PromptComponent, IPromptBuilder, PromptBreakdown } from "@omnia/llm";
 
 /**
  * Zod schema for the structured response expected from the actor LLM.
@@ -33,17 +34,19 @@ export type ActorResponse = z.infer<typeof ActorResponseSchema>;
  *
  * The prompt is strictly epistemically bounded: the entity only sees what
  * it is allowed to see (public attributes + private attributes explicitly
- * ACL'd to it), its own recent memory buffer, and the entities co-located
+ * ACL'd to it), its own Cognitive Buffer, and the entities co-located
  * with it. System UUIDs are surfaced as subjective aliases.
  */
-export class ActorPromptBuilder {
+export class ActorPromptBuilder implements IPromptBuilder<
+  [WorldState, Entity]
+> {
   /**
-   * @param bufferRepo  Used to fetch the actor's recent memory. Optional —
+   * @param bufferRepo  Used to fetch the actor's Cognitive Buffer. Optional —
    *                    if absent, the memory section is omitted.
-   * @param ledgerRepo  Used to fetch long-term memories. Optional.
-   * @param memoryLimit Maximum number of recent buffer entries to inject.
+   * @param ledgerRepo  Used to fetch Memory Ledger entries. Optional.
+   * @param memoryLimit Maximum number of recent Cognitive Buffer entries to inject.
    *                    Defaults to 20.
-   * @param ledgerLimit Maximum number of long-term memories to retrieve.
+   * @param ledgerLimit Maximum number of Memory Ledger entries to retrieve.
    *                    Defaults to 5.
    */
   constructor(
@@ -56,13 +59,20 @@ export class ActorPromptBuilder {
   /**
    * Assembles the system prompt and user context for a given entity.
    */
-  build(
-    worldState: WorldState,
-    entity: Entity,
-  ): { systemPrompt: string; userContext: string } {
+  /**
+   * Assembles the system prompt and user context for a given entity.
+   */
+  /**
+   * Assembles the system prompt and user context for a given entity.
+   */
+  build(worldState: WorldState, entity: Entity): PromptBreakdown {
     const systemPrompt = this.buildSystemPrompt();
-    const userContext = this.buildUserContext(worldState, entity);
-    return { systemPrompt, userContext };
+    const { userContext, components } = this.buildUserContext(
+      worldState,
+      entity,
+      systemPrompt,
+    );
+    return { systemPrompt, userContext, components };
   }
 
   private buildSystemPrompt(): string {
@@ -76,30 +86,32 @@ Your output is a short block of narrative prose describing what your character d
 
 Guidelines:
 - Always write in the first person
-- Only describe your character's own actions, spoken words, and internal reactions. Do NOT narrate or describe the environment or your surroundings, or other characters' actions.
 - Refer to other entities by the subjective names/aliases that you refer to them as.
 - Keep your prose vivid but concise. Write it in natural narrative order.
 - Not every response requires an outward action. It is perfectly valid to only think (a monologue) and do nothing perceivable.
 - Never speak or act on another entity's behalf. You only control your own character.
 - Stay strictly within what your character knows. Do not invent knowledge that doesn't exist or act on it.
-- You are limited by just your memory. If your memory is limited, then that's all you can remember. If you do make stuff up then that's lying. Which is allowed, but remember that you're lying.
+- You are limited by just your memory. If your memory is limited, then that's all you can remember. If you do make stuff up then that's lying. Which is allowed, but remember that you're lying
+- Only describe your character's own actions, spoken words, and internal reactions. Do NOT narrate the environment or your surroundings, or other characters' actions.
+- Be clear about who or what you are interacting with.
 ".
 `.trim();
   }
 
-  private buildUserContext(worldState: WorldState, entity: Entity): string {
-    const sections: string[] = [];
+  private buildUserContext(
+    worldState: WorldState,
+    entity: Entity,
+    systemPrompt: string,
+  ): {
+    userContext: string;
+    components: PromptComponent[];
+  } {
     const now = worldState.clock.get();
 
-    // --- Subjective present time ---
-    sections.push(
-      `=== CURRENT MOMENT ===\nIt is ${now.toISOString()} right now.`,
-    );
-
-    // --- Subjective world state (self + perceived entities + co-location) ---
-    sections.push(
-      `=== THE WORLD AS YOU PERCEIVE IT ===\n${serializeSubjectiveWorldState(worldState, entity.id)}`,
-    );
+    // --- Subjective present time & world state ---
+    const momentStr = `=== CURRENT MOMENT ===\nIt is ${now.toISOString()} right now.`;
+    const perceivedStr = `=== THE WORLD AS YOU PERCEIVE IT ===\n${serializeSubjectiveWorldState(worldState, entity.id)}`;
+    const worldInfo = `${momentStr}\n\n${perceivedStr}`;
 
     // Fetch recent buffer entries once
     let recentEntries: BufferEntry[] = [];
@@ -111,27 +123,55 @@ Guidelines:
       }
     }
 
-    // --- Recent memory ---
-    const memorySection = this.buildMemorySection(entity, recentEntries, now);
-    if (memorySection) {
-      sections.push(memorySection);
-    }
-
-    // --- Recalled Long-Term memory ---
+    // --- Recalled Memory Ledger ---
     const ledgerSection = this.buildLedgerSection(
       worldState,
       entity,
       recentEntries,
       now,
     );
-    if (ledgerSection) {
-      sections.push(ledgerSection);
+    const memoryLedger = ledgerSection || "";
+
+    // --- Cognitive Buffer ---
+    const memorySection = this.buildCognitiveBufferSection(
+      entity,
+      recentEntries,
+      now,
+    );
+    const cognitiveBuffer = memorySection || "";
+
+    // Assemble final user context
+    const parts: string[] = [worldInfo];
+    if (memoryLedger) parts.push(memoryLedger);
+    if (cognitiveBuffer) parts.push(cognitiveBuffer);
+    const userContext = parts.join("\n\n");
+
+    const components: PromptComponent[] = [
+      { label: "System Prompt", type: "system", content: systemPrompt },
+      { label: "World Info", type: "world", content: worldInfo },
+    ];
+    if (memoryLedger) {
+      components.push({
+        label: "Memory Ledger",
+        type: "memories",
+        content: memoryLedger,
+      });
+    }
+    if (cognitiveBuffer) {
+      components.push({
+        label: "Cognitive Buffer",
+        type: "events",
+        content: cognitiveBuffer,
+      });
     }
 
-    return sections.join("\n\n");
+    return {
+      userContext,
+      components,
+    };
   }
 
-  private buildMemorySection(
+  private buildCognitiveBufferSection(
     entity: Entity,
     entries: BufferEntry[],
     now: Date,
@@ -139,7 +179,7 @@ Guidelines:
     if (!this.bufferRepo) return null;
 
     if (entries.length === 0) {
-      return `=== RECENT EVENTS ===\n(No recent events recorded.)`;
+      return `=== COGNITIVE BUFFER ===\n(No entries recorded.)`;
     }
 
     const recent = entries.slice(-this.memoryLimit);
@@ -147,8 +187,15 @@ Guidelines:
     let currentGroup: string | null = null;
 
     for (const entry of recent) {
-      const serialized = serializeSubjectiveBufferEntry(entry, entity);
+      let serialized = serializeSubjectiveBufferEntry(entry, entity);
       const when = naturalizeTime(now, new Date(entry.timestamp));
+
+      if (
+        entry.intent.actorId === entity.id &&
+        entry.intent.type === "dialogue"
+      ) {
+        serialized = `I said: ${serialized}`;
+      }
 
       if (when !== currentGroup) {
         currentGroup = when;
@@ -159,7 +206,7 @@ Guidelines:
       groupedLines.push(`  - ${serialized}`);
     }
 
-    return `=== RECENT EVENTS ===\n${groupedLines.join("\n")}`;
+    return `=== COGNITIVE BUFFER ===\n${groupedLines.join("\n")}`;
   }
 
   private buildLedgerSection(
@@ -239,12 +286,7 @@ Guidelines:
     for (const entry of recalled) {
       const when = naturalizeTime(now, new Date(entry.timestamp));
 
-      let content = entry.content;
-      // Resolve system IDs to subjective aliases in the content
-      for (const targetId of entry.involvedEntityIds) {
-        const alias = resolveAlias(entity, targetId);
-        content = content.replace(new RegExp(targetId, "g"), alias);
-      }
+      let content = hydrate(entry.content, entity);
       if (entry.locationId) {
         content += ` (at ${entry.locationId})`;
       }
@@ -263,6 +305,6 @@ Guidelines:
       }
     }
 
-    return `=== YOUR MEMORIES ===\n${groupedLines.join("\n")}`;
+    return `=== MEMORY LEDGER ===\n${groupedLines.join("\n")}`;
   }
 }

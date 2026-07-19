@@ -30,9 +30,10 @@ export const ScenarioMemoryEntrySchema = z.object({
   timestamp: z.string(), // ISO string
   locationId: z.string().nullable(),
   intent: z.object({
-    type: z.enum(["dialogue", "action", "monologue"]),
-    originalText: z.string(),
-    description: z.string(),
+    type: z.enum(["dialogue", "action", "monologue", "thought"]),
+    content: z.string().optional(),
+    originalText: z.string().optional(),
+    description: z.string().optional(),
     selfDescription: z.string().optional(),
     actorId: z.string(),
     targetIds: z.array(z.string()),

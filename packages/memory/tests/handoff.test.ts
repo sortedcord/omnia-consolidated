@@ -1,20 +1,20 @@
-import { describe, test, expect } from "vitest";
 import Database from "better-sqlite3";
+import { describe, test, expect } from "vitest";
 import { Entity } from "@omnia/core";
 import { MockLLMProvider, MockEmbeddingProvider } from "@omnia/llm";
 import {
   BufferEntry,
   BufferRepository,
   LedgerRepository,
-  checkHandoffTrigger,
-  splitBufferForHandoff,
   HandoffEngine,
+  splitBufferForHandoff,
+  checkHandoffTrigger,
 } from "@omnia/memory";
 
-describe("Memory Handoff Tests (Tier 1)", () => {
-  const now = new Date("2026-07-07T12:00:00.000Z");
+const now = new Date("2026-07-09T08:00:00.000Z");
 
-  test("splitBufferForHandoff correctly splits based on watermark and fresh buckets", () => {
+describe("Memory Handoff Tests (Tier 1)", () => {
+  test("splitBufferForHandoff identifies candidate entries based on recency", () => {
     const entries: BufferEntry[] = [];
 
     // Add 12 older entries (older than 30 minutes)
@@ -30,8 +30,7 @@ describe("Memory Handoff Tests (Tier 1)", () => {
         locationId: "room-1",
         intent: {
           type: "dialogue",
-          originalText: `Old event ${i}`,
-          description: `does old thing ${i}`,
+          content: `entity@alice[I] do old thing ${i}`,
           actorId: "alice",
           targetIds: ["bob"],
         },
@@ -54,8 +53,7 @@ describe("Memory Handoff Tests (Tier 1)", () => {
         locationId: "room-1",
         intent: {
           type: "dialogue",
-          originalText: `Fresh event ${idx}`,
-          description: `does fresh thing ${idx}`,
+          content: `entity@alice[I] do fresh thing ${idx}`,
           actorId: "alice",
           targetIds: ["bob"],
         },
@@ -84,8 +82,7 @@ describe("Memory Handoff Tests (Tier 1)", () => {
       locationId: "room-1",
       intent: {
         type: "dialogue",
-        originalText: "hello",
-        description: "says hello",
+        content: "entity@alice[I] say hello",
         actorId: "alice",
         targetIds: [],
       },
@@ -100,8 +97,7 @@ describe("Memory Handoff Tests (Tier 1)", () => {
       locationId: "room-2",
       intent: {
         type: "monologue",
-        originalText: "think",
-        description: "thinks",
+        content: "entity@alice[I] think",
         actorId: "alice",
         targetIds: [],
       },
@@ -138,8 +134,7 @@ describe("Memory Handoff Tests (Tier 1)", () => {
         locationId: "room-1",
         intent: {
           type: i % 2 === 0 ? "dialogue" : "action",
-          originalText: `Event ${i}`,
-          description: `does thing ${i}`,
+          content: `entity@alice[I] do thing ${i}`,
           actorId: "alice",
           targetIds: ["bob"],
         },

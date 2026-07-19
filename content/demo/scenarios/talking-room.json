@@ -72,14 +72,35 @@
       ],
       "initialMemories": [
         {
-          "id": "alpha-wake",
-          "timestamp": "2026-07-09T07:58:00.000Z",
+          "id": "ab3f29d2-cf11-4111-9a99-b13c126d123e",
+          "timestamp": "2026-07-01T07:58:00.000Z",
           "locationId": "white-room",
           "intent": {
             "type": "monologue",
-            "originalText": "I didn't have a choice. I would have been sent to jail if I hadn't agreed to do this experiement.",
-            "description": "",
+            "content": "I didn't have a choice. I would have been sent to jail if I hadn't agreed to do this experiment.",
             "actorId": "7c9b83b3-8cfb-4e89-8d77-626a5757d591",
+            "targetIds": []
+          }
+        },
+        {
+          "id": "10ak29d2-as11-9811-9a99-b13c126d123e",
+          "timestamp": "2026-07-09T06:00:00.000Z",
+          "locationId": "white-room",
+          "intent": {
+            "type": "action",
+            "content": "entity@7c9b83b3-8cfb-4e89-8d77-626a5757d591[I] woke up today in the room and saw entity@bf3f29d2-cf11-4b11-9a99-b13c126d400e[another man]!",
+            "actorId": "7c9b83b3-8cfb-4e89-8d77-626a5757d591",
+            "targetIds": ["bf3f29d2-cf11-4b11-9a99-b13c126d400e"]
+          }
+        },
+        {
+          "id": "zz3f29d2-as11-9811-9a99-b13c126d123e",
+          "timestamp": "2026-07-09T07:58:00.000Z",
+          "locationId": "white-room",
+          "intent": {
+            "type": "action",
+            "content": "entity@bf3f29d2-cf11-4b11-9a99-b13c126d400e[I] wake up from my sleep.",
+            "actorId": "bf3f29d2-cf11-4b11-9a99-b13c126d400e",
             "targetIds": []
           }
         }
@@ -119,13 +140,12 @@
       ],
       "initialMemories": [
         {
-          "id": "beta-wake",
-          "timestamp": "2026-07-09T07:58:30.000Z",
+          "id": "zx1f29d2-cf11-4111-9a99-b13c126d123e",
+          "timestamp": "2026-07-09T07:58:00.000Z",
           "locationId": "white-room",
           "intent": {
             "type": "action",
-            "originalText": "Why can't I remember anything before the research agreement. It's like my memory was erased.",
-            "description": "",
+            "content": "entity@bf3f29d2-cf11-4b11-9a99-b13c126d400e[I] wake up in an unfamiliar place.",
             "actorId": "bf3f29d2-cf11-4b11-9a99-b13c126d400e",
             "targetIds": []
           }

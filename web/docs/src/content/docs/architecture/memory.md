@@ -36,14 +36,14 @@ Entity aliases are persisted in the `objects` table via the `aliases_json TEXT` 
 
 ## Subjective Buffer Entry
 
-A subjective `BufferEntry` records a discrete event from the perspective of an entity (the `owner`). It wraps a structured `Intent` and appends execution metadata.
+A subjective `BufferEntry` records a discrete event from the perspective of an entity (the `owner`). It wraps a structured `Intent` and appends execution metadata. These entries make up the entity's **Cognitive Buffer**.
 
 ### The Shape of a Buffer Entry
 
 ```typescript
 interface BufferEntry {
   id: string;
-  ownerId: string; // Whose subjective memory buffer this lives in
+  ownerId: string; // Whose Cognitive Buffer this entry lives in
   timestamp: string; // WorldClock.get().toISOString() at write time
   locationId: string | null; // Actor's location when this happened
 
@@ -61,7 +61,7 @@ interface BufferEntry {
 
 ## Buffer Serialization (Epistemic Substitute)
 
-To prevent leaking system IDs, buffer memories are serialized using `serializeSubjectiveBufferEntry` with the `resolveAlias` helper:
+To prevent leaking system IDs, Cognitive Buffer entries are serialized using `serializeSubjectiveBufferEntry` with the `resolveAlias` helper:
 
 ```typescript
 export function resolveAlias(viewer: Entity, targetId: string): string {
@@ -89,7 +89,7 @@ CREATE TABLE IF NOT EXISTS buffer_entries (
 ```
 
 - **JSON Storage**: `intent` and `outcome` are serialized/deserialized as raw JSON, validated by Zod at creation time.
-- **Cascade Deletes**: Deleting an entity removes all associated subjective memory entries.
+- **Cascade Deletes**: Deleting an entity removes all associated Cognitive Buffer entries.
 
 ## Time Naturalization
 

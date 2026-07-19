@@ -177,13 +177,13 @@ export function ConfigView() {
                   {
                     key: "handoff",
                     label: "Memory Handoff Engine",
-                    desc: "Promotes entities' working memories to the long-term Ledger via LLM summarization and pruning.",
+                    desc: "Promotes entities' Cognitive Buffer entries to the Memory Ledger via LLM summarization and pruning.",
                     type: "generative",
                   },
                   {
                     key: "embeddings",
                     label: "Text Embeddings Generator",
-                    desc: "Generates vector embeddings for long-term memory retrieval.",
+                    desc: "Generates vector embeddings for Memory Ledger retrieval.",
                     type: "embedding",
                   },
                 ].map((task) => (

@@ -1,5 +1,5 @@
-import { describe, test, expect } from "vitest";
 import Database from "better-sqlite3";
+import { describe, test, expect } from "vitest";
 import {
   WorldState,
   Entity,
@@ -7,15 +7,16 @@ import {
   AttributeVisibility,
 } from "@omnia/core";
 import { MockLLMProvider } from "@omnia/llm";
-import { Architect, AliasDeltaGenerator } from "@omnia/architect";
 import { Intent } from "@omnia/intent";
+import { Architect, AliasDeltaGenerator } from "../src/index.js";
 
-describe("Architect & LLMValidator Unit Tests (Tier 1)", () => {
-  test("returns valid response when LLM validates intent as successful", async () => {
+describe("World Architect Validation Tests (Tier 1)", () => {
+  test("returns valid response when LLM confirms the intent", async () => {
     const world = new WorldState("world-1");
     const alice = new Entity("alice");
     world.addEntity(alice);
 
+    // Setup mock LLM response
     const mockResponse = {
       isValid: true,
       reason: "Alice is in the room and the chest is unlocked.",
@@ -25,9 +26,7 @@ describe("Architect & LLMValidator Unit Tests (Tier 1)", () => {
 
     const intent: Intent = {
       type: "action",
-      originalText: "open the chest and read the scroll",
-      description: "Open the chest and read the scroll",
-      selfDescription: "You open the chest and read the scroll.",
+      content: "entity@alice[I] open the chest and read the scroll",
       actorId: "alice",
       targetIds: [],
       modifiers: [],
@@ -56,9 +55,7 @@ describe("Architect & LLMValidator Unit Tests (Tier 1)", () => {
 
     const intent: Intent = {
       type: "action",
-      originalText: "unlock the gate and escape",
-      description: "Unlock the gate and escape",
-      selfDescription: "You unlock the gate and escape.",
+      content: "entity@bob[I] unlock the gate and escape",
       actorId: "bob",
       targetIds: [],
       modifiers: [],
@@ -79,9 +76,7 @@ describe("Architect & LLMValidator Unit Tests (Tier 1)", () => {
 
     const intent: Intent = {
       type: "action",
-      originalText: "haunt the mansion",
-      description: "Haunt the mansion",
-      selfDescription: "You haunt the mansion.",
+      content: "entity@ghost[I] haunt the mansion",
       actorId: "ghost",
       targetIds: [],
       modifiers: [],
@@ -128,9 +123,7 @@ describe("TimeDeltaGenerator & Architect.processIntent Unit Tests (Tier 1)", () 
 
     const intent: Intent = {
       type: "action",
-      originalText: "pick the lock of the wooden chest",
-      description: "Pick the lock of the wooden chest",
-      selfDescription: "You pick the lock of the wooden chest.",
+      content: "entity@alice[I] pick the lock of the wooden chest",
       actorId: "alice",
       targetIds: [],
       modifiers: [],
@@ -177,9 +170,7 @@ describe("TimeDeltaGenerator & Architect.processIntent Unit Tests (Tier 1)", () 
 
     const intent: Intent = {
       type: "action",
-      originalText: "run away",
-      description: "Run away",
-      selfDescription: "You run away.",
+      content: "entity@bob[I] run away",
       actorId: "bob",
       targetIds: [],
       modifiers: [],

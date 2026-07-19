@@ -1,7 +1,8 @@
 import { z } from "zod";
-import { WorldState, serializeObjectiveWorldState } from "@omnia/core";
-import { ILLMProvider } from "@omnia/llm";
+import { WorldState } from "@omnia/core";
+import { ILLMProvider, PromptBreakdown } from "@omnia/llm";
 import { Intent } from "@omnia/intent";
+import { LLMValidatorPromptBuilder } from "./llm-validator-prompt-builder.js";
 
 export const ValidationResultSchema = z.object({
   isValid: z.boolean(),
@@ -11,12 +12,17 @@ export const ValidationResultSchema = z.object({
 export type ValidationResult = z.infer<typeof ValidationResultSchema>;
 
 export class LLMValidator {
-  constructor(private llmProvider: ILLMProvider) {}
+  public lastResult: PromptBreakdown | null = null;
+  private promptBuilder: LLMValidatorPromptBuilder;
+
+  constructor(private llmProvider: ILLMProvider) {
+    this.promptBuilder = new LLMValidatorPromptBuilder();
+  }
 
   /**
    * Validates an action intent against the objective world state.
    *
-   * "monologue" intents must never reach this validator — they are internal
+   * "monologue" and "thought" intents must never reach this validator — they are internal
    * thoughts that bypass validation entirely (see Architect.processIntent).
    * This guard exists as a defensive safeguard.
    */
@@ -24,12 +30,14 @@ export class LLMValidator {
     worldState: WorldState,
     intent: Intent,
   ): Promise<ValidationResult> {
-    // Defensive guard: monologue intents bypass validation.
-    if (intent.type === "monologue") {
+    this.lastResult = null;
+
+    // Defensive guard: monologue and thought intents bypass validation.
+    if (intent.type === "monologue" || intent.type === "thought") {
       return {
         isValid: true,
         reason:
-          "Monologue intents are internal thoughts and bypass validation.",
+          "Monologue/thought intents are internal thoughts and bypass validation.",
       };
     }
 
@@ -41,40 +49,16 @@ export class LLMValidator {
       };
     }
 
-    // 1. Serialize the objective world state for the LLM
-    const serializedWorld = serializeObjectiveWorldState(worldState);
+    const { systemPrompt, userContext, components } = this.promptBuilder.build(
+      worldState,
+      intent,
+    );
 
-    // 2. Build the prompts
-    const systemPrompt = `
-You are the World Architect, a deterministic and objective judge of reality, physics, and narration for a simulation game.
-Your task is to judge whether a proposed action (Intent) by an actor is physically and logically possible given the current objective state of the world.
-Exempt dialogue or speech actions from validation (consider them always valid).
-Enforce logical boundaries such as:
-- Spatial boundaries (an actor cannot grab an object in another location unless they are there).
-- Physical boundaries (an actor cannot open a locked drawer without a key or breaking it).
-- State Boundaries (an actor cannot perform a task if their state doesn't allow them to do so).
-- State/Attribute constraints.
-
-You must respond with a JSON object containing:
-- "isValid": boolean indicating if the action is possible/allowed.
-- "reason": a concise explanation of why the action is allowed or denied.
-`.trim();
-
-    const userContext = `
-=== CURRENT WORLD STATE ===
-Current Time: ${worldState.clock.get().toISOString()}
-Entities & Attributes:
-${serializedWorld}
-
-=== PROPOSED ACTION ===
-Actor ID: ${intent.actorId}
-Type: ${intent.type}
-Description: "${intent.description}"
-Original Text: "${intent.originalText}"
-Target IDs: ${intent.targetIds.join(", ") || "(None)"}
-
-Decide if the proposed action is logically valid and physically possible.
-`.trim();
+    this.lastResult = {
+      systemPrompt,
+      userContext,
+      components,
+    };
 
     // structured call via the LLM provider
     const response = await this.llmProvider.generateStructuredResponse({

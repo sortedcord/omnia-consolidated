@@ -127,6 +127,10 @@ describe("OpenRouterProvider Unit Tests (Tier 1)", () => {
     expect(provider.lastCalls[0]).toEqual({
       systemPrompt: "system prompt",
       userContext: "user context",
+      response: {
+        name: "mocked response",
+        success: true,
+      },
       usage: {
         inputTokens: 10,
         outputTokens: 5,

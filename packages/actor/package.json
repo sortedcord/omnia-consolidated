@@ -11,6 +11,7 @@
     "@omnia/intent": "workspace:*",
     "@omnia/llm": "workspace:*",
     "@omnia/memory": "workspace:*",
+    "@omnia/voice": "workspace:*",
     "zod": "^4.4.3"
   }
 }

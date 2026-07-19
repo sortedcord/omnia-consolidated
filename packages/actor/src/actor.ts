@@ -1,5 +1,5 @@
 import { Entity, WorldState } from "@omnia/core";
-import { ILLMProvider } from "@omnia/llm";
+import { ILLMProvider, PromptComponent } from "@omnia/llm";
 import { BufferEntry, BufferRepository, LedgerRepository } from "@omnia/memory";
 import { Intent, IntentDecoder, IntentSequence } from "@omnia/intent";
 import {
@@ -54,6 +54,9 @@ export interface ActorTurnResult {
   narrativeProse: string;
   /** The decoded intent sequence (split/classified from the prose). */
   intents: IntentSequence;
+  systemPrompt?: string;
+  userContext?: string;
+  promptComponents?: PromptComponent[];
 }
 
 /**
@@ -76,7 +79,7 @@ export class ActorAgent {
 
   constructor(
     llmProvider: ILLMProvider | { actor: ILLMProvider; decoder: ILLMProvider },
-    bufferRepo?: BufferRepository,
+    private bufferRepo?: BufferRepository,
     ledgerRepo?: LedgerRepository,
     memoryLimit?: number,
     generator?: IActorProseGenerator,
@@ -116,7 +119,7 @@ export class ActorAgent {
       );
     }
 
-    const { systemPrompt, userContext } = this.promptBuilder.build(
+    const { systemPrompt, userContext, components } = this.promptBuilder.build(
       worldState,
       entity,
     );
@@ -127,15 +130,27 @@ export class ActorAgent {
       userContext,
     );
 
+    const recentEntries = this.bufferRepo
+      ? this.bufferRepo.listForOwner(entity.id)
+      : [];
+    const recentIntents = recentEntries
+      .filter((e) => e.intent.actorId !== entity.id)
+      .slice(-3)
+      .map((e) => e.intent);
+
     const intents = await this.decoder.decode(
       worldState,
       entity.id,
       narrativeProse,
+      recentIntents,
     );
 
     return {
       narrativeProse,
       intents,
+      systemPrompt,
+      userContext,
+      promptComponents: components,
     };
   }
 }

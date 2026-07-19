@@ -6,9 +6,15 @@ import { z } from "zod";
  * - "action": A physical or logical action performed in the world.
  * - "monologue": An inner thought or internal monologue. Not perceivable by
  *   any other entity. Bypasses the Architect/validators entirely and is
- *   written directly to the actor's memory buffer with no outcome.
+ *   written directly to the actor's Cognitive Buffer with no outcome.
+ * - "thought": Equivalent/alias to "monologue".
  */
-export const IntentTypeSchema = z.enum(["dialogue", "action", "monologue"]);
+export const IntentTypeSchema = z.enum([
+  "dialogue",
+  "action",
+  "monologue",
+  "thought",
+]);
 export type IntentType = z.infer<typeof IntentTypeSchema>;
 
 /**
@@ -18,19 +24,13 @@ export const LLMIntentSchema = z.object({
   /** The type of intent. */
   type: IntentTypeSchema,
 
-  /** The original narrative text fragment this intent was extracted from. */
-  originalText: z.string(),
-
-  /** A concise, structured description of the intent's action or dialogue. */
-  description: z.string(),
-
-  /** The same event from the actor's own perspective (second person, "You"). */
-  selfDescription: z.string(),
+  /** The dehydrated canonical content of the intent. */
+  content: z.string(),
 
   /**
    * Entity IDs of the receiving parties (e.g., who is being spoken to,
    * what object is being interacted with). Always an empty array for
-   * "monologue" intents, since they are not perceivable by anyone.
+   * "monologue" and "thought" intents, since they are not perceivable by anyone.
    */
   targetIds: z.array(z.string()),
 
@@ -56,8 +56,14 @@ export const LLMIntentSequenceSchema = z.object({
  * The full output of the Intent Decoder: an ordered sequence of intents
  * extracted from a single narrative prose block.
  */
+import { PromptComponent } from "@omnia/llm";
+
 export const IntentSequenceSchema = z.object({
   intents: z.array(IntentSchema),
 });
 
-export type IntentSequence = z.infer<typeof IntentSequenceSchema>;
+export type IntentSequence = z.infer<typeof IntentSequenceSchema> & {
+  systemPrompt?: string;
+  userContext?: string;
+  promptComponents?: PromptComponent[];
+};

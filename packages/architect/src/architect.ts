@@ -9,7 +9,7 @@ export interface ProcessResult extends ValidationResult {
 }
 
 export class Architect {
-  private validator: LLMValidator;
+  public validator: LLMValidator;
   private timeDeltaGenerator: TimeDeltaGenerator;
 
   constructor(
@@ -47,22 +47,22 @@ export class Architect {
    * Processes, validates, generates deltas, applies them to the world state,
    * and persists the changes to the database.
    *
-   * "monologue" intents are internal thoughts — they bypass validation and
+   * "monologue" and "thought" intents are internal thoughts — they bypass validation and
    * time-delta generation entirely: the clock does not advance, the world
    * state is not mutated or persisted. The caller is responsible for writing
-   * the monologue to the actor's memory buffer.
+   * the monologue/thought to the actor's Cognitive Buffer.
    */
   async processIntent(
     worldState: WorldState,
     intent: Intent,
   ): Promise<ProcessResult> {
-    // 0. Monologue intents are purely internal — short-circuit before any
+    // 0. Monologue/thought intents are purely internal — short-circuit before any
     // validation or world mutation.
-    if (intent.type === "monologue") {
+    if (intent.type === "monologue" || intent.type === "thought") {
       return {
         isValid: true,
         reason:
-          "Monologue intent bypasses validation (internal thought, not perceivable).",
+          "Monologue/thought intent bypasses validation (internal thought, not perceivable).",
         timeDelta: {
           minutesToAdvance: 0,
           explanation: "Internal thought — no time elapsed.",

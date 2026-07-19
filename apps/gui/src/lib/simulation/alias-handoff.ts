@@ -3,7 +3,7 @@ import type { SimSession } from "./types";
 
 /**
  * Runs the HandoffEngine for every agent entity that has accumulated enough
- * buffer entries to warrant a handoff (compression to long-term memory).
+ * buffer entries to warrant a handoff (compression to the Memory Ledger).
  */
 export async function runHandoffResolution(session: SimSession): Promise<void> {
   const worldState = session.coreRepo.loadWorldState(session.worldInstanceId);
@@ -33,11 +33,39 @@ export async function runHandoffResolution(session: SimSession): Promise<void> {
       maxContext,
     );
     if (trigger !== "none") {
-      await handoffEngine.runHandoff(
+      const ran = await handoffEngine.runHandoff(
         entity,
         bufferEntries,
         worldState.clock.get(),
       );
+      if (ran) {
+        const lastResult = handoffEngine.lastResult;
+        const lastCall =
+          session.handoffProvider.lastCalls?.[
+            (session.handoffProvider.lastCalls?.length || 0) - 1
+          ];
+        const info = session.entities.find((e) => e.id === entity.id);
+        const entityName = info?.name || entity.id;
+
+        session.log.push({
+          turn: session.turn,
+          entityId: entity.id,
+          entityName,
+          narrativeProse: `Handoff triggered for ${entityName}: memories were transferred from Cognitive Buffer to Memory Ledger`,
+          intents: [],
+          timestamp: worldState.clock.get().toISOString(),
+          isHandoff: true,
+          rawPrompt: lastResult
+            ? {
+                systemPrompt: lastResult.systemPrompt || "",
+                userContext: lastResult.userContext || "",
+                components: lastResult.promptComponents,
+              }
+            : undefined,
+          usage: lastCall?.usage,
+          handoffResult: lastResult?.response || lastCall?.response,
+        });
+      }
     }
   }
 }

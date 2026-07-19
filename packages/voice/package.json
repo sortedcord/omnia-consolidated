@@ -1,0 +1,13 @@
+{
+  "name": "@omnia/voice",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./dist/index.js"
+  },
+  "dependencies": {
+    "@omnia/core": "workspace:*",
+    "compromise": "^14.14.0"
+  }
+}

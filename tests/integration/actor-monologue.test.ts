@@ -7,7 +7,6 @@ import {
   AttributeVisibility,
 } from "@omnia/core";
 import { MockLLMProvider } from "@omnia/llm";
-import { IntentSequence } from "@omnia/intent";
 import { Architect } from "@omnia/architect";
 import { BufferRepository, BufferEntry } from "@omnia/memory";
 import {
@@ -56,34 +55,25 @@ describe("Actor Agent + Monologue Intent Integration (Tier 2)", () => {
     };
 
     // 2. IntentDecoder splits that prose into 3 intents.
-    const mockDecodedSequence: IntentSequence = {
+    const mockDecodedSequence = {
       intents: [
         {
           type: "monologue",
-          originalText:
-            "I can't believe Bob hasn't noticed me yet, Alice thought.",
-          description:
-            "Alice internally reflects that Bob has not noticed her.",
-          selfDescription:
-            "You internally reflect that Bob has not noticed you.",
+          content: "I internally reflect that Bob has not noticed me.",
           actorId: "alice",
           targetIds: [],
           modifiers: [],
         },
         {
           type: "dialogue",
-          originalText: '"Hey Bob," she called out softly.',
-          description: "Alice softly calls out to Bob.",
-          selfDescription: "You softly call out to Bob.",
+          content: '"Hey Bob," I call out softly to Bob.',
           actorId: "alice",
           targetIds: ["bob"],
           modifiers: [],
         },
         {
           type: "action",
-          originalText: "She reached for the ledger on the table.",
-          description: "Alice reaches for the ledger on the table.",
-          selfDescription: "You reach for the ledger on the table.",
+          content: "I reach for the ledger on the table.",
           actorId: "alice",
           targetIds: [],
           modifiers: [],
@@ -166,7 +156,7 @@ describe("Actor Agent + Monologue Intent Integration (Tier 2)", () => {
     const expectedTime = new Date(startTime.getTime() + 3 * 60_000);
     expect(world.clock.get().toISOString()).toBe(expectedTime.toISOString());
 
-    // 7. All three intents persisted to Alice's memory buffer.
+    // 7. All three intents persisted to Alice's Cognitive Buffer.
     const aliceMemory = bufferRepo.listForOwner("alice");
     expect(aliceMemory).toHaveLength(3);
     expect(aliceMemory[0].intent.type).toBe("monologue");

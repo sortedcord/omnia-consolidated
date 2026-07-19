@@ -11,6 +11,7 @@ import type { SimSnapshot } from "@/lib/simulation-types";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { PromptModal } from "./PromptModal";
+import { HandoffModal } from "./HandoffModal";
 import { InteractView } from "./InteractView";
 import { ManageView } from "./ManageView";
 import { cn } from "@/lib/utils";
@@ -54,6 +55,9 @@ export function PlayView() {
   const [error, setError] = useState("");
   const [statusText, setStatusText] = useState("");
   const [selectedEntryForModal, setSelectedEntryForModal] = useState<
+    SimSnapshot["log"][number] | null
+  >(null);
+  const [selectedHandoffForModal, setSelectedHandoffForModal] = useState<
     SimSnapshot["log"][number] | null
   >(null);
 
@@ -384,6 +388,7 @@ export function PlayView() {
               setPlayerInput={setPlayerInput}
               onSubmitAction={handleSubmitAction}
               onShowPrompt={setSelectedEntryForModal}
+              onShowHandoff={setSelectedHandoffForModal}
               logEndRef={logEndRef}
             />
           ) : (
@@ -401,6 +406,13 @@ export function PlayView() {
           <PromptModal
             entry={selectedEntryForModal}
             onClose={() => setSelectedEntryForModal(null)}
+          />
+        )}
+
+        {selectedHandoffForModal && (
+          <HandoffModal
+            entry={selectedHandoffForModal}
+            onClose={() => setSelectedHandoffForModal(null)}
           />
         )}
       </div>

@@ -49,23 +49,68 @@ async function processIntents(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   worldState: any,
   session: SimSession,
-): Promise<IntentInfo[]> {
+): Promise<{ intentInfos: IntentInfo[]; validatorCalls: ValidatorCall[] }> {
   const intentInfos: IntentInfo[] = [];
+  const validatorCalls: ValidatorCall[] = [];
 
-  for (const intent of intents) {
+  for (let i = 0; i < intents.length; i++) {
+    const intent = intents[i];
     const outcome = await session.architect.processIntent(worldState, intent);
     const ts = worldState.clock.get().toISOString();
 
     intentInfos.push({
       type: intent.type,
-      description: intent.description,
-      selfDescription: intent.selfDescription,
+      content: intent.content,
       modifiers: intent.modifiers || [],
       targetIds: intent.targetIds,
       isValid: outcome.isValid,
       reason: outcome.reason,
       minutesToAdvance: outcome.timeDelta?.minutesToAdvance,
     });
+
+    if (intent.type === "action" && session.architect.validator.lastResult) {
+      const lastResult = session.architect.validator.lastResult;
+      let usage = undefined;
+      if (
+        session.validatorProvider.lastCalls &&
+        session.validatorProvider.lastCalls.length > 0
+      ) {
+        const valCall =
+          session.validatorProvider.lastCalls[
+            session.validatorProvider.lastCalls.length - 1
+          ];
+        usage = valCall.usage;
+      }
+
+      validatorCalls.push({
+        intentIndex: i,
+        intentContent: intent.content,
+        prompt: {
+          systemPrompt: lastResult.systemPrompt || "",
+          userContext: lastResult.userContext || "",
+          components: lastResult.promptComponents,
+        },
+        response: {
+          isValid: outcome.isValid,
+          reason: outcome.reason,
+        },
+        usage,
+      });
+    } else {
+      const reason =
+        intent.type === "dialogue"
+          ? "Dialogue intents represent verbal/communication actions and are automatically valid."
+          : "Monologue/thought intents represent internal reflections and bypass validation.";
+
+      validatorCalls.push({
+        intentIndex: i,
+        intentContent: intent.content,
+        response: {
+          isValid: true,
+          reason: outcome.reason || reason,
+        },
+      });
+    }
 
     const actorEntry = buildBufferEntryForIntent(intent, ts, entity.locationId);
     if (intent.type === "action") {
@@ -100,7 +145,7 @@ async function processIntents(
     }
   }
 
-  return intentInfos;
+  return { intentInfos, validatorCalls };
 }
 
 // ---------------------------------------------------------------------------
@@ -166,6 +211,11 @@ export async function processNpcTurn(
     narrativeProse: result.narrativeProse,
     intents: [],
     timestamp: worldState.clock.get().toISOString(),
+    rawPrompt: {
+      systemPrompt: result.systemPrompt || "",
+      userContext: result.userContext || "",
+      components: result.promptComponents,
+    },
   };
 
   if (
@@ -176,10 +226,6 @@ export async function processNpcTurn(
       session.actorProvider.lastCalls[
         session.actorProvider.lastCalls.length - 1
       ];
-    entry.rawPrompt = {
-      systemPrompt: actorCall.systemPrompt,
-      userContext: actorCall.userContext,
-    };
     entry.usage = actorCall.usage;
   }
 
@@ -191,20 +237,49 @@ export async function processNpcTurn(
       session.decoderProvider.lastCalls[
         session.decoderProvider.lastCalls.length - 1
       ];
+    const proseHeader = "=== NARRATIVE PROSE ===";
+    const userContext = decoderCall.userContext;
+    const idx = userContext.indexOf(proseHeader);
+
+    let contextStr = userContext;
+    let proseStr = "";
+
+    if (idx !== -1) {
+      contextStr = userContext.substring(0, idx).trim();
+      proseStr = userContext.substring(idx).trim();
+    }
+
     entry.decoderPrompt = {
       systemPrompt: decoderCall.systemPrompt,
       userContext: decoderCall.userContext,
+      components: [
+        {
+          label: "System Prompt",
+          type: "system",
+          content: decoderCall.systemPrompt,
+        },
+        { label: "Decoder Context", type: "world", content: contextStr },
+        { label: "Narrative Prose", type: "input", content: proseStr },
+      ],
     };
     entry.decoderUsage = decoderCall.usage;
   }
 
-  entry.intents = await processIntents(
+  const { intentInfos, validatorCalls } = await processIntents(
     result.intents.intents,
     info.id,
     entity,
     worldState,
     session,
   );
+  entry.intents = intentInfos;
+  entry.validatorCalls = validatorCalls;
+  entry.decodedIntents = result.intents.intents.map((intent) => ({
+    type: intent.type,
+    content: intent.content,
+    modifiers: intent.modifiers || [],
+    targetIds: intent.targetIds,
+  }));
 
   session.log.push(entry);
   session.coreRepo.saveWorldState(worldState);
@@ -244,8 +319,9 @@ export async function executePlayerAction(
     intents: [],
     timestamp: worldState.clock.get().toISOString(),
     rawPrompt: {
-      systemPrompt: ctx.systemPrompt,
-      userContext: ctx.userContext,
+      systemPrompt: result.systemPrompt || ctx.systemPrompt,
+      userContext: result.userContext || ctx.userContext,
+      components: result.promptComponents,
     },
   };
 
@@ -257,20 +333,45 @@ export async function executePlayerAction(
       session.decoderProvider.lastCalls[
         session.decoderProvider.lastCalls.length - 1
       ];
+    const proseHeader = "=== NARRATIVE PROSE ===";
+    const userContext = call.userContext;
+    const idx = userContext.indexOf(proseHeader);
+
+    let contextStr = userContext;
+    let proseStr = "";
+
+    if (idx !== -1) {
+      contextStr = userContext.substring(0, idx).trim();
+      proseStr = userContext.substring(idx).trim();
+    }
+
     entry.decoderPrompt = {
       systemPrompt: call.systemPrompt,
       userContext: call.userContext,
+      components: [
+        { label: "System Prompt", type: "system", content: call.systemPrompt },
+        { label: "Decoder Context", type: "world", content: contextStr },
+        { label: "Narrative Prose", type: "input", content: proseStr },
+      ],
     };
     entry.decoderUsage = call.usage;
   }
 
-  entry.intents = await processIntents(
+  const { intentInfos, validatorCalls: playerValCalls } = await processIntents(
     result.intents.intents,
     ctx.entityId,
     entity,
     worldState,
     session,
   );
+  entry.intents = intentInfos;
+  entry.validatorCalls = playerValCalls;
+  entry.decodedIntents = result.intents.intents.map((intent) => ({
+    type: intent.type,
+    content: intent.content,
+    modifiers: intent.modifiers || [],
+    targetIds: intent.targetIds,
+  }));
 
   session.log.push(entry);
   session.coreRepo.saveWorldState(worldState);

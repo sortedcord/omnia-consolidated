@@ -91,7 +91,7 @@ Access the application locally at `http://localhost:3000`.
 
 ### The Actor Agent
 
-Each entity takes turns through an **Actor Agent** that receives a strictly epistemically bounded prompt: its own attributes (public, plus private ones explicitly granted to itself), its subjective memory buffer, the entities co-present at its location, and the current moment. Nothing else. The actor responds with free narrative prose.
+Each entity takes turns through an **Actor Agent** that receives a strictly epistemically bounded prompt: its own attributes (public, plus private ones explicitly granted to itself), its **Cognitive Buffer**, the entities co-present at its location, and the current moment. Nothing else. The actor responds with free narrative prose.
 
 Prose is decoded into typed intents:
 
@@ -121,8 +121,8 @@ Space is a graph: `world → region → location → point of interest`, connect
 
 ### Memory Tiers
 
-- **Verbatim Buffer (implemented):** Per-character subjective event log. Every entry is stored from the owner's perspective actors resolved through the owner's alias map, outcomes attached — and recalled with naturalized time phrasing.
-- **Vector Archive (implemented):** Summarized, embedded memory entries for semantic retrieval, keeping verbatim quotes only for high-salience lines.
+- **Cognitive Buffer (implemented):** Per-character subjective event log. Every entry is stored from the owner's perspective actors resolved through the owner's alias map, outcomes attached — and recalled with naturalized time phrasing.
+- **Memory Ledger (implemented):** Summarized, embedded memory entries for semantic retrieval, keeping verbatim quotes only for high-salience lines.
 - **Dossier (planned):** Each observer's subjective beliefs about another character.
 
 Memory is per-character on purpose: recall is testimony from a vantage point, which is what makes interrogating two witnesses interesting.
@@ -156,14 +156,14 @@ The finish line for the first milestone is small on purpose. `v0` is almost on t
 - [x] Typed intent pipeline: `dialogue` / `action` / `monologue`, decoded from free prose.
 - [x] World Architect: LLM validation plus time-delta generation, end-to-end for single actions.
 - [x] Actor Agent with epistemically-bounded prompts (self, memory, co-located entities, subjective time).
-- [x] Verbatim memory buffer with per-observer subjective serialization and alias resolution.
+- [x] Verbatim Cognitive Buffer with per-observer subjective serialization and alias resolution.
 - [x] Spatial location graph (data model; perception is co-location only).
 - [x] Scenario loader (JSON → SQLite) and a playable CLI loop with human or LLM actors.
 
 **[The `v0` Milestone:](https://github.com/sortedcord/omnia-consolidated/milestone/1)**
 
 - [x] Two hand-authored NPCs live in one location, playable via CLI.
-- [x] Each has buffer and vector-archive memory and recalls something said a few turns earlier.
+- [x] Each has Cognitive Buffer and Memory Ledger memory and recalls something said a few turns earlier.
 - [x] One NPC knows a fact the other does not and, provably by testing, will not leak it.
 - [x] The Architect processes at least one non-trivial action per exchange with a visible state change.
 - [x] The whole thing persists to a SQLite file and reloads identically.
@@ -183,7 +183,7 @@ omnia/
     intent/      intent types (dialogue/action/monologue) and the prose decoder
     architect/   World Architect: LLM validation plus time-delta generation
     actor/       actor agent: epistemically-bounded prompts, pluggable prose generators
-    memory/      verbatim buffer; later the vector archive, dossier, and affect vectors
+    memory/      Cognitive Buffer; Memory Ledger (vector archive), dossier, and affect vectors
     spatial/     location and POI graph, portal-based perception
     llm/         ILLMProvider interface plus Gemini and deterministic mock implementations
     scenario/    scenario JSON schema and loader (JSON → SQLite)

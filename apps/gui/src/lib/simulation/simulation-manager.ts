@@ -468,6 +468,21 @@ export class SimulationManager {
   // ---------------------------------------------------------------------------
 
   private snapshot(session: SimSession): SimSnapshot {
+    const worldState = session.coreRepo.loadWorldState(session.worldInstanceId);
+    const hydratedEntities = session.entities.map((e) => {
+      const actualEntity = worldState?.getEntity(e.id);
+      const aliases: Record<string, string> = {};
+      if (actualEntity) {
+        for (const [targetId, alias] of actualEntity.aliases.entries()) {
+          aliases[targetId] = alias;
+        }
+      }
+      return {
+        ...e,
+        aliases,
+      };
+    });
+
     return {
       id: session.worldInstanceId,
       status: session.status,
@@ -475,7 +490,7 @@ export class SimulationManager {
       maxTurns: session.maxTurns,
       scenarioName: session.scenarioName,
       scenarioDescription: session.scenarioDescription,
-      entities: session.entities,
+      entities: hydratedEntities,
       log: session.log,
       entityIndex: session.entityIndex,
       waitingEntity: session.waitingEntity,

@@ -7,16 +7,28 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
+import { hydrate } from "@omnia/voice";
+import {
+  Alert,
+  AlertAction,
+  AlertDescription,
+  AlertTitle,
+} from "@/components/ui/alert";
 
 function IntentTag({
   intent,
-  isSelf,
+  playerAliases,
+  playerId,
+  entities,
 }: {
   intent: SimSnapshot["log"][number]["intents"][number];
-  isSelf?: boolean;
+  playerAliases: Record<string, string>;
+  playerId: string;
+  entities: SimSnapshot["entities"];
 }) {
   const labels: Record<string, string> = {
     monologue: "thought",
+    thought: "thought",
     dialogue: "dialogue",
     action: "action",
   };
@@ -28,10 +40,27 @@ function IntentTag({
     outcome = intent.isValid ? " ✅" : ` ❌ (${intent.reason})`;
   }
 
-  const textToDisplay =
-    isSelf && intent.selfDescription
-      ? intent.selfDescription
-      : intent.description;
+  const viewerAliasesMap = new Map<string, string>();
+  if (entities) {
+    for (const ent of entities) {
+      viewerAliasesMap.set(ent.id, ent.name || ent.id);
+    }
+  }
+  if (playerAliases) {
+    for (const [targetId, alias] of Object.entries(playerAliases)) {
+      viewerAliasesMap.set(targetId, alias);
+    }
+  }
+
+  const viewerEntityMock = {
+    id: playerId || "",
+    aliases: viewerAliasesMap,
+  };
+
+  const textToDisplay = hydrate(
+    intent.content,
+    viewerEntityMock as unknown as Parameters<typeof hydrate>[1],
+  );
 
   const modifiersStr =
     intent.modifiers && intent.modifiers.length > 0 ? (
@@ -69,10 +98,16 @@ function LogEntryCard({
   entry,
   onShowPrompt,
   isPlayerCard,
+  playerAliases,
+  playerId,
+  entities,
 }: {
   entry: SimSnapshot["log"][number];
   onShowPrompt: (entry: SimSnapshot["log"][number]) => void;
   isPlayerCard: boolean;
+  playerAliases: Record<string, string>;
+  playerId: string;
+  entities: SimSnapshot["entities"];
 }) {
   const showMenu = !!(entry.rawPrompt || entry.decoderPrompt);
 
@@ -110,7 +145,13 @@ function LogEntryCard({
       </div>
       <div className="flex flex-col gap-1.5 mt-2 border-t border-dotted border-border/10 pt-2">
         {entry.intents.map((intent, i) => (
-          <IntentTag key={i} intent={intent} isSelf={isPlayerCard} />
+          <IntentTag
+            key={i}
+            intent={intent}
+            playerAliases={playerAliases}
+            playerId={playerId}
+            entities={entities}
+          />
         ))}
       </div>
     </div>
@@ -125,6 +166,7 @@ interface InteractViewProps {
   setPlayerInput: (value: string) => void;
   onSubmitAction: (e: React.FormEvent<HTMLFormElement>) => void;
   onShowPrompt: (entry: SimSnapshot["log"][number]) => void;
+  onShowHandoff: (entry: SimSnapshot["log"][number]) => void;
   logEndRef: React.RefObject<HTMLDivElement | null>;
 }
 
@@ -136,6 +178,7 @@ export function InteractView({
   setPlayerInput,
   onSubmitAction,
   onShowPrompt,
+  onShowHandoff,
   logEndRef,
 }: InteractViewProps) {
   const router = useRouter();
@@ -147,14 +190,49 @@ export function InteractView({
       {/* Scrollable Center Viewport */}
       <main className="flex-1 overflow-y-auto px-8 py-6">
         <div className="flex flex-col gap-4 max-w-[800px] mx-auto pb-12">
-          {snapshot.log.map((entry, i) => (
-            <LogEntryCard
-              key={i}
-              entry={entry}
-              onShowPrompt={onShowPrompt}
-              isPlayerCard={entry.entityId === playerEntity?.id}
-            />
-          ))}
+          {snapshot.log.map((entry, i) => {
+            if (entry.isHandoff) {
+              return (
+                <Alert
+                  key={i}
+                  className="max-w-md border-dashed bg-secondary/10"
+                >
+                  <div className="flex-1">
+                    <AlertTitle>
+                      Handoff triggered for {entry.entityName}
+                    </AlertTitle>
+                    <AlertDescription>
+                      Memories were transferred from Cognitive Buffer to Memory
+                      Ledger
+                    </AlertDescription>
+                  </div>
+                  <AlertAction>
+                    <Button
+                      size="xs"
+                      variant="default"
+                      onClick={() => onShowHandoff(entry)}
+                    >
+                      View Details
+                    </Button>
+                  </AlertAction>
+                </Alert>
+              );
+            }
+            const playerAliases = playerEntity?.aliases || {};
+            const playerId = playerEntity?.id || "";
+
+            return (
+              <LogEntryCard
+                key={i}
+                entry={entry}
+                onShowPrompt={onShowPrompt}
+                isPlayerCard={entry.entityId === playerEntity?.id}
+                playerAliases={playerAliases}
+                playerId={playerId}
+                entities={snapshot.entities}
+              />
+            );
+          })}
           {loading && (
             <div className="flex items-center gap-2 text-sm italic text-muted-foreground p-2 font-mono">
               <Spinner />

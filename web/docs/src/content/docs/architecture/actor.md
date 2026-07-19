@@ -7,7 +7,7 @@ The Actor Agent is the system component that embodies a single entity and produc
 
 ## Design Principles
 
-1. **Epistemic boundedness** — The actor only sees what its entity would perceive: public attributes of other entities, private attributes explicitly ACL'd to it, its own memory buffer, and co-located entities. It does not have system-level access to all world state.
+1. **Epistemic boundedness** — The actor only sees what its entity would perceive: public attributes of other entities, private attributes explicitly ACL'd to it, its own Cognitive Buffer, and co-located entities. It does not have system-level access to all world state.
 
 2. **Proposal, not mutation** — The actor generates a _proposal_ (narrative prose). It never mutates world state, persists to the database, or writes to memory directly. Validation, execution, and persistence are the Architect's job.
 
@@ -38,7 +38,7 @@ Epistemically bounded, with these sections:
 | ---------------------------- | -------------------------------------------------------------------------------------------------- | -------------------------------------- |
 | Current moment               | The subjective present time                                                                        | `worldState.clock.get().toISOString()` |
 | The world as you perceive it | Self-visible attributes, co-located entities + their visible attributes, other presences elsewhere | `serializeSubjectiveWorldState()`      |
-| Your recent memory           | Recent `BufferEntry`s, alias-substituted, with relative time phrasing                              | `serializeSubjectiveBufferEntry()`     |
+| Your cognitive buffer        | Recent `BufferEntry`s, alias-substituted, with relative time phrasing                              | `serializeSubjectiveBufferEntry()`     |
 
 No system UUIDs, no private attributes the entity lacks ACL access to, and no objective-world-state dump are present.
 

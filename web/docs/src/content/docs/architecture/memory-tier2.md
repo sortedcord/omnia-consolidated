@@ -1,15 +1,15 @@
 ---
-title: Tier 2 Memory (Long-Term Ledger)
+title: Memory Ledger
 description: Persistent episodic memory storage, semantic indexing, and retrieval mechanics
 ---
 
-**Tier 2 Memory (the Ledger)** represents an entity's long-term episodic memory. It archives historical summaries of past events, providing a persistent record of character experiences that can be retrieved and injected into LLM prompts as needed.
+**Memory Ledger** represents an entity's persistent episodic memory. It archives historical summaries of past events, providing a durable record of character experiences that can be retrieved and injected into LLM prompts as needed.
 
 ---
 
 ## 1. Data Model
 
-A long-term memory is represented by a `LedgerEntry`. It includes metadata for deterministic database-level filtering, structured narrative content, and vector embeddings for semantic similarity scoring.
+A Memory Ledger entry is represented by a `LedgerEntry`. It includes metadata for deterministic database-level filtering, structured narrative content, and vector embeddings for semantic similarity scoring.
 
 ```ts
 interface LedgerEntry {
@@ -30,7 +30,7 @@ interface LedgerEntry {
 
 ## 2. Storage Model
 
-To support fast, low-latency queries across large historical datasets, Tier 2 memory is stored in standard SQLite tables. Vector embeddings are stored in raw binary format as `Float32Array` BLOBs.
+To support fast, low-latency queries across large historical datasets, Memory Ledger entries are stored in standard SQLite tables. Vector embeddings are stored in raw binary format as `Float32Array` BLOBs.
 
 Standard secondary indices optimize query execution time to microseconds, eliminating the compilation and cross-platform installation overhead of native vector database extensions (such as `sqlite-vec` or `node-gyp` binaries).
 
@@ -64,7 +64,7 @@ CREATE INDEX IF NOT EXISTS idx_ledger_involved_entity ON ledger_involved_entitie
 
 ## 3. The Handoff Pipeline
 
-Working memory (Tier 1 Buffer) entries are promoted to the Ledger through the automated [Handoff Pipeline](./handoff).
+**Cognitive Buffer** entries are promoted to the Memory Ledger through the automated [Handoff Pipeline](./handoff).
 
 During handoff:
 
@@ -72,7 +72,7 @@ During handoff:
 2. Ambient stage business and redundant details are pruned.
 3. Chunks are synthesized into third-person summaries and assigned importance scores.
 4. Text embeddings are generated for the summary.
-5. The processed memories are committed to the SQLite store, and the short-term buffer is pruned.
+5. The processed memories are committed to the SQLite store, and the Cognitive Buffer is pruned.
 
 ---
 
@@ -116,13 +116,13 @@ Once the candidate pool is loaded, the ranking engine evaluates entries in appli
 
 ## 5. Active Focus & Attention Loop
 
-In crowded settings (e.g., a room with many characters), retrieving long-term memories for all co-located entities would exhaust the prompt context window. To prevent this, retrieval uses an **Active Focus** selection strategy:
+In crowded settings (e.g., a room with many characters), retrieving Memory Ledger entries for all co-located entities would exhaust the prompt context window. To prevent this, retrieval uses an **Active Focus** selection strategy:
 
-- **Active Focus Set**: The prompt builder scans the last 10 entries of the character's working memory buffer. Any entity targeted by, spoken to, or mentioned in these entries is added to the Active Focus set.
+- **Active Focus Set**: The prompt builder scans the last 10 entries of the character's Cognitive Buffer. Any entity targeted by, spoken to, or mentioned in these entries is added to the Active Focus set.
 - **Dynamic Capacity Limits**:
-  - If the number of co-located characters is small ($\le 3$), long-term memory is retrieved for all of them.
-  - If the environment is crowded ($> 3$), long-term retrieval is strictly restricted to the top 3 characters in the Active Focus set.
-- This creates a realistic attention loop: when a new character interacts with the actor, they enter the working buffer, triggering the retrieval of their long-term history on the subsequent turn.
+  - If the number of co-located characters is small ($\le 3$), Memory Ledger entries are retrieved for all of them.
+  - If the environment is crowded ($> 3$), Memory Ledger retrieval is strictly restricted to the top 3 characters in the Active Focus set.
+- This creates a realistic attention loop: when a new character interacts with the actor, they enter the Cognitive Buffer, triggering the retrieval of their Memory Ledger history on the subsequent turn.
 
 ---
 
@@ -130,15 +130,15 @@ In crowded settings (e.g., a room with many characters), retrieving long-term me
 
 Retrieved ledger entries are formatted into the prompt chronologically and mapped to subjective aliases. Internal metrics (e.g., importance numbers and raw system IDs) are omitted to preserve immersion.
 
-- Working memory entries are injected under `=== RECENT EVENTS ===` (narrated relative to the present moment).
-- Recalled ledger entries are injected under `=== YOUR MEMORIES ===` (presented as long-term recollections).
+- Cognitive Buffer entries are injected under `=== COGNITIVE BUFFER ===` (narrated relative to the present moment).
+- Recalled Memory Ledger entries are injected under `=== MEMORY LEDGER ===` (presented as episodic recollections).
 
 ```text
-=== RECENT EVENTS ===
+=== COGNITIVE BUFFER ===
 Moments ago
   - You spoke to Strider: "Hello there"
 
-=== YOUR MEMORIES ===
+=== MEMORY LEDGER ===
 A couple days ago
   - You met a hooded figure named Strider at The Prancing Pony.
     Quote: "I can avoid being seen, if I wish, but to disappear entirely, that is a rare gift."
