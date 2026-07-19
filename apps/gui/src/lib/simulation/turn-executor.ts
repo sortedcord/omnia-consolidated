@@ -58,8 +58,7 @@ async function processIntents(
 
     intentInfos.push({
       type: intent.type,
-      description: intent.description,
-      selfDescription: intent.selfDescription,
+      content: intent.content,
       modifiers: intent.modifiers || [],
       targetIds: intent.targetIds,
       isValid: outcome.isValid,

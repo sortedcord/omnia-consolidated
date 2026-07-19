@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
+import { hydrate } from "@omnia/voice";
 import {
   Alert,
   AlertAction,
@@ -17,9 +18,13 @@ import {
 function IntentTag({
   intent,
   isSelf,
+  playerAliases,
+  playerId,
 }: {
   intent: SimSnapshot["log"][number]["intents"][number];
   isSelf?: boolean;
+  playerAliases: Record<string, string>;
+  playerId: string;
 }) {
   const labels: Record<string, string> = {
     monologue: "thought",
@@ -35,10 +40,13 @@ function IntentTag({
     outcome = intent.isValid ? " ✅" : ` ❌ (${intent.reason})`;
   }
 
-  const textToDisplay =
-    isSelf && intent.selfDescription
-      ? intent.selfDescription
-      : intent.description;
+  const viewerAliasesMap = new Map(Object.entries(playerAliases || {}));
+  const viewerEntityMock = {
+    id: playerId || "",
+    aliases: viewerAliasesMap,
+  };
+
+  const textToDisplay = hydrate(intent.content, viewerEntityMock as any);
 
   const modifiersStr =
     intent.modifiers && intent.modifiers.length > 0 ? (
@@ -76,10 +84,14 @@ function LogEntryCard({
   entry,
   onShowPrompt,
   isPlayerCard,
+  playerAliases,
+  playerId,
 }: {
   entry: SimSnapshot["log"][number];
   onShowPrompt: (entry: SimSnapshot["log"][number]) => void;
   isPlayerCard: boolean;
+  playerAliases: Record<string, string>;
+  playerId: string;
 }) {
   const showMenu = !!(entry.rawPrompt || entry.decoderPrompt);
 
@@ -117,7 +129,13 @@ function LogEntryCard({
       </div>
       <div className="flex flex-col gap-1.5 mt-2 border-t border-dotted border-border/10 pt-2">
         {entry.intents.map((intent, i) => (
-          <IntentTag key={i} intent={intent} isSelf={isPlayerCard} />
+          <IntentTag
+            key={i}
+            intent={intent}
+            isSelf={isPlayerCard}
+            playerAliases={playerAliases}
+            playerId={playerId}
+          />
         ))}
       </div>
     </div>
@@ -184,12 +202,17 @@ export function InteractView({
                 </Alert>
               );
             }
+            const playerAliases = playerEntity?.aliases || {};
+            const playerId = playerEntity?.id || "";
+
             return (
               <LogEntryCard
                 key={i}
                 entry={entry}
                 onShowPrompt={onShowPrompt}
                 isPlayerCard={entry.entityId === playerEntity?.id}
+                playerAliases={playerAliases}
+                playerId={playerId}
               />
             );
           })}

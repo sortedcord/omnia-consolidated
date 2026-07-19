@@ -1,30 +1,21 @@
 import { describe, test, expect } from "vitest";
 import Database from "better-sqlite3";
-import {
-  WorldState,
-  Entity,
-  SQLiteRepository,
-  AttributeVisibility,
-} from "@omnia/core";
+import { WorldState, Entity, SQLiteRepository } from "@omnia/core";
 import { MockLLMProvider } from "@omnia/llm";
 import { IntentDecoder, IntentSequence } from "@omnia/intent";
 import { Architect } from "@omnia/architect";
 
-describe("Omnia Integration Tests (Tier 2)", () => {
-  test("end-to-end intent decoding, validation, execution, and persistence", async () => {
+describe("Game Loop Integration Tests (Tier 2)", () => {
+  test("successfully processes a sequence of dialogue and action intents", async () => {
     const db = new Database(":memory:");
     const repo = new SQLiteRepository(db);
 
     const startTime = new Date("2026-07-06T12:00:00.000Z");
     const world = new WorldState("world-abc", startTime);
-    world.addAttribute("location", "Dungeon Crawl", AttributeVisibility.PUBLIC);
 
     const alice = new Entity("alice", "room-1");
-    alice.addAttribute("role", "rogue", AttributeVisibility.PUBLIC);
-    world.addEntity(alice);
-
     const bob = new Entity("bob", "room-1");
-    bob.addAttribute("role", "knight", AttributeVisibility.PUBLIC);
+    world.addEntity(alice);
     world.addEntity(bob);
 
     // Save initial state to database
@@ -32,22 +23,18 @@ describe("Omnia Integration Tests (Tier 2)", () => {
 
     // Mock responses for LLM:
     // 1. IntentDecoder parses: `"Cover me," Alice whispered to Bob. She crept towards the door and pulled the handle.`
-    const mockIntentSequence: IntentSequence = {
+    const mockIntentSequence = {
       intents: [
         {
           type: "dialogue",
-          originalText: '"Cover me," Alice whispered to Bob.',
-          description: "Alice whispers to Bob to cover her.",
-          selfDescription: "You whisper to Bob to cover you.",
+          content: '"Cover me," I whisper to Bob.',
           actorId: "alice",
           targetIds: ["bob"],
           modifiers: [],
         },
         {
           type: "action",
-          originalText: "She crept towards the door and pulled the handle.",
-          description: "Alice creeps to the door and pulls the handle.",
-          selfDescription: "You creep to the door and pull the handle.",
+          content: "I creep to the door and pull the handle.",
           actorId: "alice",
           targetIds: [],
           modifiers: [],
@@ -135,9 +122,7 @@ describe("Omnia Integration Tests (Tier 2)", () => {
     // 2. Valid dialogue: speaking to bob
     const intent1 = {
       type: "action" as const,
-      originalText: "She tries to unlock the gate with a hairpin.",
-      description: "Alice attempts to pick the lock with a hairpin.",
-      selfDescription: "You attempt to pick the lock with a hairpin.",
+      content: "entity@alice[I] attempt to pick the lock with a hairpin.",
       actorId: "alice",
       targetIds: [],
       modifiers: [],
@@ -145,9 +130,7 @@ describe("Omnia Integration Tests (Tier 2)", () => {
 
     const intent2 = {
       type: "dialogue" as const,
-      originalText: '"This is useless," she mutters.',
-      description: "Alice mutters to herself.",
-      selfDescription: "You mutter to yourself.",
+      content: '"This is useless," entity@alice[I] mutter.',
       actorId: "alice",
       targetIds: [],
       modifiers: [],

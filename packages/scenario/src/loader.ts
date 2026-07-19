@@ -145,8 +145,14 @@ export class ScenarioLoader {
               timestamp: mem.timestamp,
               locationId: mem.locationId,
               intent: {
-                ...mem.intent,
-                selfDescription: mem.intent.selfDescription ?? "",
+                type: mem.intent.type,
+                content:
+                  mem.intent.content ||
+                  mem.intent.description ||
+                  mem.intent.originalText ||
+                  "",
+                actorId: mem.intent.actorId,
+                targetIds: mem.intent.targetIds,
                 modifiers: mem.intent.modifiers ?? [],
               },
               outcome: mem.outcome,

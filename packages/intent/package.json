@@ -9,6 +9,7 @@
   "dependencies": {
     "@omnia/core": "workspace:*",
     "@omnia/llm": "workspace:*",
+    "@omnia/voice": "workspace:*",
     "zod": "^4.4.3"
   }
 }

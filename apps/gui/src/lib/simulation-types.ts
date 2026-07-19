@@ -1,7 +1,6 @@
 export interface IntentInfo {
   type: string;
-  description: string;
-  selfDescription?: string;
+  content: string;
   modifiers: string[];
   targetIds: string[];
   isValid?: boolean;
@@ -49,6 +48,7 @@ export interface EntityInfo {
   name: string;
   isPlayer: boolean;
   isAgent: boolean;
+  aliases?: Record<string, string>;
 }
 
 export interface WaitingContext {

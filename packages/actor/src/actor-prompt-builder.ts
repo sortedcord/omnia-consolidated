@@ -13,6 +13,7 @@ import {
   LedgerEntry,
   LedgerRepository,
 } from "@omnia/memory";
+import { hydrate } from "@omnia/voice";
 
 /**
  * Zod schema for the structured response expected from the actor LLM.
@@ -158,7 +159,7 @@ Guidelines:
         entry.intent.actorId === entity.id &&
         entry.intent.type === "dialogue"
       ) {
-        serialized = `You said: ${serialized}`;
+        serialized = `I said: ${serialized}`;
       }
 
       if (when !== currentGroup) {
@@ -250,12 +251,7 @@ Guidelines:
     for (const entry of recalled) {
       const when = naturalizeTime(now, new Date(entry.timestamp));
 
-      let content = entry.content;
-      // Resolve system IDs to subjective aliases in the content
-      for (const targetId of entry.involvedEntityIds) {
-        const alias = resolveAlias(entity, targetId);
-        content = content.replace(new RegExp(targetId, "g"), alias);
-      }
+      let content = hydrate(entry.content, entity);
       if (entry.locationId) {
         content += ` (at ${entry.locationId})`;
       }

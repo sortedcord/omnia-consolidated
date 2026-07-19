@@ -24,14 +24,8 @@ export const LLMIntentSchema = z.object({
   /** The type of intent. */
   type: IntentTypeSchema,
 
-  /** The original narrative text fragment this intent was extracted from. */
-  originalText: z.string(),
-
-  /** A concise, structured description of the intent's action or dialogue. */
-  description: z.string(),
-
-  /** The same event from the actor's own perspective (second person, "You"). */
-  selfDescription: z.string(),
+  /** The dehydrated canonical content of the intent. */
+  content: z.string(),
 
   /**
    * Entity IDs of the receiving parties (e.g., who is being spoken to,

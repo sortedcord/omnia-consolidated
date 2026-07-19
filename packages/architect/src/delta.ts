@@ -2,6 +2,7 @@ import { z } from "zod";
 import { WorldState, serializeObjectiveWorldState } from "@omnia/core";
 import { ILLMProvider } from "@omnia/llm";
 import { Intent } from "@omnia/intent";
+import { hydrateObjective } from "@omnia/voice";
 
 export const TimeDeltaSchema = z.object({
   minutesToAdvance: z.number().int().nonnegative(),
@@ -46,6 +47,8 @@ Return a structured JSON object containing:
 - "explanation": a brief explanation of why this amount of time is appropriate.
 `.trim();
 
+    const objectiveContent = hydrateObjective(intent.content, worldState);
+
     const userContext = `
 === CURRENT WORLD STATE ===
 Current Time: ${worldState.clock.get().toISOString()}
@@ -55,8 +58,7 @@ ${serializeObjectiveWorldState(worldState)}
 === ACTION ===
 Actor ID: ${intent.actorId}
 Type: ${intent.type}
-Description: "${intent.description}"
-Original Text: "${intent.originalText}"
+Content: "${objectiveContent}"
 Target IDs: ${intent.targetIds.join(", ") || "(None)"}
 `.trim();
 

@@ -55,8 +55,8 @@ describe("ActorPromptBuilder with Memory Ledger Integration", () => {
         type: "dialogue",
         actorId: "alice",
         targetIds: ["bob"],
-        originalText: "Hello there",
-        description: "Alice greets Bob",
+        content: "entity@alice[I] say 'Hello there' to entity@bob[Bob]",
+        modifiers: [],
       },
     });
 
@@ -67,7 +67,7 @@ describe("ActorPromptBuilder with Memory Ledger Integration", () => {
       timestamp: "2024-01-08T12:00:00.000Z", // 2 days ago
       locationId: "tavern",
       involvedEntityIds: ["bob"],
-      content: "alice met bob at the tavern.",
+      content: "entity@alice[Alice] met entity@bob[bob] at the tavern.",
       quotes: ["I am a ranger."],
       importance: 9,
       embedding: [],
@@ -78,12 +78,12 @@ describe("ActorPromptBuilder with Memory Ledger Integration", () => {
 
     // Check Cognitive Buffer exists
     expect(userContext).toContain("=== COGNITIVE BUFFER ===");
-    expect(userContext).toContain("You said: Alice greets Bob");
+    expect(userContext).toContain("I said: I say 'Hello there' to Strider");
 
     // Check Memory Ledger exists
     expect(userContext).toContain("=== MEMORY LEDGER ===");
-    // Bob should be resolved to Strider in the ledger content
-    expect(userContext).toContain("alice met Strider at the tavern.");
+    // Bob should be resolved to Strider, and alice to I in the ledger content
+    expect(userContext).toContain("I met Strider at the tavern.");
     expect(userContext).toContain('Quote: "I am a ranger."');
   });
 

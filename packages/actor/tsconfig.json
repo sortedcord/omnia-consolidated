@@ -9,6 +9,7 @@
     { "path": "../core" },
     { "path": "../intent" },
     { "path": "../llm" },
-    { "path": "../memory" }
+    { "path": "../memory" },
+    { "path": "../voice" }
   ]
 }

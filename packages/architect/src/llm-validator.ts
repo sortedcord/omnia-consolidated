@@ -2,6 +2,7 @@ import { z } from "zod";
 import { WorldState, serializeObjectiveWorldState } from "@omnia/core";
 import { ILLMProvider } from "@omnia/llm";
 import { Intent } from "@omnia/intent";
+import { hydrateObjective } from "@omnia/voice";
 
 export const ValidationResultSchema = z.object({
   isValid: z.boolean(),
@@ -60,6 +61,8 @@ You must respond with a JSON object containing:
 - "reason": a concise explanation of why the action is allowed or denied.
 `.trim();
 
+    const objectiveContent = hydrateObjective(intent.content, worldState);
+
     const userContext = `
 === CURRENT WORLD STATE ===
 Current Time: ${worldState.clock.get().toISOString()}
@@ -69,8 +72,7 @@ ${serializedWorld}
 === PROPOSED ACTION ===
 Actor ID: ${intent.actorId}
 Type: ${intent.type}
-Description: "${intent.description}"
-Original Text: "${intent.originalText}"
+Content: "${objectiveContent}"
 Target IDs: ${intent.targetIds.join(", ") || "(None)"}
 
 Decide if the proposed action is logically valid and physically possible.

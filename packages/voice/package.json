@@ -1,5 +1,5 @@
 {
-  "name": "@omnia/memory",
+  "name": "@omnia/voice",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -8,9 +8,6 @@
   },
   "dependencies": {
     "@omnia/core": "workspace:*",
-    "@omnia/intent": "workspace:*",
-    "@omnia/llm": "workspace:*",
-    "@omnia/voice": "workspace:*",
-    "zod": "^4.4.3"
+    "compromise": "^14.14.0"
   }
 }

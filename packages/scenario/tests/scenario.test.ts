@@ -139,7 +139,7 @@ describe("Scenario Validation & Schema Tests (Tier 1)", () => {
     expect(memories[0].id).toBe("mem-seed-1");
     expect(memories[0].timestamp).toBe("2026-07-09T07:55:00.000Z");
     expect(memories[0].locationId).toBe("lobby");
-    expect(memories[0].intent.description).toBe("entered the house");
+    expect(memories[0].intent.content).toBe("entered the house");
 
     db.close();
   });

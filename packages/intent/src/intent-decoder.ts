@@ -1,5 +1,6 @@
 import { WorldState, resolveAlias } from "@omnia/core";
 import { ILLMProvider } from "@omnia/llm";
+import { dehydrate } from "@omnia/voice";
 import { Intent, IntentSequence, LLMIntentSequenceSchema } from "./intent.js";
 
 export class IntentDecoder {
@@ -51,8 +52,10 @@ export class IntentDecoder {
           return `(Alias="${alias}", ID="${tid}")`;
         })
         .join(", ");
+      // In the historical context, prior.content is already dehydrated, so we hydrate it for the actor's view
+      // Wait, we can keep it simple or just use the content. We'll show the content.
       historicalLines.push(
-        `    - Content: "${prior.originalText}", Type: ${prior.type}, Target Entities: ${targetsStr || "None"}`,
+        `    - Content: "${prior.content}", Type: ${prior.type}, Target Entities: ${targetsStr || "None"}`,
       );
     }
     const historicalContext =
@@ -67,15 +70,11 @@ Your job is to take a block of narrative prose written by an actor agent and dec
 For each intent you must:
 1. Classify its type:
    - "dialogue": if actor speaking, talking, whispering, murmuring, etc
-   - "action": Any physical or logical action performed in the world (e.g., moving, opening, looking).
-   - "monologue" (or "thought"): An inner thought, reflection, or internal monologue/self narration.
-2. Extract the original text fragment from the prose that corresponds to this intent.
-3. Populate "description" and "selfDescription":
-   - "description": No subject or name — a bare third-person verb phrase only (e.g. "clears their throat", "shakes their head slowly")
-   - "selfDescription": The same event from the actor's own perspective, second person, complete sentence starting with "You" (e.g. "You clear your throat.", "You shake your head slowly."). This is shown directly in the actor's own memory — it must never say "the actor" or refer to them in the third person.
-   - In case of a dialogue, the description and self Description only stores the exact words said by the entity. (e.g. "I will do that later", "Are you serious right now?")
-4. Identify targetIds — the entity IDs of the receiving parties. Use the "Other entities in context" list to resolve any subjective names, aliases, or descriptions used in the prose to their correct entity IDs. If no specific target, use an empty array.
-5. Identify modifiers — a list of strings representing additional qualities or modifiers extracted from the narrative prose. This includes emotions, tone of voice, speed, manner of action, or statement type (e.g., "question", "anxious", "whispering", "slowly", "quietly", "forcefully"). If no modifiers are present, use an empty array.
+   - "action": Any physical action performed in the world (e.g., moving, opening, looking). DO NOT CLASSIFY SPEAKING MODIFIERS AS ACTIONS
+   - "monologue" (or "thought"): An inner thought, reflection, or monologue/self narration.
+2. Extract the original narrative text fragment from the prose that corresponds to this intent and populate it as "content". Do not paraphrase, do not convert to third person, and do not convert to second person. Keep the original text fragment exactly as written in the prose (first-person voice).
+3. Identify targetIds — the entity IDs of the receiving parties. Use the "Other entities in context" list to resolve any subjective names, aliases, or descriptions used in the prose to their correct entity IDs. If no specific target, use an empty array.
+4. Identify modifiers — a list of strings representing additional qualities or modifiers extracted from the narrative prose. This includes emotions, tone of voice, speed, manner of action, or statement type (e.g., "question", "anxious", "whispering", "slowly", "quietly", "forcefully"). If no modifiers are present, use an empty array.
 `.trim();
 
     const userContext = `
@@ -101,10 +100,26 @@ ${narrativeProse}
       );
     }
 
-    const fullIntents = response.data.intents.map((intent) => ({
-      ...intent,
-      actorId,
-    }));
+    const aliasMap: Record<string, string> = {};
+    if (actor) {
+      for (const [targetId, alias] of actor.aliases.entries()) {
+        aliasMap[alias] = targetId;
+      }
+    }
+
+    const fullIntents = response.data.intents.map((intent) => {
+      const dehydrated = dehydrate(
+        intent.content,
+        actorId,
+        intent.targetIds,
+        aliasMap,
+      );
+      return {
+        ...intent,
+        content: dehydrated,
+        actorId,
+      };
+    });
 
     return {
       intents: fullIntents,

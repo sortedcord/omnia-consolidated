@@ -1,6 +1,7 @@
 import Database from "better-sqlite3";
 import { Entity, resolveAlias } from "@omnia/core";
 import { Intent } from "@omnia/intent";
+import { hydrate } from "@omnia/voice";
 
 export interface BufferEntry {
   id: string;
@@ -23,32 +24,14 @@ export function serializeSubjectiveBufferEntry(
   entry: BufferEntry,
   viewer: Entity,
 ): string {
-  const isSelf = viewer.id === entry.intent.actorId;
-
-  if (isSelf) {
-    let details = (
-      entry.intent.selfDescription ||
-      entry.intent.description ||
-      entry.intent.originalText
-    ).trim();
-    if (details.length > 0) {
-      details = details.charAt(0).toUpperCase() + details.slice(1);
-    }
-    if (entry.intent.type === "action" && entry.outcome) {
-      details += ` (Outcome: ${entry.outcome.isValid ? "Succeeded" : `Failed - ${entry.outcome.reason}`})`;
-    }
-    return details;
+  let details = hydrate(entry.intent.content, viewer).trim();
+  if (details.length > 0) {
+    details = details.charAt(0).toUpperCase() + details.slice(1);
   }
-
-  const actorAlias = resolveAlias(viewer, entry.intent.actorId);
-  const subjectStr = actorAlias.charAt(0).toUpperCase() + actorAlias.slice(1);
-
-  let details = (entry.intent.description || entry.intent.originalText).trim();
   if (entry.intent.type === "action" && entry.outcome) {
     details += ` (Outcome: ${entry.outcome.isValid ? "Succeeded" : `Failed - ${entry.outcome.reason}`})`;
   }
-
-  return `${subjectStr} ${details}`;
+  return details;
 }
 
 export class BufferRepository {

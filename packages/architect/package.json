@@ -10,6 +10,7 @@
     "@omnia/core": "workspace:*",
     "@omnia/llm": "workspace:*",
     "@omnia/intent": "workspace:*",
+    "@omnia/voice": "workspace:*",
     "zod": "^4.4.3"
   }
 }

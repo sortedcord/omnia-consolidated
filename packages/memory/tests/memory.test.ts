@@ -1,24 +1,14 @@
-import { describe, test, expect } from "vitest";
 import Database from "better-sqlite3";
+import { describe, test, expect } from "vitest";
 import { Entity, SQLiteRepository } from "@omnia/core";
 import { Intent } from "@omnia/intent";
 import {
   BufferEntry,
   BufferRepository,
   serializeSubjectiveBufferEntry,
-  resolveAlias,
 } from "@omnia/memory";
 
 describe("Subjective Buffer Entry Serializer Tests (Tier 1)", () => {
-  test("resolveAlias correctly handles self and fallbacks", () => {
-    const viewer = new Entity("alice");
-    viewer.aliases.set("bob", "the hooded figure");
-
-    expect(resolveAlias(viewer, "alice")).toBe("you");
-    expect(resolveAlias(viewer, "bob")).toBe("the hooded figure");
-    expect(resolveAlias(viewer, "charlie")).toBe("an unfamiliar figure");
-  });
-
   test("serializes dialogue intent substituting target/actor aliases", () => {
     const viewer = new Entity("alice");
     viewer.aliases.set("bob", "the hooded figure");
@@ -31,9 +21,8 @@ describe("Subjective Buffer Entry Serializer Tests (Tier 1)", () => {
       locationId: "room-1",
       intent: {
         type: "dialogue",
-        originalText: '"Hello there," Bob said to Charlie.',
-        description: "says, 'Hello there' to the bartender",
-        selfDescription: "You say, 'Hello there' to the bartender.",
+        content:
+          "entity@bob[I] say 'Hello there' to entity@charlie[the bartender]",
         actorId: "bob",
         targetIds: ["charlie"],
         modifiers: [],
@@ -42,7 +31,7 @@ describe("Subjective Buffer Entry Serializer Tests (Tier 1)", () => {
 
     const result = serializeSubjectiveBufferEntry(entry, viewer);
     expect(result).toBe(
-      "The hooded figure says, 'Hello there' to the bartender",
+      "The hooded figure says 'Hello there' to the bartender",
     );
   });
 
@@ -57,9 +46,7 @@ describe("Subjective Buffer Entry Serializer Tests (Tier 1)", () => {
       locationId: "room-1",
       intent: {
         type: "action",
-        originalText: "Bob tried to break the latch.",
-        description: "attempts to break the lock latch",
-        selfDescription: "You attempt to break the lock latch.",
+        content: "entity@bob[I] attempt to break the lock latch",
         actorId: "bob",
         targetIds: [],
         modifiers: [],
@@ -86,9 +73,7 @@ describe("Subjective Buffer Entry Serializer Tests (Tier 1)", () => {
       locationId: "room-1",
       intent: {
         type: "action",
-        originalText: "I opened the window.",
-        description: "open the window",
-        selfDescription: "You open the window.",
+        content: "entity@alice[I] open the window",
         actorId: "alice",
         targetIds: [],
         modifiers: [],
@@ -96,7 +81,7 @@ describe("Subjective Buffer Entry Serializer Tests (Tier 1)", () => {
     };
 
     const resultSelf = serializeSubjectiveBufferEntry(entrySelf, viewer);
-    expect(resultSelf).toBe("You open the window.");
+    expect(resultSelf).toBe("I open the window");
 
     const entryUnfamiliar: BufferEntry = {
       id: "entry-unfamiliar",
@@ -105,9 +90,7 @@ describe("Subjective Buffer Entry Serializer Tests (Tier 1)", () => {
       locationId: "room-1",
       intent: {
         type: "action",
-        originalText: "Someone knocked.",
-        description: "knocks on the door",
-        selfDescription: "You knock on the door.",
+        content: "entity@stranger-1[I] knock on the door",
         actorId: "stranger-1",
         targetIds: [],
         modifiers: [],
@@ -136,9 +119,7 @@ describe("BufferRepository Persistence Tests (Tier 1)", () => {
 
     const intent: Intent = {
       type: "action",
-      originalText: "Alice picked up a stick.",
-      description: "Alice gathers a stick",
-      selfDescription: "You gather a stick.",
+      content: "entity@alice[I] gather a stick",
       actorId: "alice",
       targetIds: [],
       modifiers: [],
@@ -196,8 +177,7 @@ describe("BufferRepository Persistence Tests (Tier 1)", () => {
       locationId: "forest",
       intent: {
         type: "action",
-        originalText: "Alice sneezed.",
-        description: "Alice sneezes",
+        content: "entity@alice[I] sneeze",
         actorId: "alice",
         targetIds: [],
       },
