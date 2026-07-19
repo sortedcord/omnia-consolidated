@@ -39,7 +39,7 @@ export async function runHandoffResolution(session: SimSession): Promise<void> {
         worldState.clock.get(),
       );
       if (ran) {
-        const lastResult = (handoffEngine as any).lastResult;
+        const lastResult = handoffEngine.lastResult;
         const lastCall =
           session.handoffProvider.lastCalls?.[
             (session.handoffProvider.lastCalls?.length || 0) - 1

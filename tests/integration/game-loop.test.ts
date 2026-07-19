@@ -2,7 +2,7 @@ import { describe, test, expect } from "vitest";
 import Database from "better-sqlite3";
 import { WorldState, Entity, SQLiteRepository } from "@omnia/core";
 import { MockLLMProvider } from "@omnia/llm";
-import { IntentDecoder, IntentSequence } from "@omnia/intent";
+import { IntentDecoder } from "@omnia/intent";
 import { Architect } from "@omnia/architect";
 
 describe("Game Loop Integration Tests (Tier 2)", () => {

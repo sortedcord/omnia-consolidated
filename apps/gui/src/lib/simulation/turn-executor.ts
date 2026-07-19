@@ -68,11 +68,8 @@ async function processIntents(
       minutesToAdvance: outcome.timeDelta?.minutesToAdvance,
     });
 
-    if (
-      intent.type === "action" &&
-      (session.architect.validator as any).lastResult
-    ) {
-      const lastResult = (session.architect.validator as any).lastResult;
+    if (intent.type === "action" && session.architect.validator.lastResult) {
+      const lastResult = session.architect.validator.lastResult;
       let usage = undefined;
       if (
         session.validatorProvider.lastCalls &&

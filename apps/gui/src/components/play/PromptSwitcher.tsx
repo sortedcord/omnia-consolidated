@@ -2,7 +2,7 @@
 
 interface PromptSwitcherProps {
   activeTab: string;
-  onTabChange: (tab: any) => void;
+  onTabChange: (tab: string) => void;
   hasActor: boolean;
   hasDecoder: boolean;
   validatorCalls?: { intentIndex: number; intentContent: string }[];

@@ -99,12 +99,13 @@ function InputGroupButton({
     return React.cloneElement(render, {
       className: cn(
         inputGroupButtonVariants({ size }),
-        (render.props as any)?.className,
+        (render.props as Record<string, unknown>)?.className as
+          string | undefined,
         className,
       ),
       type,
       ...props,
-    } as any);
+    } as Record<string, unknown> as React.HTMLAttributes<HTMLElement>);
   }
 
   return (

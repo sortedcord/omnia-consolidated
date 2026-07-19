@@ -43,13 +43,7 @@ import {
   CardTitle,
   CardAction,
 } from "@/components/ui/card";
-import {
-  Item,
-  ItemContent,
-  ItemGroup,
-  ItemTitle,
-  ItemDescription,
-} from "@/components/ui/item";
+import { Item, ItemContent, ItemGroup, ItemTitle } from "@/components/ui/item";
 import { Empty, EmptyTitle, EmptyDescription } from "@/components/ui/empty";
 import { cn } from "@/lib/utils";
 import { RefreshCwIcon } from "lucide-react";
@@ -200,14 +194,12 @@ export function ProviderInstancesConfig({
         fetchModelsForExistingInstance(selectedInstanceId);
       }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedInstanceId, instances, availableProviders]);
 
   // Re-fetch models when provider/key/endpoint changes on new instance form
   useEffect(() => {
     if (selectedInstanceId !== "new") return;
     fetchModelsForNewInstance(editProvider, editKey, editEndpointUrl);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editProvider, editKey, editEndpointUrl, selectedInstanceId]);
 
   const handleProviderChange = (providerId: string | null) => {

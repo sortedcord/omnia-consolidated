@@ -38,6 +38,13 @@ export interface ValidatorCall {
   };
 }
 
+export interface HandoffResult {
+  chunks: {
+    content: string;
+    importance: number;
+  }[];
+}
+
 export interface LogEntry {
   turn: number;
   entityId: string;
@@ -46,7 +53,7 @@ export interface LogEntry {
   intents: IntentInfo[];
   timestamp: string;
   isHandoff?: boolean;
-  handoffResult?: any;
+  handoffResult?: HandoffResult;
   decodedIntents?: IntentInfo[];
   validatorCalls?: ValidatorCall[];
   rawPrompt?: PromptBreakdown;

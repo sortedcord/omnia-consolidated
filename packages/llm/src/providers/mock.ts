@@ -30,6 +30,7 @@ export class MockLLMProvider implements ILLMProvider {
     registerGenerative("mock", () => new MockLLMProvider([]));
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   static create(inst: ModelProviderInstance): ILLMProvider {
     return new MockLLMProvider([]);
   }

@@ -7,7 +7,6 @@ import {
   AttributeVisibility,
 } from "@omnia/core";
 import { MockLLMProvider } from "@omnia/llm";
-import { IntentSequence } from "@omnia/intent";
 import { Architect } from "@omnia/architect";
 import { BufferRepository, BufferEntry } from "@omnia/memory";
 import {

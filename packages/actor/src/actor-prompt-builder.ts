@@ -4,7 +4,6 @@ import {
   WorldState,
   naturalizeTime,
   serializeSubjectiveWorldState,
-  resolveAlias,
 } from "@omnia/core";
 import {
   BufferEntry,

@@ -10,7 +10,6 @@ export function splitQuotes(text: string): Segment[] {
   const segments: Segment[] = [];
   let current = "";
   let inQuote = false;
-  let quoteChar = "";
 
   for (let i = 0; i < text.length; i++) {
     const char = text[i];
@@ -78,7 +77,10 @@ export function dehydrate(
     // 2. Replace names and aliases with entity@<id>[name]
     sortedNames.forEach((name) => {
       const id = nameToId.get(name)!;
-      const escapedName = name.replace(/[-\/\\^$*+?.()|[\]{}]/g, "\\$&");
+      const escapedName = name.replace(
+        new RegExp("[-/\\\\^$*+?.()|[\\]{}]", "g"),
+        "\\$&",
+      );
       const regex = new RegExp(`\\b${escapedName}\\b`, "gi");
 
       text = text.replace(regex, (matched) => {

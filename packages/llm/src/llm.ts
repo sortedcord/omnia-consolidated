@@ -13,7 +13,7 @@ export interface PromptBreakdown {
   components?: PromptComponent[];
 }
 
-export interface IPromptBuilder<TArgs extends any[]> {
+export interface IPromptBuilder<TArgs extends unknown[]> {
   build(...args: TArgs): PromptBreakdown;
 }
 
@@ -49,7 +49,7 @@ export interface LLMCallRecord {
     providerInstanceName?: string;
     maxContext?: number;
   };
-  response?: any;
+  response?: unknown;
 }
 
 export interface ILLMProvider {

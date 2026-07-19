@@ -126,66 +126,73 @@ export function HandoffModal({ entry, onClose }: HandoffModalProps) {
                   <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground font-mono">
                     Memory Ledger Additions
                   </h3>
-                  {chunks.map((chunk: any, index: number) => (
-                    <div
-                      key={index}
-                      className="border border-border/30 bg-card p-4 shadow-[2px_2px_0_0_var(--border)] relative flex flex-col gap-3"
-                    >
-                      <div className="flex justify-between items-start gap-4">
-                        <div className="flex-1 text-sm text-foreground/90 leading-relaxed font-sans">
-                          {chunk.content}
-                        </div>
-                        <Badge
-                          variant="outline"
-                          className={`font-mono text-xs ${getImportanceColor(chunk.importance)}`}
-                        >
-                          Importance: {chunk.importance}
-                        </Badge>
-                      </div>
-
-                      {chunk.quotes && chunk.quotes.length > 0 && (
-                        <div className="bg-secondary/10 border-l-2 border-primary/50 p-2.5 my-1 text-xs italic text-muted-foreground space-y-1">
-                          {chunk.quotes.map((quote: string, qIdx: number) => (
-                            <div key={qIdx}>&ldquo;{quote}&rdquo;</div>
-                          ))}
-                        </div>
-                      )}
-
-                      <div className="flex flex-wrap gap-2 text-xs pt-2 border-t border-dotted border-border/10">
-                        {chunk.retainInBuffer ? (
+                  {chunks.map(
+                    (
+                      chunk: { content: string; importance: number },
+                      index: number,
+                    ) => (
+                      <div
+                        key={index}
+                        className="border border-border/30 bg-card p-4 shadow-sm relative flex flex-col gap-3"
+                      >
+                        <div className="flex justify-between items-start gap-4">
+                          <div className="flex-1 text-sm text-foreground/90 leading-relaxed font-sans">
+                            {chunk.content}
+                          </div>
                           <Badge
                             variant="outline"
-                            className="bg-primary/5 text-primary border-primary/20 text-[10px] font-mono"
+                            className={`font-mono text-xs ${getImportanceColor(chunk.importance)}`}
                           >
-                            Pinned in Buffer
+                            Importance: {chunk.importance}
                           </Badge>
-                        ) : (
-                          <Badge
-                            variant="outline"
-                            className="bg-muted text-muted-foreground border-border/20 text-[10px] font-mono"
-                          >
-                            Pruned from Buffer
-                          </Badge>
+                        </div>
+
+                        {chunk.quotes && chunk.quotes.length > 0 && (
+                          <div className="bg-secondary/10 border-l-2 border-primary/50 p-2.5 my-1 text-xs italic text-muted-foreground space-y-1">
+                            {chunk.quotes.map((quote: string, qIdx: number) => (
+                              <div key={qIdx}>&ldquo;{quote}&rdquo;</div>
+                            ))}
+                          </div>
                         )}
 
-                        {chunk.involvedEntityIds &&
-                          chunk.involvedEntityIds.length > 0 && (
-                            <div className="flex items-center gap-1.5 ml-auto text-[10px] font-mono text-muted-foreground">
-                              <span>Entities:</span>
-                              {chunk.involvedEntityIds.map((entId: string) => (
-                                <Badge
-                                  key={entId}
-                                  variant="outline"
-                                  className="text-[10px] px-1 py-0 border-border/20 font-mono"
-                                >
-                                  {entId}
-                                </Badge>
-                              ))}
-                            </div>
+                        <div className="flex flex-wrap gap-2 text-xs pt-2 border-t border-dotted border-border/10">
+                          {chunk.retainInBuffer ? (
+                            <Badge
+                              variant="outline"
+                              className="bg-primary/5 text-primary border-primary/20 text-[10px] font-mono"
+                            >
+                              Pinned in Buffer
+                            </Badge>
+                          ) : (
+                            <Badge
+                              variant="outline"
+                              className="bg-muted text-muted-foreground border-border/20 text-[10px] font-mono"
+                            >
+                              Pruned from Buffer
+                            </Badge>
                           )}
+
+                          {chunk.involvedEntityIds &&
+                            chunk.involvedEntityIds.length > 0 && (
+                              <div className="flex items-center gap-1.5 ml-auto text-[10px] font-mono text-muted-foreground">
+                                <span>Entities:</span>
+                                {chunk.involvedEntityIds.map(
+                                  (entId: string) => (
+                                    <Badge
+                                      key={entId}
+                                      variant="outline"
+                                      className="text-[10px] px-1 py-0 border-border/20 font-mono"
+                                    >
+                                      {entId}
+                                    </Badge>
+                                  ),
+                                )}
+                              </div>
+                            )}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    ),
+                  )}
                 </div>
               )}
             </div>

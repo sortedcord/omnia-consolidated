@@ -1,5 +1,5 @@
 import Database from "better-sqlite3";
-import { Entity, resolveAlias } from "@omnia/core";
+import { Entity } from "@omnia/core";
 import { Intent } from "@omnia/intent";
 import { hydrate } from "@omnia/voice";
 

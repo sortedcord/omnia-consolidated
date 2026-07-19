@@ -208,7 +208,7 @@ export interface HandoffRunResult {
   systemPrompt?: string;
   userContext?: string;
   promptComponents?: PromptComponent[];
-  response?: any;
+  response?: unknown;
 }
 
 export class HandoffEngine {
@@ -267,7 +267,11 @@ export class HandoffEngine {
     };
 
     const result = response.data;
-    const db = (this.bufferRepo as any).db;
+    const db = (
+      this.bufferRepo as unknown as {
+        db: { transaction: (fn: () => void) => () => void };
+      }
+    ).db;
 
     const ledgerEntries: LedgerEntry[] = [];
     for (const chunk of result.chunks) {

@@ -1,7 +1,7 @@
 import { describe, test, expect } from "vitest";
 import { WorldState, Entity } from "@omnia/core";
 import { MockLLMProvider } from "@omnia/llm";
-import { IntentDecoder, IntentSequence } from "@omnia/intent";
+import { IntentDecoder } from "@omnia/intent";
 
 describe("IntentDecoder Unit Tests (Tier 1)", () => {
   test("decodes prose with a single action intent", async () => {

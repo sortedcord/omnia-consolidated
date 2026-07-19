@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { SimSnapshot } from "@/lib/simulation-types";
+import type { SimSnapshot, PromptBreakdown } from "@/lib/simulation-types";
 import {
   Dialog,
   DialogContent,
@@ -28,7 +28,7 @@ export function PromptModal({ entry, onClose }: PromptModalProps) {
 
   // Helper to resolve components with a fallback if none exist (for backwards-compatibility)
   const getComponents = (
-    promptBreakdown: any,
+    promptBreakdown: PromptBreakdown | null | undefined,
     defaultType: "world" | "input",
   ) => {
     if (!promptBreakdown) return [];
@@ -66,7 +66,7 @@ export function PromptModal({ entry, onClose }: PromptModalProps) {
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-[750px] sm:max-w-[750px] h-[90vh] overflow-hidden flex flex-col p-0 gap-0">
+      <DialogContent className="max-w-187.5 sm:max-w-187.5 h-[90vh] overflow-hidden flex flex-col p-0 gap-0">
         <DialogHeader className="px-6 pt-5 pb-4 border-b">
           <DialogTitle className="text-lg">
             Raw Prompts & Token Usage ({entry.entityName})

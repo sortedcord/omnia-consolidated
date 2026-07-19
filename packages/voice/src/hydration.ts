@@ -48,7 +48,7 @@ export function hydrate(content: string, viewer: Entity): string {
     return seg.text.replace(regex, (matchStr, id, original, followingWord) => {
       const isSelf = id === viewer.id;
       const lowerOriginal = original.toLowerCase();
-      let resolvedSubject = "";
+      let resolvedSubject: string;
       let isThirdPersonSingular = false;
 
       if (isSelf) {
@@ -129,7 +129,8 @@ export function hydrate(content: string, viewer: Entity): string {
 
       if (followingWord) {
         if (isThirdPersonSingular) {
-          const conj = nlp(followingWord).verbs().conjugate()[0] as any;
+          const conj = nlp(followingWord).verbs().conjugate()[0] as
+            { Infinitive?: string; PresentTense?: string } | undefined;
           if (conj && conj.Infinitive === followingWord && conj.PresentTense) {
             return `${resolvedSubject} ${conj.PresentTense}`;
           }
@@ -194,7 +195,7 @@ export function hydrateObjective(
       const entity = worldState.getEntity(id);
       const name = entity?.attributes.get("name")?.getValue() || id;
       const lowerOriginal = original.toLowerCase();
-      let resolvedSubject = "";
+      let resolvedSubject: string;
       let isThirdPersonSingular = false;
 
       if (firstPersonSet.has(lowerOriginal)) {
@@ -220,7 +221,8 @@ export function hydrateObjective(
 
       if (followingWord) {
         if (isThirdPersonSingular) {
-          const conj = nlp(followingWord).verbs().conjugate()[0] as any;
+          const conj = nlp(followingWord).verbs().conjugate()[0] as
+            { Infinitive?: string; PresentTense?: string } | undefined;
           if (conj && conj.Infinitive === followingWord && conj.PresentTense) {
             return `${resolvedSubject} ${conj.PresentTense}`;
           }

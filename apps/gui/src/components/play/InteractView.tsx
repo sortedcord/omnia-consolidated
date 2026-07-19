@@ -17,13 +17,11 @@ import {
 
 function IntentTag({
   intent,
-  isSelf,
   playerAliases,
   playerId,
   entities,
 }: {
   intent: SimSnapshot["log"][number]["intents"][number];
-  isSelf?: boolean;
   playerAliases: Record<string, string>;
   playerId: string;
   entities: SimSnapshot["entities"];
@@ -59,7 +57,10 @@ function IntentTag({
     aliases: viewerAliasesMap,
   };
 
-  const textToDisplay = hydrate(intent.content, viewerEntityMock as any);
+  const textToDisplay = hydrate(
+    intent.content,
+    viewerEntityMock as unknown as Parameters<typeof hydrate>[1],
+  );
 
   const modifiersStr =
     intent.modifiers && intent.modifiers.length > 0 ? (
@@ -147,7 +148,6 @@ function LogEntryCard({
           <IntentTag
             key={i}
             intent={intent}
-            isSelf={isPlayerCard}
             playerAliases={playerAliases}
             playerId={playerId}
             entities={entities}
