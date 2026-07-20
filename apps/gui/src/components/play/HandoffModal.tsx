@@ -128,7 +128,13 @@ export function HandoffModal({ entry, onClose }: HandoffModalProps) {
                   </h3>
                   {chunks.map(
                     (
-                      chunk: { content: string; importance: number },
+                      chunk: {
+                        content: string;
+                        importance: number;
+                        quotes?: string[];
+                        retainInBuffer?: boolean;
+                        involvedEntityIds?: string[];
+                      },
                       index: number,
                     ) => (
                       <div

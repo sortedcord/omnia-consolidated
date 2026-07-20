@@ -63,7 +63,7 @@ export async function runHandoffResolution(session: SimSession): Promise<void> {
               }
             : undefined,
           usage: lastCall?.usage,
-          handoffResult: lastResult?.response || lastCall?.response,
+          handoffResult: (lastResult?.response || lastCall?.response) as any,
         });
       }
     }

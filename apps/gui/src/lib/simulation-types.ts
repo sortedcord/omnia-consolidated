@@ -42,6 +42,9 @@ export interface HandoffResult {
   chunks: {
     content: string;
     importance: number;
+    quotes?: string[];
+    retainInBuffer?: boolean;
+    involvedEntityIds?: string[];
   }[];
 }
 
@@ -103,4 +106,6 @@ export interface SimSnapshot {
   entityIndex: number;
   waitingEntity?: WaitingContext;
   error?: string;
+  worldTime?: string;
+  currentLocation?: string;
 }

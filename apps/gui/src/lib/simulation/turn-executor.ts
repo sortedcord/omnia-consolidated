@@ -10,6 +10,7 @@ import type {
   IntentInfo,
   LogEntry,
   WaitingContext,
+  ValidatorCall,
 } from "../simulation-types";
 
 // ---------------------------------------------------------------------------
@@ -88,7 +89,7 @@ async function processIntents(
         prompt: {
           systemPrompt: lastResult.systemPrompt || "",
           userContext: lastResult.userContext || "",
-          components: lastResult.promptComponents,
+          components: lastResult.components,
         },
         response: {
           isValid: outcome.isValid,

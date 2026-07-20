@@ -1,10 +1,8 @@
 "use client";
 
 import * as React from "react";
-import { useRouter } from "next/navigation";
 import type { SimSnapshot } from "@/lib/simulation-types";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
 import { hydrate } from "@omnia/voice";
@@ -15,6 +13,7 @@ import {
   AlertDescription,
   AlertTitle,
 } from "@/components/ui/alert";
+import { InteractDock } from "./InteractDock";
 
 function IntentTag({
   intent,
@@ -117,7 +116,7 @@ function LogEntryCard({
   entry: SimSnapshot["log"][number];
   onShowPrompt: (entry: SimSnapshot["log"][number]) => void;
   isPlayerCard: boolean;
-  playerAlciases: Record<string, string>;
+  playerAliases: Record<string, string>;
   playerId: string;
   entities: SimSnapshot["entities"];
 }) {
@@ -182,6 +181,9 @@ interface InteractViewProps {
   onShowPrompt: (entry: SimSnapshot["log"][number]) => void;
   onShowHandoff: (entry: SimSnapshot["log"][number]) => void;
   logEndRef: React.RefObject<HTMLDivElement | null>;
+  onPauseRequested: () => void;
+  onResumeRequested: () => void;
+  onStopRequested: () => void;
 }
 
 export function InteractView({
@@ -194,16 +196,17 @@ export function InteractView({
   onShowPrompt,
   onShowHandoff,
   logEndRef,
+  onPauseRequested,
+  onResumeRequested,
+  onStopRequested,
 }: InteractViewProps) {
-  const router = useRouter();
-
   const playerEntity = snapshot.entities.find((e) => e.isPlayer);
 
   return (
     <>
       {/* Scrollable Center Viewport */}
       <main className="flex-1 overflow-y-auto px-8 py-6">
-        <div className="flex flex-col gap-4 max-w-200 mx-auto pb-12">
+        <div className="flex flex-col gap-4 max-w-200 mx-auto pb-44 md:pb-52">
           {snapshot.log.map((entry, i) => {
             if (entry.isHandoff) {
               return (
@@ -257,54 +260,16 @@ export function InteractView({
         </div>
       </main>
 
-      {/* Sticky Chat / Interaction Input Footer */}
-      <footer className="sticky bottom-0 bg-background/95 backdrop-blur-xs border-t border-dotted border-border/20 px-8 py-4 z-10 shrink-0">
-        <div className="max-w-200 mx-auto">
-          {snapshot.status === "waiting_player" && snapshot.waitingEntity ? (
-            <div className="border border-border/30 bg-card p-4 shadow-sm">
-              <details className="mb-3">
-                <summary className="cursor-pointer text-sm font-medium font-head text-primary select-none outline-none">
-                  <strong>Your context as {snapshot.waitingEntity.name}</strong>
-                </summary>
-                <pre className="text-xs whitespace-pre-wrap bg-input border border-border/20 p-2 max-h-37.5 overflow-y-auto mt-2 font-mono">
-                  {snapshot.waitingEntity.userContext}
-                </pre>
-              </details>
-
-              <form onSubmit={onSubmitAction} className="flex flex-col gap-2">
-                <Textarea
-                  value={playerInput}
-                  onChange={(e) => setPlayerInput(e.target.value)}
-                  placeholder="Describe what your character does, says, or thinks..."
-                  rows={3}
-                  disabled={loading}
-                />
-                <Button type="submit" disabled={loading || !playerInput.trim()}>
-                  {loading ? "Processing..." : "Submit Action"}
-                </Button>
-              </form>
-            </div>
-          ) : snapshot.status === "done" || snapshot.status === "error" ? (
-            <div className="flex justify-between items-center bg-card border border-border/30 p-4 shadow-sm">
-              <span className="text-sm font-mono text-muted-foreground">
-                {snapshot.status === "error"
-                  ? "Simulation finished with an error."
-                  : "Simulation complete."}
-              </span>
-              <Button
-                onClick={() => {
-                  router.push("/");
-                }}
-                size="sm"
-              >
-                {snapshot.status === "error"
-                  ? "Back to Dashboard"
-                  : "New Simulation"}
-              </Button>
-            </div>
-          ) : null}
-        </div>
-      </footer>
+      <InteractDock
+        snapshot={snapshot}
+        loading={loading}
+        playerInput={playerInput}
+        setPlayerInput={setPlayerInput}
+        onSubmitAction={onSubmitAction}
+        onPauseRequested={onPauseRequested}
+        onResumeRequested={onResumeRequested}
+        onStopRequested={onStopRequested}
+      />
     </>
   );
 }

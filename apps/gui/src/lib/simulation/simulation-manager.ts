@@ -483,6 +483,23 @@ export class SimulationManager {
       };
     });
 
+    // Get current location from the waiting entity
+    let currentLocation: string | undefined;
+    if (
+      worldState &&
+      session.entityIndex >= 0 &&
+      session.entityIndex < session.entities.length
+    ) {
+      const currentEntityInfo = session.entities[session.entityIndex];
+      const actualEntity = worldState.getEntity(currentEntityInfo.id);
+      if (actualEntity?.locationId) {
+        const location = worldState.getLocation(actualEntity.locationId);
+        if (location) {
+          currentLocation = location.id;
+        }
+      }
+    }
+
     return {
       id: session.worldInstanceId,
       status: session.status,
@@ -495,6 +512,8 @@ export class SimulationManager {
       entityIndex: session.entityIndex,
       waitingEntity: session.waitingEntity,
       error: session.error,
+      worldTime: worldState?.clock.get().toISOString(),
+      currentLocation,
     };
   }
 }

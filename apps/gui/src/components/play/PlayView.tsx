@@ -319,43 +319,6 @@ export function PlayView() {
                   </p>
                 </div>
               </div>
-              {/* Simulation Global Controls */}
-              <div className="flex gap-2 shrink-0">
-                {snapshot.status !== "done" && snapshot.status !== "error" && (
-                  <>
-                    {snapshot.status === "running" &&
-                      (loading ? (
-                        <Button
-                          variant="secondary"
-                          size="sm"
-                          onClick={() => {
-                            pauseRequestedRef.current = true;
-                          }}
-                        >
-                          Pause
-                        </Button>
-                      ) : (
-                        <Button
-                          variant="secondary"
-                          size="sm"
-                          onClick={() => runSteps(snapshot.id)}
-                        >
-                          Resume
-                        </Button>
-                      ))}
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => {
-                        pauseRequestedRef.current = true;
-                        router.push("/");
-                      }}
-                    >
-                      Stop
-                    </Button>
-                  </>
-                )}
-              </div>
             </div>
             <div className="flex items-center justify-between text-xs font-mono mt-1 pt-1.5 border-t border-border/10">
               <span className="text-muted-foreground">
@@ -390,6 +353,14 @@ export function PlayView() {
               onShowPrompt={setSelectedEntryForModal}
               onShowHandoff={setSelectedHandoffForModal}
               logEndRef={logEndRef}
+              onPauseRequested={() => {
+                pauseRequestedRef.current = true;
+              }}
+              onResumeRequested={() => runSteps(snapshot.id)}
+              onStopRequested={() => {
+                pauseRequestedRef.current = true;
+                router.push("/");
+              }}
             />
           ) : (
             <ManageView snapshot={snapshot} onRename={setSnapshot} />
