@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
 import { hydrate } from "@omnia/voice";
+import { Brain, PersonStanding, Speech } from "lucide-react";
 import {
   Alert,
   AlertAction,
@@ -26,19 +27,14 @@ function IntentTag({
   playerId: string;
   entities: SimSnapshot["entities"];
 }) {
-  const labels: Record<string, string> = {
-    monologue: "thought",
-    thought: "thought",
-    dialogue: "dialogue",
-    action: "action",
+  const icons: Record<string, React.ReactNode> = {
+    monologue: <Brain className="size-4" />,
+    thought: <Brain className="size-4" />,
+    dialogue: <Speech className="size-4" />,
+    action: <PersonStanding className="size-4" />,
   };
 
-  const label = labels[intent.type] || intent.type;
-
-  let outcome = "";
-  if (intent.type === "action") {
-    outcome = intent.isValid ? " ✅" : ` ❌ (${intent.reason})`;
-  }
+  const icon = icons[intent.type] || null;
 
   const viewerAliasesMap = new Map<string, string>();
   if (entities) {
@@ -69,12 +65,28 @@ function IntentTag({
       </span>
     ) : null;
 
+  const invalidActionReason =
+    intent.type === "action" && !intent.isValid && intent.reason
+      ? ` (${intent.reason})`
+      : "";
+
+  const invalidActionClassName =
+    intent.type === "action" && !intent.isValid ? " text-destructive" : "";
+
   return (
-    <span className="text-sm text-muted-foreground">
-      [{label}] &ldquo;{textToDisplay}&rdquo;{modifiersStr}
-      {outcome}
-      {intent.minutesToAdvance ? ` [+${intent.minutesToAdvance}min]` : ""}
-    </span>
+    <>
+      <span className="text-sm text-muted-foreground inline-flex items-start gap-1">
+        <span className="mt-0.5 inline-flex shrink-0 items-center justify-center">
+          {icon}
+        </span>
+        <span className={invalidActionClassName}>
+          &ldquo;{textToDisplay}&rdquo;{modifiersStr}
+          {invalidActionReason}
+          {intent.minutesToAdvance ? ` [+${intent.minutesToAdvance}min]` : ""}
+        </span>
+      </span>
+      <br />
+    </>
   );
 }
 
@@ -105,45 +117,47 @@ function LogEntryCard({
   entry: SimSnapshot["log"][number];
   onShowPrompt: (entry: SimSnapshot["log"][number]) => void;
   isPlayerCard: boolean;
-  playerAliases: Record<string, string>;
+  playerAlciases: Record<string, string>;
   playerId: string;
   entities: SimSnapshot["entities"];
 }) {
   const showMenu = !!(entry.rawPrompt || entry.decoderPrompt);
 
   return (
-    <div
-      className={cn(
-        "border p-4 shadow-[2px_2px_0_0_var(--border)]",
-        isPlayerCard
-          ? "border-primary bg-surface-container-low"
-          : "border-border/30 bg-card",
-      )}
-    >
-      <div className="flex justify-between items-center mb-2 border-b border-dotted border-border/20 pb-2">
-        <div className="flex items-center gap-2">
-          <strong className="text-body-md font-bold text-foreground">
-            {entry.entityName}
-          </strong>
-          <span className="text-xs text-muted-foreground font-mono">
-            Turn {entry.turn} &middot; {formatSimTime(entry.timestamp)}
-          </span>
-        </div>
-        {showMenu && (
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => onShowPrompt(entry)}
-            title="View Raw Prompts & Token Usage"
-          >
-            ☰
-          </Button>
+    <div className={cn("mb-2")}>
+      <div
+        className={cn(
+          "border p-4 shadow-sm",
+          isPlayerCard
+            ? "border-primary bg-surface-container-low"
+            : "border-border/30 bg-card",
         )}
+      >
+        <div className="flex justify-between items-center mb-2 border-b border-dotted border-border/20 pb-2">
+          <div className="flex items-center gap-2">
+            <strong className="text-body-md font-bold text-foreground">
+              {entry.entityName}
+            </strong>
+            <span className="text-xs text-muted-foreground font-mono">
+              Turn {entry.turn} &middot; {formatSimTime(entry.timestamp)}
+            </span>
+          </div>
+          {showMenu && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => onShowPrompt(entry)}
+              title="View Raw Prompts & Token Usage"
+            >
+              ☰
+            </Button>
+          )}
+        </div>
+        <div className="text-body-md leading-relaxed mb-3 text-foreground/90 whitespace-pre-wrap">
+          {entry.narrativeProse}
+        </div>
       </div>
-      <div className="text-body-md leading-relaxed mb-3 text-foreground/90 whitespace-pre-wrap">
-        {entry.narrativeProse}
-      </div>
-      <div className="flex flex-col gap-1.5 mt-2 border-t border-dotted border-border/10 pt-2">
+      <div className={cn("mt-3 ms-3")}>
         {entry.intents.map((intent, i) => (
           <IntentTag
             key={i}
@@ -189,7 +203,7 @@ export function InteractView({
     <>
       {/* Scrollable Center Viewport */}
       <main className="flex-1 overflow-y-auto px-8 py-6">
-        <div className="flex flex-col gap-4 max-w-[800px] mx-auto pb-12">
+        <div className="flex flex-col gap-4 max-w-200 mx-auto pb-12">
           {snapshot.log.map((entry, i) => {
             if (entry.isHandoff) {
               return (
@@ -245,14 +259,14 @@ export function InteractView({
 
       {/* Sticky Chat / Interaction Input Footer */}
       <footer className="sticky bottom-0 bg-background/95 backdrop-blur-xs border-t border-dotted border-border/20 px-8 py-4 z-10 shrink-0">
-        <div className="max-w-[800px] mx-auto">
+        <div className="max-w-200 mx-auto">
           {snapshot.status === "waiting_player" && snapshot.waitingEntity ? (
-            <div className="border border-border/30 bg-card p-4 shadow-[2px_2px_0_0_var(--border)]">
+            <div className="border border-border/30 bg-card p-4 shadow-sm">
               <details className="mb-3">
                 <summary className="cursor-pointer text-sm font-medium font-head text-primary select-none outline-none">
                   <strong>Your context as {snapshot.waitingEntity.name}</strong>
                 </summary>
-                <pre className="text-xs whitespace-pre-wrap bg-input border border-border/20 p-2 max-h-[150px] overflow-y-auto mt-2 font-mono">
+                <pre className="text-xs whitespace-pre-wrap bg-input border border-border/20 p-2 max-h-37.5 overflow-y-auto mt-2 font-mono">
                   {snapshot.waitingEntity.userContext}
                 </pre>
               </details>
@@ -271,7 +285,7 @@ export function InteractView({
               </form>
             </div>
           ) : snapshot.status === "done" || snapshot.status === "error" ? (
-            <div className="flex justify-between items-center bg-card border border-border/30 p-4 shadow-[2px_2px_0_0_var(--border)]">
+            <div className="flex justify-between items-center bg-card border border-border/30 p-4 shadow-sm">
               <span className="text-sm font-mono text-muted-foreground">
                 {snapshot.status === "error"
                   ? "Simulation finished with an error."

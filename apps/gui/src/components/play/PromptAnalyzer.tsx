@@ -52,21 +52,26 @@ export function PromptAnalyzer({
     maxContext > 0 ? (inputTokens / maxContext) * 100 : 0;
   const isAbsolute = maxContext > 0 && usagePctOfContext >= 20;
 
-  const getColorClass = (type: string) => {
-    switch (type) {
-      case "system":
-        return "bg-blue-500";
-      case "world":
-        return "bg-emerald-500";
-      case "events":
-        return "bg-purple-500";
-      case "memories":
-        return "bg-pink-500";
-      case "input":
-        return "bg-amber-500";
-      default:
-        return "bg-slate-500";
-    }
+  const legentColors = [
+    "bg-blue-500",
+    "bg-emerald-500",
+    "bg-purple-500",
+    "bg-orange-500",
+    "bg-pink-500",
+    "bg-amber-500",
+    "bg-teal-500",
+    "bg-cyan-500",
+    "bg-indigo-500",
+    "bg-violet-500",
+    "bg-rose-500",
+    "bg-sky-500",
+    "bg-lime-500",
+    "bg-fuchsia-500",
+    "bg-red-500",
+  ];
+
+  const getColorClass = (index: number) => {
+    return legentColors[index % legentColors.length];
   };
 
   return (
@@ -106,7 +111,7 @@ export function PromptAnalyzer({
             return (
               <div
                 key={idx}
-                className={`h-full transition-all duration-300 ${getColorClass(item.type)}`}
+                className={`h-full transition-all duration-300 ${getColorClass(idx)}`}
                 style={{ width: `${widthPct}%` }}
                 title={`${item.label}: ${item.tokens} tokens (${item.pct.toFixed(1)}%)`}
               />
@@ -129,7 +134,7 @@ export function PromptAnalyzer({
                 <AccordionTrigger className="text-sm py-2.5 hover:no-underline">
                   <div className="flex items-center gap-2">
                     <span
-                      className={`inline-block w-2.5 h-2.5 rounded-sm ${getColorClass(item.type)}`}
+                      className={`inline-block w-2.5 h-2.5 rounded-sm ${getColorClass(idx)}`}
                     />
                     <span>{item.label}:</span>
                     <span className="text-muted-foreground font-normal">
@@ -139,7 +144,7 @@ export function PromptAnalyzer({
                   </div>
                 </AccordionTrigger>
                 <AccordionContent>
-                  <pre className="m-0 p-3 bg-muted rounded text-xs font-mono whitespace-pre-wrap text-foreground border max-h-[300px] overflow-y-auto">
+                  <pre className="m-0 p-3 bg-muted rounded text-xs font-mono whitespace-pre-wrap text-foreground border max-h-75 overflow-y-auto">
                     {item.content}
                   </pre>
                 </AccordionContent>
@@ -161,7 +166,7 @@ export function PromptAnalyzer({
             )}
           </div>
           <div className="rounded border-2">
-            <pre className="m-0 p-3 bg-muted text-xs font-mono whitespace-pre-wrap text-foreground max-h-[250px] overflow-y-auto">
+            <pre className="m-0 p-3 bg-muted text-xs font-mono whitespace-pre-wrap text-foreground max-h-62.5 overflow-y-auto">
               {outputText}
             </pre>
           </div>

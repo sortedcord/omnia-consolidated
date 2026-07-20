@@ -25,15 +25,8 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
+import { Bot, UserRound } from "lucide-react";
 
 export function HomeView() {
   const router = useRouter();
@@ -192,7 +185,7 @@ export function HomeView() {
 
   return (
     <div className="flex-1 overflow-y-auto w-full relative">
-      <div className="relative z-10 mx-auto max-w-[1024px] px-10 py-12">
+      <div className="relative z-10 mx-auto max-w-5xl px-10 py-12">
         <div className="animate-fade-in">
           {/* Centered Big Logo */}
           <div className="flex flex-col items-center justify-center mb-10 pt-4">
@@ -237,7 +230,7 @@ export function HomeView() {
                 {Array.from({ length: 3 }).map((_, index) => (
                   <div
                     key={index}
-                    className="flex-shrink-0 w-72 border border-border/30 bg-card p-5 shadow-sm transition-all flex flex-col justify-between h-[148px]"
+                    className="shrink-0 w-72 border border-border/30 bg-card p-5 shadow-sm transition-all flex flex-col justify-between h-37"
                   >
                     <div className="space-y-3">
                       <Skeleton className="h-5 w-2/3" />
@@ -264,7 +257,7 @@ export function HomeView() {
                         ? undefined
                         : () => handleResume(s.id)
                     }
-                    className={`flex-shrink-0 w-72 border border-border/30 bg-card p-5 shadow-sm transition-all relative group ${
+                    className={`shrink-0 w-72 border border-border/30 bg-card p-5 shadow-sm transition-all relative group ${
                       providerInstances.length === 0
                         ? "opacity-50 cursor-not-allowed filter grayscale"
                         : "cursor-pointer hover:-translate-y-0.5 hover:shadow-md active:translate-y-0 active:shadow-sm"
@@ -310,8 +303,8 @@ export function HomeView() {
             </h2>
             {loadingData ? (
               <div className="flex overflow-x-auto gap-6 pb-4 scrollbar-thin scrollbar-thumb-border/20">
-                <Link href="/builder" className="no-underline flex-shrink-0">
-                  <div className="w-64 border border-border/30 bg-card p-5 cursor-pointer shadow-sm hover:-translate-y-0.5 hover:shadow-md active:translate-y-0 active:shadow-sm transition-all flex flex-col justify-between h-full min-h-[148px]">
+                <Link href="/builder" className="no-underline shrink-0">
+                  <div className="w-64 border border-border/30 bg-card p-5 cursor-pointer shadow-sm hover:-translate-y-0.5 hover:shadow-md active:translate-y-0 active:shadow-sm transition-all flex flex-col justify-between h-full min-h-37">
                     <div>
                       <strong className="text-body-md text-foreground block mb-1">
                         Build a scenario
@@ -331,7 +324,7 @@ export function HomeView() {
                 {Array.from({ length: 3 }).map((_, index) => (
                   <div
                     key={index}
-                    className="flex-shrink-0 w-64 border border-border/30 bg-card p-5 shadow-sm flex flex-col justify-between h-[148px]"
+                    className="shrink-0 w-64 border border-border/30 bg-card p-5 shadow-sm flex flex-col justify-between h-37"
                   >
                     <div className="space-y-3">
                       <Skeleton className="h-5 w-3/4" />
@@ -345,8 +338,8 @@ export function HomeView() {
               </div>
             ) : (
               <div className="flex overflow-x-auto gap-6 pb-4 scrollbar-thin scrollbar-thumb-border/20">
-                <Link href="/builder" className="no-underline flex-shrink-0">
-                  <div className="w-64 border border-primary bg-primary p-5 cursor-pointer shadow-sm hover:-translate-y-0.5 hover:shadow-md active:translate-y-0 active:shadow-sm transition-all flex flex-col justify-between h-full min-h-[148px]">
+                <Link href="/builder" className="no-underline shrink-0">
+                  <div className="w-64 border border-primary bg-primary p-5 cursor-pointer shadow-sm hover:-translate-y-0.5 hover:shadow-md active:translate-y-0 active:shadow-sm transition-all flex flex-col justify-between h-full min-h-37">
                     <div>
                       <strong className="text-body-md text-surface block mb-1">
                         Build a scenario
@@ -382,7 +375,7 @@ export function HomeView() {
               open={!!scenarioForModal}
               onOpenChange={(open) => !open && setScenarioForModal(null)}
             >
-              <DialogContent className="max-w-[400px]">
+              <DialogContent className="max-w-100">
                 <DialogHeader className="border-b border-dotted border-border/20 pb-4 mb-2">
                   <DialogTitle>Start Scenario</DialogTitle>
                   <DialogDescription>
@@ -412,28 +405,37 @@ export function HomeView() {
                       <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground font-mono">
                         Simulation Mode / Play as
                       </label>
-                      <Select
-                        value={selectedEntityForModal}
-                        onValueChange={(val) =>
-                          setSelectedEntityForModal(val || "")
-                        }
-                      >
-                        <SelectTrigger className="w-full">
-                          <SelectValue placeholder="-- Run Fully Autonomously --" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectGroup>
-                            <SelectItem value="">
-                              -- Run Fully Autonomously --
-                            </SelectItem>
-                            {modalEntities.map((ent) => (
-                              <SelectItem key={ent.id} value={ent.id}>
-                                Play as {ent.name}
-                              </SelectItem>
-                            ))}
-                          </SelectGroup>
-                        </SelectContent>
-                      </Select>
+                      <div className="flex flex-wrap gap-2">
+                        <Button
+                          type="button"
+                          variant={
+                            selectedEntityForModal === ""
+                              ? "default"
+                              : "outline"
+                          }
+                          onClick={() => setSelectedEntityForModal("")}
+                          className="flex-1 min-w-40"
+                        >
+                          <Bot />
+                          Run Fully Autonomously
+                        </Button>
+                        {modalEntities.map((ent) => (
+                          <Button
+                            key={ent.id}
+                            type="button"
+                            variant={
+                              selectedEntityForModal === ent.id
+                                ? "default"
+                                : "outline"
+                            }
+                            onClick={() => setSelectedEntityForModal(ent.id)}
+                            className="flex-1 min-w-40"
+                          >
+                            <UserRound />
+                            Play as {ent.name}
+                          </Button>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 )}

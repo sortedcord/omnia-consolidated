@@ -62,6 +62,50 @@ export class ProviderManager {
     };
   }
 
+  static duplicate(id: string): ModelProviderInstance | null {
+    const db = getDb();
+    const source = db
+      .prepare("SELECT * FROM provider_instances WHERE id = ?")
+      .get(id) as DbRow | undefined;
+    if (!source) return null;
+
+    const newId = "provider-" + Date.now();
+    const newName = `${source.name} (Copy)`;
+
+    const activeCount = db
+      .prepare(
+        "SELECT COUNT(*) as count FROM provider_instances WHERE isActive = 1 AND type = ?",
+      )
+      .get(source.type) as { count: number };
+    const isActive = activeCount.count === 0 ? 1 : 0;
+
+    db.prepare(
+      `INSERT INTO provider_instances (id, name, providerName, apiKey, isActive, modelName, type, maxContext, endpointUrl)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    ).run(
+      newId,
+      newName,
+      source.providerName,
+      source.apiKey,
+      isActive,
+      source.modelName,
+      source.type,
+      source.maxContext,
+      source.endpointUrl,
+    );
+
+    return {
+      id: newId,
+      name: newName,
+      providerName: source.providerName,
+      apiKey: source.apiKey,
+      isActive: isActive === 1,
+      modelName: source.modelName || undefined,
+      type: source.type as "generative" | "embedding",
+      maxContext: source.maxContext,
+      endpointUrl: source.endpointUrl || undefined,
+    };
+  }
   static delete(id: string): void {
     const db = getDb();
     const provider = db

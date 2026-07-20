@@ -136,7 +136,7 @@ export function PromptModal({ entry, onClose }: PromptModalProps) {
               }
               modelName={validatorCall.usage?.modelName}
               providerInstanceName={validatorCall.usage?.providerInstanceName}
-              outputLabel={`LLM Output (Validation for: "${validatorCall.intentContent}")`}
+              outputLabel={`LLM Output`}
               outputText={JSON.stringify(validatorCall.response, null, 2)}
               outputTokens={validatorCall.usage?.outputTokens}
             />

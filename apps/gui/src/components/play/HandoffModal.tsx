@@ -33,7 +33,7 @@ export function HandoffModal({ entry, onClose }: HandoffModalProps) {
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-[800px] sm:max-w-[800px] h-[85vh] overflow-hidden flex flex-col p-0 gap-0 border-2">
+      <DialogContent className="max-w-200 sm:max-w-200 h-[85vh] overflow-hidden flex flex-col p-0 gap-0 border-2">
         <DialogHeader className="px-6 pt-5 pb-4 border-b">
           <DialogTitle className="text-lg font-head tracking-wide text-primary flex items-center justify-between">
             <span>Memory Handoff Details &mdash; {entry.entityName}</span>
@@ -240,7 +240,7 @@ export function HandoffModal({ entry, onClose }: HandoffModalProps) {
               <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground font-mono">
                 Raw JSON Output
               </h4>
-              <pre className="p-3 bg-muted rounded text-xs font-mono whitespace-pre-wrap text-foreground border flex-1 overflow-y-auto max-h-[500px]">
+              <pre className="p-3 bg-muted rounded text-xs font-mono whitespace-pre-wrap text-foreground border flex-1 overflow-y-auto max-h-125">
                 {handoffResult
                   ? JSON.stringify(handoffResult, null, 2)
                   : "No JSON Output recorded."}

@@ -7,6 +7,7 @@ import {
   setActiveProviderInstance,
   regenerateEmbeddings,
   deleteProviderInstance,
+  duplicateProviderInstance,
   fetchAvailableModels,
   fetchAvailableModelsForInstance,
 } from "@/app/actions";
@@ -338,6 +339,23 @@ export function ProviderInstancesConfig({
     }
   };
 
+  const handleDuplicate = async () => {
+    if (selectedInstanceId === "new" || selectedInstanceId === null) return;
+    try {
+      setLoading(true);
+      setError("");
+      const duplicated = await duplicateProviderInstance(selectedInstanceId);
+      if (duplicated) {
+        setSelectedInstanceId(duplicated.id);
+        await onChanged();
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <section className="mb-8 flex min-h-[600px] flex-col">
       {error && (
@@ -646,16 +664,26 @@ export function ProviderInstancesConfig({
                 </div>
 
                 <div className="flex flex-row items-center justify-between gap-2">
-                  <div>
+                  <div className="flex flex-row gap-2">
                     {selectedInstanceId !== "new" && (
-                      <Button
-                        type="button"
-                        variant="destructive"
-                        onClick={handleDelete}
-                        disabled={loading}
-                      >
-                        Delete
-                      </Button>
+                      <>
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          onClick={handleDelete}
+                          disabled={loading}
+                        >
+                          Delete
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          onClick={handleDuplicate}
+                          disabled={loading}
+                        >
+                          Duplicate
+                        </Button>
+                      </>
                     )}
                   </div>
                   <Button type="submit" disabled={loading}>

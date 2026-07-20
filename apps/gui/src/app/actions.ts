@@ -271,6 +271,12 @@ export async function createProviderInstance(
   );
 }
 
+export async function duplicateProviderInstance(
+  id: string,
+): Promise<ModelProviderInstance | null> {
+  return ProviderManager.duplicate(id);
+}
+
 export async function deleteProviderInstance(id: string): Promise<void> {
   ProviderManager.delete(id);
 }

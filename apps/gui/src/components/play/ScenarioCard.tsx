@@ -21,7 +21,7 @@ export function ScenarioCard({
   return (
     <div
       onClick={disabled ? undefined : onClick}
-      className={`flex-shrink-0 w-64 border border-border/30 bg-card p-5 shadow-sm transition-all ${
+      className={`shrink-0 w-64 border border-border/30 bg-card p-5 shadow-sm transition-all ${
         disabled
           ? "opacity-50 cursor-not-allowed filter grayscale"
           : "cursor-pointer hover:-translate-y-0.5 hover:shadow-md active:translate-y-0 active:shadow-sm"
