@@ -3,6 +3,7 @@ services:
     build:
       context: .
       dockerfile: apps/gui/Dockerfile.dev
+    restart: unless-stopped
     ports:
       - "3000:3000"
     environment:

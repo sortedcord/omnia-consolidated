@@ -1,0 +1,65 @@
+# Git metadata
+.git/
+.gitignore
+.gitattributes
+
+# Dependencies and package managers
+node_modules/
+.pnpm-store/
+.pnp
+.pnp.*
+.yarn/
+.yarn-cache/
+
+# Build and generated output
+dist/
+dist-ssr/
+build/
+coverage/
+.next/
+.astro/
+out/
+*.tsbuildinfo
+.turbo/
+.cache/
+
+# Logs and temporary files
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+.pnpm-debug.log*
+lerna-debug.log*
+*.swp
+*.swo
+*.swn
+*.tmp
+*.temp
+
+# Environment and local config
+.env
+.env*
+*.local
+
+# OS/editor files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.suo
+*.sln
+*.ntvs*
+*.njsproj
+
+# Databases and local data
+*.db
+*.sqlite
+*.sqlite3
+*.db-journal
+*.db-wal
+*.db-shm
+omnia.db
+
+# Local notes and generated artifacts
+__local_notes/

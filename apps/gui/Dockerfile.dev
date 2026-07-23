@@ -15,4 +15,4 @@ RUN apt-get update -qq && \
 EXPOSE 3000
 
 # We run a shell command or script to handle mounting sync + pnpm install fallback
-CMD ["pnpm", "--filter", "@omnia/gui", "dev", "--turbopack"]
+CMD ["sh", "-c", "pnpm install && pnpm build && pnpm --filter @omnia/gui dev --turbopack"]
